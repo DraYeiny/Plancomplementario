@@ -330,7 +330,7 @@ function rebuildSheets(){
   document.getElementById('sheetsContainer').innerHTML='';
 
   for(let w=0;w<numWeeks;w++){
-    const ws = addDays(mondayOf(startDate), w*7);
+    const ws = addDays(startDate, w*7);
     const we = addDays(ws,6);
 
     const btn=document.createElement('button');
@@ -349,9 +349,12 @@ function rebuildSheets(){
     title.textContent=`📅 Semana ${w+1}: del ${fmt(ws)} al ${fmt(we)}`;
     sheet.appendChild(title);
 
-    const dayHeaders = DAY_SHORT.map((dl,i)=>{
+    const DAY_NAMES_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const DAY_ICONS_ALL = ['🌞','🌙','🔥','⚡','🌈','🎉','⭐'];
+    const dayHeaders = Array.from({length:7},(_,i)=>{
       const dd=addDays(ws,i);
-      return `${DAY_ICONS[i]}<br>${dl}<br><small style="font-size:0.65rem;font-weight:700;color:#888">${dd.getDate()}/${dd.getMonth()+1}</small>`;
+      const dowIdx=dd.getDay();
+      return `${DAY_ICONS_ALL[dowIdx]}<br>${DAY_NAMES_ES[dowIdx]}<br><small style="font-size:0.65rem;font-weight:700;color:#888">${dd.getDate()}/${dd.getMonth()+1}</small>`;
     });
 
     const wrap=document.createElement('div');
