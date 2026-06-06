@@ -606,28 +606,38 @@ function downloadAllPDF(){
 
 async function runPDF(){
   toast('⏳ Generando PDF del plan...');
-  const name    = document.getElementById('childName').value || 'plan-alimentacion';
-  const appendOn= true;
-  const pdfUrl  = 'https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIA.pdf';
+  const childName = document.getElementById('childName').value.trim();
+  const name      = childName ? childName + ' - Plan de alimentacion' : 'Plan de alimentacion';
+  const appendOn  = true;
+  const pdfUrl    = 'https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIA.pdf';
 
-  /* 1 ── Capturar cada semana como imagen JPEG */
+  /* 1 ── Capturar cada semana como imagen JPEG al ancho exacto A4 landscape */
   const btnRow  = document.querySelector('.btn-row');
   const footer  = document.querySelector('.footer');
   const tabsBar = document.getElementById('tabsBar');
   btnRow.style.display='none'; footer.style.display='none';
   tabsBar.style.display='none';
 
-  const pageImages = [];   // { dataUrl, w, h }
+  // A4 landscape @ 150dpi → 1754 × 1240 px  (297mm × 210mm)
+  const CAPTURE_W = 1754;
+  const CAPTURE_H = 1240;
+
+  const pageImages = [];
   for(let w=0;w<numWeeks;w++){
     document.querySelectorAll('.week-sheet').forEach(s=>s.style.display='none');
     document.getElementById('sheet-'+w).style.display='block';
-    await new Promise(r=>setTimeout(r,120));
+    await new Promise(r=>setTimeout(r,150));
     const el = document.querySelector('.page');
     const canvas = await html2canvas(el,{
-      scale:2, useCORS:true, scrollX:0, scrollY:-window.scrollY,
-      windowWidth:1200, width:el.scrollWidth, height:el.scrollHeight
+      scale: CAPTURE_W / el.scrollWidth,
+      useCORS: true,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: el.scrollWidth,
+      width:  el.scrollWidth,
+      height: el.scrollHeight
     });
-    pageImages.push({ dataUrl: canvas.toDataURL('image/jpeg',0.95), w:canvas.width, h:canvas.height });
+    pageImages.push({ dataUrl: canvas.toDataURL('image/jpeg',0.97), w:canvas.width, h:canvas.height });
   }
 
   /* restore UI */
@@ -642,17 +652,17 @@ async function runPDF(){
   const planDoc = await PDFDocument.create();
 
   const mmToPt = mm => mm * 2.8346;
-  const pageW  = mmToPt(297); // A4 landscape
-  const pageH  = mmToPt(210);
-  const margin = mmToPt(5);
+  const pageW  = mmToPt(297); // A4 landscape width
+  const pageH  = mmToPt(210); // A4 landscape height
+  const margin = mmToPt(4);
 
   for(const img of pageImages){
-    const jpgBytes  = await fetch(img.dataUrl).then(r=>r.arrayBuffer());
-    const jpgImage  = await planDoc.embedJpg(jpgBytes);
-    const page      = planDoc.addPage([pageW, pageH]);
-    const ratio     = img.w / img.h;
-    const maxW      = pageW - margin*2;
-    const maxH      = pageH - margin*2;
+    const jpgBytes = await fetch(img.dataUrl).then(r=>r.arrayBuffer());
+    const jpgImage = await planDoc.embedJpg(jpgBytes);
+    const page     = planDoc.addPage([pageW, pageH]);
+    const ratio    = img.w / img.h;
+    const maxW     = pageW - margin*2;
+    const maxH     = pageH - margin*2;
     let iW = maxW, iH = maxW/ratio;
     if(iH > maxH){ iH = maxH; iW = maxH*ratio; }
     page.drawImage(jpgImage,{
@@ -687,7 +697,7 @@ async function runPDF(){
   const url      = URL.createObjectURL(blob);
   const a        = document.createElement('a');
   a.href = url;
-  a.download = name.trim().replace(/\s+/g,'_') + '.pdf';
+  a.download = name.replace(/\s+/g,' ').trim() + '.pdf';
   a.click();
   URL.revokeObjectURL(url);
   toast('✅ PDF descargado');
