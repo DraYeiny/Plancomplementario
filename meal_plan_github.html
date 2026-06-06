@@ -337,18 +337,33 @@ document.getElementById('dateStart').value = toddmmyyyy(startDate);
 document.getElementById('dateEnd').value   = toddmmyyyy(endDate);
 
 // Toggle popups
-document.getElementById('df-start').addEventListener('click', e => {
+function toggleCal(showId, hideId, renderFn) {
+  const show = document.getElementById(showId);
+  const hide = document.getElementById(hideId);
+  const isOpen = show.classList.contains('open');
+  hide.classList.remove('open');
+  if (isOpen) { show.classList.remove('open'); }
+  else { show.classList.add('open'); renderFn(); }
+}
+
+document.getElementById('dateStart').addEventListener('click', e => {
   e.stopPropagation();
-  document.getElementById('cal-end').classList.remove('open');
-  document.getElementById('cal-start').classList.toggle('open');
-  renderCalStart();
+  toggleCal('cal-start','cal-end', renderCalStart);
 });
-document.getElementById('df-end').addEventListener('click', e => {
+document.querySelector('#df-start .cal-icon').addEventListener('click', e => {
   e.stopPropagation();
-  document.getElementById('cal-start').classList.remove('open');
-  document.getElementById('cal-end').classList.toggle('open');
-  renderCalEnd();
+  toggleCal('cal-start','cal-end', renderCalStart);
 });
+document.getElementById('dateEnd').addEventListener('click', e => {
+  e.stopPropagation();
+  toggleCal('cal-end','cal-start', renderCalEnd);
+});
+document.querySelector('#df-end .cal-icon').addEventListener('click', e => {
+  e.stopPropagation();
+  toggleCal('cal-end','cal-start', renderCalEnd);
+});
+document.getElementById('cal-start').addEventListener('click', e => e.stopPropagation());
+document.getElementById('cal-end').addEventListener('click',   e => e.stopPropagation());
 document.addEventListener('click', () => {
   document.getElementById('cal-start').classList.remove('open');
   document.getElementById('cal-end').classList.remove('open');
