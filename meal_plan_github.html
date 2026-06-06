@@ -76,13 +76,13 @@
   /* ── Celda editable ── */
   .cell-edit {
     display: flex; align-items: center; justify-content: center;
-    min-height: 34px; height: 34px;
+    height: 38px;
     border: 1.5px dashed #ccc; border-radius: 6px;
-    padding: 2px 4px; cursor: text; overflow: hidden;
+    padding: 0 6px; cursor: text; overflow: hidden;
     transition: border-color 0.2s, background 0.2s;
-    font-family: 'Nunito', sans-serif; font-weight: 600;
-    color: #444; font-size: 12px;
-    text-align: center; line-height: 1.2;
+    font-family: 'Nunito', sans-serif; font-weight: 700;
+    color: #444; font-size: 13px;
+    text-align: center; line-height: 38px;
     white-space: nowrap;
     outline: none;
   }
@@ -256,7 +256,7 @@ function buildTable() {
         div.dataset.placeholder = '...';
         div.spellcheck = false;
 
-        div.addEventListener('input', () => { fitText(div); autoSave(); });
+        div.addEventListener('input', () => { autoSave(); });
         div.addEventListener('keydown', e => {
           if (e.key === 'Enter') { e.preventDefault(); div.blur(); }
         });
