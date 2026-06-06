@@ -342,38 +342,81 @@ function toast(msg) {
 }
 
 function downloadPDF() {
-  // Load html2pdf from CDN if not already loaded
-  if (window.html2pdf) { runPDF(); return; }
-  toast('⏳ Cargando generador PDF...');
-  const s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-  s.onload = runPDF;
-  s.onerror = () => toast('❌ Sin conexión, usa Ctrl+P para imprimir');
-  document.head.appendChild(s);
+  const libs = [
+    { id:'jspdf',      src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',        check:() => window.jspdf },
+    { id:'html2canvas',src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', check:() => window.html2canvas }
+  ];
+  toast('⏳ Preparando PDF...');
+  let loaded = 0;
+  libs.forEach(lib => {
+    if (lib.check()) { if (++loaded === libs.length) runPDF(); return; }
+    const s = document.createElement('script');
+    s.src = lib.src;
+    s.onload = () => { if (++loaded === libs.length) runPDF(); };
+    s.onerror = () => toast('❌ Sin conexión, no se pudo generar el PDF');
+    document.head.appendChild(s);
+  });
 }
 
 function runPDF() {
   const name = document.getElementById('childName').value || 'plan-alimentacion';
-  const filename = name.trim().replace(/\s+/g,'_') + '.pdf';
+  const filename = name.trim().replace(/\s+/g, '_') + '.pdf';
 
-  // Temporarily hide buttons
   const btnRow = document.querySelector('.btn-row');
+  const footer = document.querySelector('.footer');
   btnRow.style.display = 'none';
+  if (footer) footer.style.display = 'none';
 
-  const el = document.getElementById('mainPage') || document.querySelector('.page');
+  const el = document.querySelector('.page');
+  const W = el.scrollWidth;
+  const H = el.scrollHeight;
 
-  html2pdf().set({
-    margin:        [8, 6, 8, 6],
-    filename:      filename,
-    image:         { type: 'jpeg', quality: 0.98 },
-    html2canvas:   { scale: 2, useCORS: true, logging: false },
-    jsPDF:         { unit: 'mm', format: 'a4', orientation: 'landscape' },
-    pagebreak:     { mode: 'avoid-all' }
-  }).from(el).save().then(() => {
+  // Use html2canvas to capture full element, then fit into one A4 landscape PDF
+  if (!window.html2canvas) {
+    const s2 = document.createElement('script');
+    s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s2.onload = () => capture(el, W, H, filename, btnRow, footer);
+    document.head.appendChild(s2);
+  } else {
+    capture(el, W, H, filename, btnRow, footer);
+  }
+}
+
+function capture(el, W, H, filename, btnRow, footer) {
+  toast('⏳ Generando PDF...');
+  html2canvas(el, {
+    scale: 2,
+    useCORS: true,
+    scrollX: 0, scrollY: -window.scrollY,
+    windowWidth: 1200,
+    width: el.scrollWidth,
+    height: el.scrollHeight
+  }).then(canvas => {
+    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+    // A4 landscape in mm
+    const pageW = 297, pageH = 210;
+    const margin = 5;
+    const maxW = pageW - margin * 2;
+    const maxH = pageH - margin * 2;
+
+    // Scale image to fit page keeping aspect ratio
+    const ratio = canvas.width / canvas.height;
+    let iW = maxW, iH = maxW / ratio;
+    if (iH > maxH) { iH = maxH; iW = maxH * ratio; }
+    const x = (pageW - iW) / 2;
+    const y = (pageH - iH) / 2;
+
+    const pdf = new window.jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+    pdf.addImage(imgData, 'JPEG', x, y, iW, iH);
+    pdf.save(filename);
+
     btnRow.style.display = '';
+    if (footer) footer.style.display = '';
     toast('✅ PDF descargado: ' + filename);
   }).catch(() => {
     btnRow.style.display = '';
+    if (footer) footer.style.display = '';
     toast('❌ Error al generar PDF');
   });
 }
