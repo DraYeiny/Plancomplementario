@@ -618,9 +618,8 @@ async function runPDF(){
   btnRow.style.display='none'; footer.style.display='none';
   tabsBar.style.display='none';
 
-  // A4 landscape @ 150dpi → 1754 × 1240 px  (297mm × 210mm)
-  const CAPTURE_W = 1754;
-  const CAPTURE_H = 1240;
+  // A4 landscape @ 300dpi → 3508 px wide para texto perfectamente nítido
+  const CAPTURE_W = 3508;
 
   const pageImages = [];
   for(let w=0;w<numWeeks;w++){
@@ -637,7 +636,8 @@ async function runPDF(){
       width:  el.scrollWidth,
       height: el.scrollHeight
     });
-    pageImages.push({ dataUrl: canvas.toDataURL('image/jpeg',0.97), w:canvas.width, h:canvas.height });
+    // PNG sin pérdida → texto 100% nítido
+    pageImages.push({ dataUrl: canvas.toDataURL('image/png'), w:canvas.width, h:canvas.height, isPng: true });
   }
 
   /* restore UI */
@@ -657,15 +657,15 @@ async function runPDF(){
   const margin = mmToPt(4);
 
   for(const img of pageImages){
-    const jpgBytes = await fetch(img.dataUrl).then(r=>r.arrayBuffer());
-    const jpgImage = await planDoc.embedJpg(jpgBytes);
+    const imgBytes = await fetch(img.dataUrl).then(r=>r.arrayBuffer());
+    const embedded = await planDoc.embedPng(imgBytes);
     const page     = planDoc.addPage([pageW, pageH]);
     const ratio    = img.w / img.h;
     const maxW     = pageW - margin*2;
     const maxH     = pageH - margin*2;
     let iW = maxW, iH = maxW/ratio;
     if(iH > maxH){ iH = maxH; iW = maxH*ratio; }
-    page.drawImage(jpgImage,{
+    page.drawImage(embedded,{
       x: (pageW-iW)/2, y: (pageH-iH)/2, width: iW, height: iH
     });
   }
