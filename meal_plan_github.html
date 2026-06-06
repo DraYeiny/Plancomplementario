@@ -146,6 +146,8 @@ td.cell { padding: 2px; border-radius: 7px; vertical-align: middle; }
 .cell-edit:empty::before { content: attr(data-placeholder); color: #ccc; font-size: 11px; font-weight: 400; }
 tr.spacer td { height: 6px; background: transparent; }
 
+
+
 .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 22px; }
 .btn {
   display: flex; align-items: center; gap: 7px; padding: 10px 22px;
@@ -257,7 +259,7 @@ function mondayOf(d){
 }
 
 /* ── CALENDAR MODAL ── */
-let calTarget = null; // 'start' | 'end'
+let calTarget = null;
 let calCur    = new Date();
 
 function renderCal(){
@@ -279,7 +281,6 @@ function renderCal(){
   }
   document.getElementById('calGrid').innerHTML = html;
 
-  // bind clicks
   document.querySelectorAll('#calGrid .day').forEach(el=>{
     el.addEventListener('click', ()=>{
       const picked = new Date(+el.dataset.y, +el.dataset.m, +el.dataset.d);
@@ -451,10 +452,6 @@ function apply(d){
   onDatesChange();
   if(d.cells) restoreCells(d.cells);
 }
-function saveData(){
-  try{ localStorage.setItem(KEY,JSON.stringify(collect())); toast('💾 ¡Guardado!'); }
-  catch(e){ toast('⚠️ Error al guardar'); }
-}
 function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} }
 function clearAll(){
   if(!confirm('¿Borrar todo el contenido? 🗑️')) return;
@@ -468,49 +465,112 @@ function toast(msg){
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-/* ── PDF ── */
+/* ── PDF DOWNLOAD (plan + PDF adjunto combinados con pdf-lib) ── */
 function downloadAllPDF(){
   toast('⏳ Cargando librerías...');
-  const libs=[
-    {src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',check:()=>window.jspdf},
-    {src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',check:()=>window.html2canvas}
+
+  const libs = [
+    { src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',        check:()=>window.jspdf },
+    { src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', check:()=>window.html2canvas },
+    { src:'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js',                        check:()=>window.PDFLib }
   ];
-  let loaded=0;
-  libs.forEach(lib=>{
-    if(lib.check()){if(++loaded===libs.length)runPDF();return;}
-    const s=document.createElement('script'); s.src=lib.src;
-    s.onload=()=>{if(++loaded===libs.length)runPDF();};
-    s.onerror=()=>toast('❌ Sin conexión');
+
+  let loaded = 0;
+  libs.forEach(lib => {
+    if(lib.check()){ if(++loaded === libs.length) runPDF(); return; }
+    const s = document.createElement('script'); s.src = lib.src;
+    s.onload  = () => { if(++loaded === libs.length) runPDF(); };
+    s.onerror = () => toast('❌ Sin conexión para cargar librerías');
     document.head.appendChild(s);
   });
 }
-async function runPDF(){
-  toast('⏳ Generando PDF...');
-  const name=document.getElementById('childName').value||'plan-alimentacion';
-  const pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  const pageW=297,pageH=210,margin=5;
-  const btnRow=document.querySelector('.btn-row');
-  const footer=document.querySelector('.footer');
-  const tabsBar=document.getElementById('tabsBar');
-  btnRow.style.display='none'; footer.style.display='none'; tabsBar.style.display='none';
 
+async function runPDF(){
+  toast('⏳ Generando PDF del plan...');
+  const name    = document.getElementById('childName').value || 'plan-alimentacion';
+  const appendOn= true;
+  const pdfUrl  = 'https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIA.pdf';
+
+  /* 1 ── Capturar cada semana como imagen JPEG */
+  const btnRow  = document.querySelector('.btn-row');
+  const footer  = document.querySelector('.footer');
+  const tabsBar = document.getElementById('tabsBar');
+  btnRow.style.display='none'; footer.style.display='none';
+  tabsBar.style.display='none';
+
+  const pageImages = [];   // { dataUrl, w, h }
   for(let w=0;w<numWeeks;w++){
     document.querySelectorAll('.week-sheet').forEach(s=>s.style.display='none');
     document.getElementById('sheet-'+w).style.display='block';
-    if(w>0) pdf.addPage();
-    await new Promise(r=>setTimeout(r,100));
-    const el=document.querySelector('.page');
-    const canvas=await html2canvas(el,{scale:2,useCORS:true,scrollX:0,scrollY:-window.scrollY,windowWidth:1200,width:el.scrollWidth,height:el.scrollHeight});
-    const img=canvas.toDataURL('image/jpeg',1.0);
-    const ratio=canvas.width/canvas.height;
-    const maxW=pageW-margin*2,maxH=pageH-margin*2;
-    let iW=maxW,iH=maxW/ratio; if(iH>maxH){iH=maxH;iW=maxH*ratio;}
-    pdf.addImage(img,'JPEG',(pageW-iW)/2,(pageH-iH)/2,iW,iH);
+    await new Promise(r=>setTimeout(r,120));
+    const el = document.querySelector('.page');
+    const canvas = await html2canvas(el,{
+      scale:2, useCORS:true, scrollX:0, scrollY:-window.scrollY,
+      windowWidth:1200, width:el.scrollWidth, height:el.scrollHeight
+    });
+    pageImages.push({ dataUrl: canvas.toDataURL('image/jpeg',0.95), w:canvas.width, h:canvas.height });
   }
-  btnRow.style.display=''; footer.style.display=''; tabsBar.style.display='';
+
+  /* restore UI */
+  btnRow.style.display=''; footer.style.display='';
+  tabsBar.style.display='';
   document.querySelectorAll('.week-sheet').forEach((s,i)=>s.style.display=i===0?'block':'none');
   switchTab(0);
-  pdf.save(name.trim().replace(/\s+/g,'_')+'.pdf');
+
+  /* 2 ── Construir PDF del plan con pdf-lib */
+  toast('⏳ Ensamblando PDF...');
+  const { PDFDocument } = window.PDFLib;
+  const planDoc = await PDFDocument.create();
+
+  const mmToPt = mm => mm * 2.8346;
+  const pageW  = mmToPt(297); // A4 landscape
+  const pageH  = mmToPt(210);
+  const margin = mmToPt(5);
+
+  for(const img of pageImages){
+    const jpgBytes  = await fetch(img.dataUrl).then(r=>r.arrayBuffer());
+    const jpgImage  = await planDoc.embedJpg(jpgBytes);
+    const page      = planDoc.addPage([pageW, pageH]);
+    const ratio     = img.w / img.h;
+    const maxW      = pageW - margin*2;
+    const maxH      = pageH - margin*2;
+    let iW = maxW, iH = maxW/ratio;
+    if(iH > maxH){ iH = maxH; iW = maxH*ratio; }
+    page.drawImage(jpgImage,{
+      x: (pageW-iW)/2, y: (pageH-iH)/2, width: iW, height: iH
+    });
+  }
+
+  /* 3 ── Cargar y adjuntar el PDF de alimentación complementaria */
+  let finalDoc = planDoc;
+
+  if(appendOn && pdfUrl){
+    try {
+      toast('⏳ Cargando PDF de alimentación complementaria...');
+      const extBytes = await fetch(pdfUrl).then(r=>{
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.arrayBuffer();
+      });
+      const extDoc   = await PDFDocument.load(extBytes, { ignoreEncryption: true });
+      const extPages = await planDoc.copyPages(extDoc, extDoc.getPageIndices());
+      extPages.forEach(p => planDoc.addPage(p));
+      toast('✅ PDF combinado listo');
+    } catch(err){
+      console.warn('No se pudo cargar el PDF externo:', err);
+      toast('⚠️ No se pudo adjuntar el PDF externo (descargando solo el plan)');
+      await new Promise(r=>setTimeout(r,2000));
+    }
+  }
+
+  /* 4 ── Guardar y descargar */
+  const pdfBytes = await planDoc.save();
+  const blob     = new Blob([pdfBytes],{ type:'application/pdf' });
+  const url      = URL.createObjectURL(blob);
+  const a        = document.createElement('a');
+  a.href = url;
+  a.download = name.trim().replace(/\s+/g,'_') + '.pdf';
+  a.click();
+  URL.revokeObjectURL(url);
   toast('✅ PDF descargado');
 }
 
