@@ -13,49 +13,46 @@ body {
   min-height: 100vh; padding: 24px 12px;
 }
 
-/* ── DATE PICKER ── */
-.date-field { position: relative; display: inline-block; }
-.date-field input[type="text"] {
-  border: none; border-bottom: 2px dashed #c9a8f0;
-  background: transparent; font-family: 'Nunito', sans-serif;
-  font-size: 0.92rem; color: #444; outline: none;
-  padding: 2px 28px 2px 6px; width: 120px; cursor: pointer;
+/* ── CALENDAR MODAL ── */
+#calOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.18); z-index: 9000;
+  align-items: center; justify-content: center;
 }
-.date-field .cal-icon {
-  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-  font-size: 1rem; cursor: pointer; pointer-events: none;
+#calOverlay.open { display: flex; }
+#calBox {
+  background: white; border-radius: 20px; padding: 18px;
+  box-shadow: 0 12px 40px rgba(107,79,158,0.25);
+  min-width: 260px; user-select: none;
 }
-.cal-popup {
-  display: none; position: absolute; top: calc(100% + 6px); left: 0;
-  background: white; border-radius: 16px; padding: 12px;
-  box-shadow: 0 8px 28px rgba(107,79,158,0.2); z-index: 9999;
-  min-width: 230px; user-select: none;
-}
-.cal-popup.open { display: block; }
 .cal-nav {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
 }
 .cal-nav button {
-  background: #f0e6ff; border: none; border-radius: 8px;
-  width: 28px; height: 28px; cursor: pointer; font-size: 1rem;
-  color: #6b4f9e; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  background: #f0e6ff; border: none; border-radius: 10px;
+  width: 32px; height: 32px; cursor: pointer; font-size: 1.1rem;
+  color: #6b4f9e; font-weight: 900; display: flex; align-items: center; justify-content: center;
 }
 .cal-nav button:hover { background: #d4b3f0; }
-.cal-title { font-weight: 800; color: #6b4f9e; font-size: 0.9rem; }
-.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; text-align: center; }
-.cal-grid .dow { font-size: 0.68rem; font-weight: 800; color: #aaa; padding: 3px 0; }
+.cal-title { font-weight: 800; color: #6b4f9e; font-size: 1rem; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; text-align: center; }
+.cal-grid .dow { font-size: 0.7rem; font-weight: 800; color: #aaa; padding: 4px 0; }
 .cal-grid .day {
-  font-size: 0.78rem; font-weight: 700; padding: 5px 2px;
-  border-radius: 8px; cursor: pointer; color: #444;
+  font-size: 0.85rem; font-weight: 700; padding: 7px 2px;
+  border-radius: 10px; cursor: pointer; color: #444;
 }
 .cal-grid .day:hover { background: #f0e6ff; color: #6b4f9e; }
 .cal-grid .day.today { border: 2px solid #a78bfa; color: #6b4f9e; }
-.cal-grid .day.selected { background: #7c3aed; color: white; border-radius: 8px; }
-.cal-grid .day.other-month { color: #ccc; }
-.cal-grid .day.empty { cursor: default; }
+.cal-grid .day.selected { background: #7c3aed; color: white; }
+.cal-grid .day.other-month { color: #ddd; pointer-events: none; }
+.cal-close-row { text-align: center; margin-top: 12px; }
+.cal-close-row button {
+  background: #f0e6ff; border: none; border-radius: 50px;
+  padding: 7px 22px; font-family: 'Nunito', sans-serif;
+  font-weight: 800; color: #6b4f9e; cursor: pointer; font-size: 0.85rem;
+}
 
-/* ── PAGE CARD ── */
+/* ── PAGE ── */
 .page {
   background: white; border-radius: 28px; padding: 28px 24px;
   box-shadow: 0 8px 32px rgba(107,79,158,0.12);
@@ -67,15 +64,23 @@ body {
 .header p  { font-size: 0.85rem; color: #aaa; margin-top: 3px; }
 
 .controls-bar {
-  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
   background: #f8f0ff; border-radius: 16px; padding: 12px 20px; margin-bottom: 18px;
 }
 .controls-bar label { font-weight: 700; color: #6b4f9e; font-size: 0.88rem; white-space: nowrap; }
-.controls-bar input[type="text"]#childName {
+#childName {
   border: none; border-bottom: 2px dashed #c9a8f0; background: transparent;
   font-family: 'Nunito', sans-serif; font-size: 0.92rem; color: #444;
   outline: none; padding: 2px 6px; flex: 1; min-width: 120px;
 }
+.date-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: white; border: 2px dashed #c9a8f0; border-radius: 10px;
+  padding: 5px 12px; cursor: pointer; font-family: 'Nunito', sans-serif;
+  font-size: 0.88rem; font-weight: 700; color: #6b4f9e;
+  transition: background 0.15s, border-color 0.15s;
+}
+.date-btn:hover { background: #f0e6ff; border-color: #a78bfa; }
 .week-badge {
   margin-left: auto; background: #7c3aed; color: white;
   border-radius: 50px; padding: 4px 14px; font-size: 0.8rem; font-weight: 800;
@@ -84,34 +89,29 @@ body {
 .legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 14px; }
 .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; color: #555; }
 .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
-.dot-cereal { background:#ffe082; } .dot-fruta { background:#ffb3b3; }
-.dot-verdura { background:#b5ead7; } .dot-proteina { background:#d4b3f0; }
+.dot-cereal{background:#ffe082;} .dot-fruta{background:#ffb3b3;}
+.dot-verdura{background:#b5ead7;} .dot-proteina{background:#d4b3f0;}
 
-/* ── WEEK TABS ── */
-.tabs-bar {
-  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; justify-content: center;
-}
+.tabs-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; justify-content: center; }
 .tab-btn {
-  padding: 7px 18px; border: 2px solid #e0d4f7; border-radius: 50px;
-  background: white; font-family: 'Nunito', sans-serif; font-size: 0.8rem;
+  padding: 7px 16px; border: 2px solid #e0d4f7; border-radius: 50px;
+  background: white; font-family: 'Nunito', sans-serif; font-size: 0.78rem;
   font-weight: 700; color: #6b4f9e; cursor: pointer; transition: all 0.15s;
 }
 .tab-btn:hover { background: #f0e6ff; }
 .tab-btn.active { background: #7c3aed; color: white; border-color: #7c3aed; }
 
-/* ── WEEK SHEET ── */
 .week-sheet { display: none; }
 .week-sheet.visible { display: block; }
 .sheet-title {
-  text-align: center; font-size: 0.9rem; font-weight: 800;
-  color: #6b4f9e; margin-bottom: 10px; background: #f8f0ff;
-  border-radius: 12px; padding: 6px;
+  text-align: center; font-size: 0.88rem; font-weight: 800; color: #6b4f9e;
+  margin-bottom: 10px; background: #f8f0ff; border-radius: 12px; padding: 6px;
 }
 
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: 0.78rem; }
 th.day-header {
-  background: #f0e6ff; color: #6b4f9e; font-weight: 800; font-size: 0.8rem;
+  background: #f0e6ff; color: #6b4f9e; font-weight: 800; font-size: 0.78rem;
   text-align: center; padding: 8px 3px; border-radius: 10px;
 }
 th.empty-corner { background: transparent; }
@@ -119,21 +119,20 @@ td.meal-header {
   font-weight: 800; font-size: 0.82rem; text-align: center; padding: 5px 6px;
   border-radius: 10px; vertical-align: middle; white-space: nowrap;
 }
-.meal-desayuno { background:#fff3cd; color:#b8860b; }
-.meal-almuerzo { background:#d4edda; color:#276a3e; }
-.meal-cena     { background:#dce8ff; color:#2a56a8; }
+.meal-desayuno{background:#fff3cd;color:#b8860b;}
+.meal-almuerzo{background:#d4edda;color:#276a3e;}
+.meal-cena    {background:#dce8ff;color:#2a56a8;}
 td.sub-header {
   font-weight: 700; font-size: 0.72rem; padding: 4px 7px;
   border-radius: 8px; text-align: right; white-space: nowrap; vertical-align: middle;
 }
-.sub-cereal   { background:#fff8dc; color:#997a00; }
-.sub-fruta    { background:#ffe4e4; color:#b03030; }
-.sub-verdura  { background:#e8f5ee; color:#2e7d52; }
-.sub-proteina { background:#f0e6ff; color:#6b4f9e; }
+.sub-cereal  {background:#fff8dc;color:#997a00;}
+.sub-fruta   {background:#ffe4e4;color:#b03030;}
+.sub-verdura {background:#e8f5ee;color:#2e7d52;}
+.sub-proteina{background:#f0e6ff;color:#6b4f9e;}
 td.cell { padding: 2px; border-radius: 7px; vertical-align: middle; }
-.cell-cereal   { background:#fffbea; } .cell-fruta    { background:#fff0f0; }
-.cell-verdura  { background:#f0fbf5; } .cell-proteina { background:#f7f0ff; }
-
+.cell-cereal  {background:#fffbea;} .cell-fruta   {background:#fff0f0;}
+.cell-verdura {background:#f0fbf5;} .cell-proteina{background:#f7f0ff;}
 .cell-edit {
   display: flex; align-items: center; justify-content: center;
   height: 36px; border: 1.5px dashed #ccc; border-radius: 6px;
@@ -144,12 +143,9 @@ td.cell { padding: 2px; border-radius: 7px; vertical-align: middle; }
   line-height: 36px; white-space: nowrap; outline: none;
 }
 .cell-edit:focus { border-color: #9b7fd4; border-style: solid; background: #faf5ff; }
-.cell-edit:empty::before {
-  content: attr(data-placeholder); color: #ccc; font-size: 11px; font-weight: 400;
-}
+.cell-edit:empty::before { content: attr(data-placeholder); color: #ccc; font-size: 11px; font-weight: 400; }
 tr.spacer td { height: 6px; background: transparent; }
 
-/* ── BUTTONS ── */
 .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 22px; }
 .btn {
   display: flex; align-items: center; gap: 7px; padding: 10px 22px;
@@ -160,10 +156,9 @@ tr.spacer td { height: 6px; background: transparent; }
 }
 .btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.17); }
 .btn:active { transform: translateY(0); }
-.btn-save  { background: linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; }
-.btn-pdf   { background: linear-gradient(135deg,#f9a8d4,#ec4899); color:#fff; }
-.btn-clear { background: linear-gradient(135deg,#fca5a5,#ef4444); color:#fff; }
-
+.btn-save {background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;}
+.btn-pdf  {background:linear-gradient(135deg,#f9a8d4,#ec4899);color:#fff;}
+.btn-clear{background:linear-gradient(135deg,#fca5a5,#ef4444);color:#fff;}
 .footer { text-align: center; margin-top: 16px; font-size: 0.72rem; color: #ccc; }
 
 #toast {
@@ -177,6 +172,19 @@ tr.spacer td { height: 6px; background: transparent; }
 </head>
 <body>
 
+<!-- CALENDAR MODAL -->
+<div id="calOverlay">
+  <div id="calBox">
+    <div class="cal-nav">
+      <button id="calPrev">‹</button>
+      <span class="cal-title" id="calTitle"></span>
+      <button id="calNext">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-close-row"><button id="calClose">Cerrar</button></div>
+  </div>
+</div>
+
 <div class="page">
   <div class="header">
     <div class="emojis">🌟 🥦 🍎 🥣 🍗 🌟</div>
@@ -188,18 +196,10 @@ tr.spacer td { height: 6px; background: transparent; }
     <label>👦 Nombre:</label>
     <input type="text" id="childName" placeholder="Escribe tu nombre aquí..." oninput="autoSave()">
     <label>📅 Del:</label>
-    <div class="date-field" id="df-start">
-      <input type="text" id="dateStart" placeholder="dd/mm/aaaa" readonly>
-      <span class="cal-icon">📅</span>
-      <div class="cal-popup" id="cal-start"></div>
-    </div>
+    <button class="date-btn" id="btnStart">📅 <span id="lblStart">Seleccionar</span></button>
     <label>al:</label>
-    <div class="date-field" id="df-end">
-      <input type="text" id="dateEnd" placeholder="dd/mm/aaaa" readonly>
-      <span class="cal-icon">📅</span>
-      <div class="cal-popup" id="cal-end"></div>
-    </div>
-    <span class="week-badge" id="weekBadge">0 semanas</span>
+    <button class="date-btn" id="btnEnd">📅 <span id="lblEnd">Seleccionar</span></button>
+    <span class="week-badge" id="weekBadge">—</span>
   </div>
 
   <div class="legend">
@@ -213,22 +213,20 @@ tr.spacer td { height: 6px; background: transparent; }
   <div id="sheetsContainer"></div>
 
   <div class="btn-row">
-    <button class="btn btn-save"  onclick="saveData()">💾 Guardar</button>
-    <button class="btn btn-pdf"   onclick="downloadAllPDF()">📄 Descargar PDF</button>
+    <button class="btn btn-save" onclick="saveData()">💾 Guardar</button>
+    <button class="btn btn-pdf"  onclick="downloadAllPDF()">📄 Descargar PDF</button>
     <button class="btn btn-clear" onclick="clearAll()">🗑️ Limpiar</button>
   </div>
   <div class="footer">✨ Plantilla de alimentación · Datos guardados automáticamente</div>
 </div>
-
 <div id="toast"></div>
 
 <script>
-/* ══════════ CONFIG ══════════ */
-const KEY  = 'mealPlan_v4';
-const DAYS_LABELS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-const DAY_ICONS   = ['🌙','🔥','⚡','🌈','🎉','⭐','🌞'];
-const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DOWS   = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+const KEY = 'mealPlan_v5';
+const MONTHS   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DOWS     = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+const DAY_ICONS= ['🌙','🔥','⚡','🌈','🎉','⭐','🌞'];
+const DAY_SHORT= ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
 const meals = [
   { id:'desayuno', label:'☀️ Desayuno', hClass:'meal-desayuno',
@@ -247,306 +245,233 @@ const meals = [
           {id:'proteina',icon:'🍗',label:'Proteína',sClass:'sub-proteina',cClass:'cell-proteina'}]}
 ];
 
-/* ══════════ STATE ══════════ */
+/* ── DATES ── */
 let startDate = null, endDate = null, numWeeks = 0;
 
-/* ══════════ DATE HELPERS ══════════ */
-function toddmmyyyy(d) {
-  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
-}
+function fmt(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
 function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
-function isSameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
-function weeksBetween(a,b){
-  const ms = b - a;
-  return Math.max(1, Math.ceil(ms / (7*24*3600*1000)));
-}
-function getWeekStart(base, weekIdx){
-  // always start from Monday of the week containing base
-  const d = new Date(base);
-  const dow = d.getDay(); // 0=Sun
-  const diff = dow === 0 ? -6 : 1 - dow;
-  d.setDate(d.getDate() + diff + weekIdx*7);
-  return d;
+function isSame(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function weeksBetween(a,b){ return Math.max(1,Math.ceil((b-a)/(7*864e5))); }
+function mondayOf(d){
+  const r=new Date(d); const dow=r.getDay();
+  r.setDate(r.getDate()+(dow===0?-6:1-dow)); return r;
 }
 
-/* ══════════ MINI CALENDAR ══════════ */
-function buildCal(popupEl, inputEl, onPick) {
-  let cur = new Date();
-  function render() {
-    const y = cur.getFullYear(), m = cur.getMonth();
-    const first = new Date(y,m,1).getDay(); // 0=Sun
-    const days  = new Date(y,m+1,0).getDate();
-    const today = new Date();
-    let html = `<div class="cal-nav">
-      <button onclick="calPrev_${popupEl.id}()">‹</button>
-      <span class="cal-title">${MONTHS[m]} ${y}</span>
-      <button onclick="calNext_${popupEl.id}()">›</button>
-    </div><div class="cal-grid">`;
-    DOWS.forEach(d => html += `<div class="dow">${d}</div>`);
-    // offset (Sunday=0 → pad 0, Monday=1 → pad 1 …)
-    const pad = first; // days before 1st
-    for(let i=0;i<pad;i++) html+=`<div class="day empty"></div>`;
-    for(let d=1;d<=days;d++){
-      const dt = new Date(y,m,d);
-      let cls = 'day';
-      if(isSameDay(dt,today)) cls+=' today';
-      const selVal = inputEl.value;
-      if(selVal){
-        const parts=selVal.split('/');
-        if(parts.length===3){
-          const sel=new Date(+parts[2],+parts[1]-1,+parts[0]);
-          if(isSameDay(dt,sel)) cls+=' selected';
-        }
-      }
-      html+=`<div class="${cls}" onclick="calPick_${popupEl.id}(${y},${m},${d})">${d}</div>`;
-    }
-    html+='</div>';
-    popupEl.innerHTML = html;
+/* ── CALENDAR MODAL ── */
+let calTarget = null; // 'start' | 'end'
+let calCur    = new Date();
+
+function renderCal(){
+  const y=calCur.getFullYear(), m=calCur.getMonth();
+  document.getElementById('calTitle').textContent = MONTHS[m]+' '+y;
+  const firstDow = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const today = new Date();
+  const selDate = calTarget==='start' ? startDate : endDate;
+
+  let html = DOWS.map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<firstDow;i++) html+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const dt=new Date(y,m,d);
+    let cls='day';
+    if(isSame(dt,today)) cls+=' today';
+    if(selDate && isSame(dt,selDate)) cls+=' selected';
+    html+=`<div class="${cls}" data-y="${y}" data-m="${m}" data-d="${d}">${d}</div>`;
   }
-  window[`calPrev_${popupEl.id}`] = () => { cur.setMonth(cur.getMonth()-1); render(); };
-  window[`calNext_${popupEl.id}`] = () => { cur.setMonth(cur.getMonth()+1); render(); };
-  window[`calPick_${popupEl.id}`] = (y,m,d) => {
-    const dt = new Date(y,m,d);
-    inputEl.value = toddmmyyyy(dt);
-    popupEl.classList.remove('open');
-    onPick(dt);
-    render();
-  };
-  render();
-  return render;
+  document.getElementById('calGrid').innerHTML = html;
+
+  // bind clicks
+  document.querySelectorAll('#calGrid .day').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const picked = new Date(+el.dataset.y, +el.dataset.m, +el.dataset.d);
+      if(calTarget==='start'){
+        startDate = picked;
+        document.getElementById('lblStart').textContent = fmt(picked);
+        if(endDate && endDate < startDate){ endDate=new Date(startDate); document.getElementById('lblEnd').textContent=fmt(endDate); }
+      } else {
+        if(startDate && picked < startDate){ alert('La fecha final no puede ser anterior al inicio.'); return; }
+        endDate = picked;
+        document.getElementById('lblEnd').textContent = fmt(picked);
+      }
+      closeCalModal();
+      onDatesChange();
+    });
+  });
 }
 
-/* ══════════ INIT CALENDARS ══════════ */
-const today = new Date();
-
-const renderCalStart = buildCal(
-  document.getElementById('cal-start'),
-  document.getElementById('dateStart'),
-  dt => { startDate = dt; onDatesChange(); }
-);
-const renderCalEnd = buildCal(
-  document.getElementById('cal-end'),
-  document.getElementById('dateEnd'),
-  dt => { endDate = dt; onDatesChange(); }
-);
-
-// Set today as default
-startDate = new Date(today);
-endDate   = new Date(today);
-document.getElementById('dateStart').value = toddmmyyyy(startDate);
-document.getElementById('dateEnd').value   = toddmmyyyy(endDate);
-
-// Toggle popups
-function toggleCal(showId, hideId, renderFn) {
-  const show = document.getElementById(showId);
-  const hide = document.getElementById(hideId);
-  const isOpen = show.classList.contains('open');
-  hide.classList.remove('open');
-  if (isOpen) { show.classList.remove('open'); }
-  else { show.classList.add('open'); renderFn(); }
+function openCalModal(target){
+  calTarget = target;
+  calCur = target==='start' ? (startDate ? new Date(startDate) : new Date())
+                             : (endDate   ? new Date(endDate)   : new Date());
+  document.getElementById('calOverlay').classList.add('open');
+  renderCal();
 }
+function closeCalModal(){ document.getElementById('calOverlay').classList.remove('open'); }
 
-document.getElementById('dateStart').addEventListener('click', e => {
-  e.stopPropagation();
-  toggleCal('cal-start','cal-end', renderCalStart);
-});
-document.querySelector('#df-start .cal-icon').addEventListener('click', e => {
-  e.stopPropagation();
-  toggleCal('cal-start','cal-end', renderCalStart);
-});
-document.getElementById('dateEnd').addEventListener('click', e => {
-  e.stopPropagation();
-  toggleCal('cal-end','cal-start', renderCalEnd);
-});
-document.querySelector('#df-end .cal-icon').addEventListener('click', e => {
-  e.stopPropagation();
-  toggleCal('cal-end','cal-start', renderCalEnd);
-});
-document.getElementById('cal-start').addEventListener('click', e => e.stopPropagation());
-document.getElementById('cal-end').addEventListener('click',   e => e.stopPropagation());
-document.addEventListener('click', () => {
-  document.getElementById('cal-start').classList.remove('open');
-  document.getElementById('cal-end').classList.remove('open');
-});
+document.getElementById('calPrev').onclick = ()=>{ calCur.setMonth(calCur.getMonth()-1); renderCal(); };
+document.getElementById('calNext').onclick = ()=>{ calCur.setMonth(calCur.getMonth()+1); renderCal(); };
+document.getElementById('calClose').onclick = closeCalModal;
+document.getElementById('calOverlay').addEventListener('click', e=>{ if(e.target===document.getElementById('calOverlay')) closeCalModal(); });
+document.getElementById('btnStart').onclick = ()=> openCalModal('start');
+document.getElementById('btnEnd').onclick   = ()=> openCalModal('end');
 
-/* ══════════ SHEETS ══════════ */
-function onDatesChange() {
-  if (!startDate || !endDate) return;
-  if (endDate < startDate) { endDate = new Date(startDate); document.getElementById('dateEnd').value = toddmmyyyy(endDate); }
-  numWeeks = weeksBetween(startDate, endDate);
-  document.getElementById('weekBadge').textContent = numWeeks + (numWeeks===1?' semana':' semanas');
+/* ── SHEETS ── */
+function onDatesChange(){
+  if(!startDate||!endDate) return;
+  numWeeks = weeksBetween(startDate,endDate);
+  document.getElementById('weekBadge').textContent = numWeeks+(numWeeks===1?' semana':' semanas');
   rebuildSheets();
   autoSave();
 }
 
-function rebuildSheets() {
-  const tabsBar  = document.getElementById('tabsBar');
-  const container = document.getElementById('sheetsContainer');
-  // save existing data before rebuild
+function rebuildSheets(){
   const existing = collectCells();
+  document.getElementById('tabsBar').innerHTML='';
+  document.getElementById('sheetsContainer').innerHTML='';
 
-  tabsBar.innerHTML = '';
-  container.innerHTML = '';
+  for(let w=0;w<numWeeks;w++){
+    const ws = addDays(mondayOf(startDate), w*7);
+    const we = addDays(ws,6);
 
-  for (let w = 0; w < numWeeks; w++) {
-    const ws = getWeekStart(startDate, w);
-    const we = addDays(ws, 6);
-    const label = `Sem ${w+1}: ${toddmmyyyy(ws)}`;
+    const btn=document.createElement('button');
+    btn.className='tab-btn'+(w===0?' active':'');
+    btn.textContent=`Sem ${w+1}: ${fmt(ws)}`;
+    btn.dataset.week=w;
+    btn.onclick=()=>switchTab(w);
+    document.getElementById('tabsBar').appendChild(btn);
 
-    // Tab button
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (w===0?' active':'');
-    btn.textContent = label;
-    btn.dataset.week = w;
-    btn.onclick = () => switchTab(w);
-    tabsBar.appendChild(btn);
+    const sheet=document.createElement('div');
+    sheet.className='week-sheet'+(w===0?' visible':'');
+    sheet.id='sheet-'+w;
 
-    // Sheet
-    const sheet = document.createElement('div');
-    sheet.className = 'week-sheet' + (w===0?' visible':'');
-    sheet.id = 'sheet-' + w;
-
-    const title = document.createElement('div');
-    title.className = 'sheet-title';
-    // build day headers with actual dates
-    const dayHeaders = DAYS_LABELS.map((dl,i) => {
-      const dd = addDays(ws, i);
-      return `${DAY_ICONS[i]}<br>${dl}<br><small style="font-size:0.65rem;font-weight:700;color:#888">${dd.getDate()}/${dd.getMonth()+1}</small>`;
-    });
-    title.textContent = `📅 Del ${toddmmyyyy(ws)} al ${toddmmyyyy(we)}`;
+    const title=document.createElement('div');
+    title.className='sheet-title';
+    title.textContent=`📅 Semana ${w+1}: del ${fmt(ws)} al ${fmt(we)}`;
     sheet.appendChild(title);
 
-    const wrap = document.createElement('div');
-    wrap.className = 'table-wrap';
-    wrap.appendChild(buildTable(w, dayHeaders));
-    sheet.appendChild(wrap);
-    container.appendChild(sheet);
-  }
+    const dayHeaders = DAY_SHORT.map((dl,i)=>{
+      const dd=addDays(ws,i);
+      return `${DAY_ICONS[i]}<br>${dl}<br><small style="font-size:0.65rem;font-weight:700;color:#888">${dd.getDate()}/${dd.getMonth()+1}</small>`;
+    });
 
-  // Restore data
+    const wrap=document.createElement('div');
+    wrap.className='table-wrap';
+    wrap.appendChild(buildTable(w,dayHeaders));
+    sheet.appendChild(wrap);
+    document.getElementById('sheetsContainer').appendChild(sheet);
+  }
   restoreCells(existing);
 }
 
-function switchTab(w) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', +b.dataset.week===w));
-  document.querySelectorAll('.week-sheet').forEach(s => s.classList.toggle('visible', s.id==='sheet-'+w));
+function switchTab(w){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',+b.dataset.week===w));
+  document.querySelectorAll('.week-sheet').forEach(s=>s.classList.toggle('visible',s.id==='sheet-'+w));
 }
 
-function buildTable(weekIdx, dayHeaders) {
-  const tbl = document.createElement('table');
-  const thead = document.createElement('thead');
-  const hrow = document.createElement('tr');
-  ['',''].forEach(w => { const th=document.createElement('th'); th.className='empty-corner'; th.style.width=w?'78px':'88px'; hrow.appendChild(th); });
-  dayHeaders.forEach(h => {
-    const th = document.createElement('th');
-    th.className = 'day-header'; th.innerHTML = h; hrow.appendChild(th);
-  });
+function buildTable(wi,dayHeaders){
+  const tbl=document.createElement('table');
+  const thead=document.createElement('thead');
+  const hrow=document.createElement('tr');
+  const c1=document.createElement('th'); c1.className='empty-corner'; c1.style.width='88px'; hrow.appendChild(c1);
+  const c2=document.createElement('th'); c2.className='empty-corner'; c2.style.width='78px'; hrow.appendChild(c2);
+  dayHeaders.forEach(h=>{ const th=document.createElement('th'); th.className='day-header'; th.innerHTML=h; hrow.appendChild(th); });
   thead.appendChild(hrow); tbl.appendChild(thead);
 
-  const tbody = document.createElement('tbody');
-  meals.forEach((meal, mi) => {
-    meal.subs.forEach((sub, si) => {
-      const tr = document.createElement('tr');
-      if (si===0) {
-        const td = document.createElement('td');
-        td.rowSpan = meal.subs.length; td.className = 'meal-header ' + meal.hClass;
-        td.innerHTML = meal.label.replace(' ','<br>'); tr.appendChild(td);
+  const tbody=document.createElement('tbody');
+  meals.forEach((meal,mi)=>{
+    meal.subs.forEach((sub,si)=>{
+      const tr=document.createElement('tr');
+      if(si===0){
+        const td=document.createElement('td');
+        td.rowSpan=meal.subs.length; td.className='meal-header '+meal.hClass;
+        td.innerHTML=meal.label.replace(' ','<br>'); tr.appendChild(td);
       }
-      const std = document.createElement('td');
-      std.className = 'sub-header ' + sub.sClass;
-      std.innerHTML = sub.icon+' '+sub.label; tr.appendChild(std);
-      for (let d=0; d<7; d++) {
-        const ctd = document.createElement('td');
-        ctd.className = 'cell ' + sub.cClass;
-        const div = document.createElement('div');
-        div.className = 'cell-edit';
-        div.contentEditable = 'true';
-        div.dataset.id = `w${weekIdx}_${meal.id}_${sub.id}_${d}`;
-        div.dataset.placeholder = '...';
-        div.spellcheck = false;
-        div.addEventListener('input', autoSave);
-        div.addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();div.blur();} });
-        div.addEventListener('paste', e => {
+      const std=document.createElement('td');
+      std.className='sub-header '+sub.sClass;
+      std.innerHTML=sub.icon+' '+sub.label; tr.appendChild(std);
+      for(let d=0;d<7;d++){
+        const ctd=document.createElement('td'); ctd.className='cell '+sub.cClass;
+        const div=document.createElement('div');
+        div.className='cell-edit'; div.contentEditable='true';
+        div.dataset.id=`w${wi}_${meal.id}_${sub.id}_${d}`;
+        div.dataset.placeholder='...'; div.spellcheck=false;
+        div.addEventListener('input',autoSave);
+        div.addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();div.blur();} });
+        div.addEventListener('paste',e=>{
           e.preventDefault();
-          const t = (e.clipboardData||window.clipboardData).getData('text/plain').replace(/\n/g,' ');
+          const t=(e.clipboardData||window.clipboardData).getData('text/plain').replace(/\n/g,' ');
           document.execCommand('insertText',false,t);
         });
         ctd.appendChild(div); tr.appendChild(ctd);
       }
       tbody.appendChild(tr);
     });
-    if (mi < meals.length-1) {
+    if(mi<meals.length-1){
       const sp=document.createElement('tr'); sp.className='spacer';
       const td=document.createElement('td'); td.colSpan=9; sp.appendChild(td); tbody.appendChild(sp);
     }
   });
-  tbl.appendChild(tbody);
-  return tbl;
+  tbl.appendChild(tbody); return tbl;
 }
 
-/* ══════════ SAVE / LOAD ══════════ */
-function collectCells() {
-  const out = {};
-  document.querySelectorAll('.cell-edit').forEach(el => {
-    out[el.dataset.id] = el.innerText.trim();
-  });
+/* ── PERSISTENCE ── */
+function collectCells(){
+  const out={};
+  document.querySelectorAll('.cell-edit').forEach(el=>{ out[el.dataset.id]=el.innerText.trim(); });
   return out;
 }
-function restoreCells(cells) {
-  if (!cells) return;
-  Object.entries(cells).forEach(([id,v]) => {
-    const el = document.querySelector(`[data-id="${id}"]`);
-    if (el && v) el.innerText = v;
+function restoreCells(cells){
+  if(!cells) return;
+  Object.entries(cells).forEach(([id,v])=>{
+    const el=document.querySelector(`[data-id="${id}"]`);
+    if(el&&v) el.innerText=v;
   });
 }
-function collect() {
+function collect(){
   return {
     childName: document.getElementById('childName').value,
-    dateStart: document.getElementById('dateStart').value,
-    dateEnd:   document.getElementById('dateEnd').value,
+    dateStart: startDate ? fmt(startDate) : '',
+    dateEnd:   endDate   ? fmt(endDate)   : '',
     cells: collectCells()
   };
 }
-function apply(d) {
-  if (!d) return;
-  if (d.childName) document.getElementById('childName').value = d.childName;
-  if (d.dateStart) {
-    document.getElementById('dateStart').value = d.dateStart;
+function apply(d){
+  if(!d) return;
+  if(d.childName) document.getElementById('childName').value=d.childName;
+  if(d.dateStart){
     const p=d.dateStart.split('/'); startDate=new Date(+p[2],+p[1]-1,+p[0]);
+    document.getElementById('lblStart').textContent=d.dateStart;
   }
-  if (d.dateEnd) {
-    document.getElementById('dateEnd').value = d.dateEnd;
+  if(d.dateEnd){
     const p=d.dateEnd.split('/'); endDate=new Date(+p[2],+p[1]-1,+p[0]);
+    document.getElementById('lblEnd').textContent=d.dateEnd;
   }
   onDatesChange();
-  if (d.cells) restoreCells(d.cells);
+  if(d.cells) restoreCells(d.cells);
 }
-function saveData() {
-  try { localStorage.setItem(KEY, JSON.stringify(collect())); toast('💾 ¡Guardado!'); }
-  catch(e) { toast('⚠️ Error al guardar'); }
+function saveData(){
+  try{ localStorage.setItem(KEY,JSON.stringify(collect())); toast('💾 ¡Guardado!'); }
+  catch(e){ toast('⚠️ Error al guardar'); }
 }
-function autoSave() {
-  try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch(e) {}
-}
-function clearAll() {
-  if (!confirm('¿Borrar todo el contenido? 🗑️')) return;
-  document.querySelectorAll('.cell-edit').forEach(el => el.innerText='');
+function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} }
+function clearAll(){
+  if(!confirm('¿Borrar todo el contenido? 🗑️')) return;
+  document.querySelectorAll('.cell-edit').forEach(el=>el.innerText='');
   document.getElementById('childName').value='';
-  try { localStorage.removeItem(KEY); } catch(e) {}
+  try{ localStorage.removeItem(KEY); }catch(e){}
 }
-
-function toast(msg) {
+function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-/* ══════════ PDF ══════════ */
-function downloadAllPDF() {
+/* ── PDF ── */
+function downloadAllPDF(){
   toast('⏳ Cargando librerías...');
-  const libs = [
-    { src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',        check:()=>window.jspdf },
-    { src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', check:()=>window.html2canvas }
+  const libs=[
+    {src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',check:()=>window.jspdf},
+    {src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',check:()=>window.html2canvas}
   ];
   let loaded=0;
   libs.forEach(lib=>{
@@ -557,52 +482,43 @@ function downloadAllPDF() {
     document.head.appendChild(s);
   });
 }
-
-async function runPDF() {
+async function runPDF(){
   toast('⏳ Generando PDF...');
-  const name = document.getElementById('childName').value||'plan-alimentacion';
-  const filename = name.trim().replace(/\s+/g,'_')+'.pdf';
-  const pdf = new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const name=document.getElementById('childName').value||'plan-alimentacion';
+  const pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const pageW=297,pageH=210,margin=5;
-
-  const btnRow = document.querySelector('.btn-row');
-  const footer = document.querySelector('.footer');
-  const tabsBar = document.getElementById('tabsBar');
+  const btnRow=document.querySelector('.btn-row');
+  const footer=document.querySelector('.footer');
+  const tabsBar=document.getElementById('tabsBar');
   btnRow.style.display='none'; footer.style.display='none'; tabsBar.style.display='none';
 
-  for (let w=0; w<numWeeks; w++) {
-    // Show only this sheet
+  for(let w=0;w<numWeeks;w++){
     document.querySelectorAll('.week-sheet').forEach(s=>s.style.display='none');
-    const sheet = document.getElementById('sheet-'+w);
-    sheet.style.display='block';
+    document.getElementById('sheet-'+w).style.display='block';
     if(w>0) pdf.addPage();
-    await new Promise(r=>setTimeout(r,80));
-    const canvas = await html2canvas(document.querySelector('.page'),{
-      scale:2,useCORS:true,scrollX:0,scrollY:-window.scrollY,
-      windowWidth:1200,
-      width:document.querySelector('.page').scrollWidth,
-      height:document.querySelector('.page').scrollHeight
-    });
+    await new Promise(r=>setTimeout(r,100));
+    const el=document.querySelector('.page');
+    const canvas=await html2canvas(el,{scale:2,useCORS:true,scrollX:0,scrollY:-window.scrollY,windowWidth:1200,width:el.scrollWidth,height:el.scrollHeight});
     const img=canvas.toDataURL('image/jpeg',1.0);
     const ratio=canvas.width/canvas.height;
-    const maxW=pageW-margin*2, maxH=pageH-margin*2;
-    let iW=maxW,iH=maxW/ratio;
-    if(iH>maxH){iH=maxH;iW=maxH*ratio;}
+    const maxW=pageW-margin*2,maxH=pageH-margin*2;
+    let iW=maxW,iH=maxW/ratio; if(iH>maxH){iH=maxH;iW=maxH*ratio;}
     pdf.addImage(img,'JPEG',(pageW-iW)/2,(pageH-iH)/2,iW,iH);
   }
-
-  // Restore UI
   btnRow.style.display=''; footer.style.display=''; tabsBar.style.display='';
-  // Restore tab visibility
   document.querySelectorAll('.week-sheet').forEach((s,i)=>s.style.display=i===0?'block':'none');
   switchTab(0);
-  pdf.save(filename);
-  toast('✅ PDF descargado: '+filename);
+  pdf.save(name.trim().replace(/\s+/g,'_')+'.pdf');
+  toast('✅ PDF descargado');
 }
 
-/* ══════════ BOOT ══════════ */
-onDatesChange(); // build initial single week
-try { apply(JSON.parse(localStorage.getItem(KEY))); } catch(e) {}
+/* ── BOOT ── */
+const today=new Date();
+startDate=new Date(today); endDate=new Date(today);
+document.getElementById('lblStart').textContent=fmt(startDate);
+document.getElementById('lblEnd').textContent=fmt(endDate);
+onDatesChange();
+try{ apply(JSON.parse(localStorage.getItem(KEY))); }catch(e){}
 </script>
 </body>
 </html>
