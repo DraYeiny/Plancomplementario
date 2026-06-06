@@ -7,46 +7,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   body {
     font-family: 'Nunito', sans-serif;
     background: linear-gradient(135deg, #fff9f0 0%, #f0e6ff 100%);
-    min-height: 100vh;
-    padding: 24px 12px;
+    min-height: 100vh; padding: 24px 12px;
   }
-
   .page {
-    background: white;
-    border-radius: 28px;
-    padding: 32px 28px;
+    background: white; border-radius: 28px; padding: 32px 28px;
     box-shadow: 0 8px 32px rgba(107,79,158,0.12);
-    max-width: 1120px;
-    margin: 0 auto;
+    max-width: 1120px; margin: 0 auto;
   }
-
   .header { text-align: center; margin-bottom: 22px; }
   .header .emojis { font-size: 1.8rem; letter-spacing: 6px; margin-bottom: 6px; }
   .header h1 { font-size: 1.9rem; font-weight: 800; color: #6b4f9e; }
   .header p  { font-size: 0.9rem; color: #aaa; margin-top: 4px; }
 
   .name-row {
-    display: flex; flex-wrap: wrap; gap: 12px;
-    align-items: center;
-    background: #f8f0ff; border-radius: 16px;
-    padding: 12px 20px; margin-bottom: 18px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    background: #f8f0ff; border-radius: 16px; padding: 12px 20px; margin-bottom: 18px;
   }
   .name-row label { font-weight: 700; color: #6b4f9e; font-size: 0.9rem; white-space: nowrap; }
   .name-row input {
-    border: none; border-bottom: 2px dashed #c9a8f0;
-    background: transparent; font-family: 'Nunito', sans-serif;
-    font-size: 0.95rem; color: #444; outline: none;
-    padding: 2px 6px; flex: 1; min-width: 120px;
+    border: none; border-bottom: 2px dashed #c9a8f0; background: transparent;
+    font-family: 'Nunito', sans-serif; font-size: 0.95rem; color: #444;
+    outline: none; padding: 2px 6px; flex: 1; min-width: 120px;
   }
 
-  .legend {
-    display: flex; flex-wrap: wrap; gap: 14px;
-    justify-content: center; margin-bottom: 18px;
-  }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-bottom: 18px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #555; }
   .legend-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
   .dot-cereal   { background: #ffe082; }
@@ -55,35 +42,25 @@
   .dot-proteina { background: #d4b3f0; }
 
   .table-wrap { overflow-x: auto; }
-
-  table {
-    width: 100%; border-collapse: separate;
-    border-spacing: 3px; font-size: 0.8rem;
-  }
+  table { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: 0.8rem; }
 
   th.day-header {
-    background: #f0e6ff; color: #6b4f9e;
-    font-weight: 800; font-size: 0.82rem;
-    text-align: center; padding: 10px 4px;
-    border-radius: 10px; letter-spacing: 0.3px;
+    background: #f0e6ff; color: #6b4f9e; font-weight: 800; font-size: 0.82rem;
+    text-align: center; padding: 10px 4px; border-radius: 10px; letter-spacing: 0.3px;
   }
   th.empty-corner { background: transparent; }
 
   td.meal-header {
-    font-weight: 800; font-size: 0.85rem;
-    text-align: center; padding: 6px 8px;
-    border-radius: 10px; vertical-align: middle;
-    white-space: nowrap;
+    font-weight: 800; font-size: 0.85rem; text-align: center; padding: 6px 8px;
+    border-radius: 10px; vertical-align: middle; white-space: nowrap;
   }
   .meal-desayuno { background: #fff3cd; color: #b8860b; }
   .meal-almuerzo { background: #d4edda; color: #276a3e; }
   .meal-cena     { background: #dce8ff; color: #2a56a8; }
 
   td.sub-header {
-    font-weight: 700; font-size: 0.76rem;
-    padding: 5px 8px; border-radius: 8px;
-    text-align: right; white-space: nowrap;
-    vertical-align: middle;
+    font-weight: 700; font-size: 0.76rem; padding: 5px 8px; border-radius: 8px;
+    text-align: right; white-space: nowrap; vertical-align: middle;
   }
   .sub-cereal   { background: #fff8dc; color: #997a00; }
   .sub-fruta    { background: #ffe4e4; color: #b03030; }
@@ -96,75 +73,34 @@
   .cell-verdura  { background: #f0fbf5; }
   .cell-proteina { background: #f7f0ff; }
 
-  /* ── Celda con texto auto-ajustable ── */
-  td.cell .cell-wrap {
-    position: relative;
-    width: 100%;
-    height: 36px; /* altura fija del recuadro */
-    border: 1.5px dashed #ccc;
-    border-radius: 6px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: text;
+  /* ── Celda editable ── */
+  .cell-edit {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 34px; height: 34px;
+    border: 1.5px dashed #ccc; border-radius: 6px;
+    padding: 2px 4px; cursor: text; overflow: hidden;
     transition: border-color 0.2s, background 0.2s;
-  }
-  td.cell .cell-wrap:focus-within {
-    border-color: #9b7fd4;
-    background: #faf5ff;
-  }
-
-  /* Input invisible — solo captura teclado */
-  td.cell .cell-wrap input[type="text"] {
-    position: absolute;
-    opacity: 0;
-    width: 100%; height: 100%;
-    border: none; outline: none;
-    cursor: text;
-    background: transparent;
-    font-size: 0px;
-  }
-
-  /* Span visible con el texto renderizado */
-  td.cell .cell-wrap .cell-text {
-    position: absolute;
-    width: calc(100% - 6px);
-    text-align: center;
-    font-family: 'Nunito', sans-serif;
-    font-weight: 600;
-    color: #444;
-    line-height: 1.2;
+    font-family: 'Nunito', sans-serif; font-weight: 600;
+    color: #444; font-size: 12px;
+    text-align: center; line-height: 1.2;
     white-space: nowrap;
-    pointer-events: none;
-    user-select: none;
-    font-size: 0.76rem; /* tamaño inicial; JS lo ajustará */
-    transition: font-size 0.1s;
+    outline: none;
   }
-
-  /* Placeholder */
-  td.cell .cell-wrap .cell-placeholder {
-    position: absolute;
-    width: calc(100% - 6px);
-    text-align: center;
-    font-family: 'Nunito', sans-serif;
-    font-size: 0.7rem;
-    color: #bbb;
-    pointer-events: none;
-    user-select: none;
+  .cell-edit:focus {
+    border-color: #9b7fd4; border-style: solid; background: #faf5ff;
+  }
+  .cell-edit:empty::before {
+    content: attr(data-placeholder);
+    color: #ccc; font-size: 11px; font-weight: 400; pointer-events: none;
   }
 
   tr.spacer td { height: 8px; background: transparent; }
 
-  .btn-row {
-    display: flex; flex-wrap: wrap;
-    justify-content: center; gap: 14px; margin-top: 26px;
-  }
+  .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 26px; }
   .btn {
-    display: flex; align-items: center; gap: 8px;
-    padding: 11px 26px; border: none; border-radius: 50px;
-    font-family: 'Nunito', sans-serif; font-size: 0.92rem;
-    font-weight: 800; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; padding: 11px 26px;
+    border: none; border-radius: 50px; font-family: 'Nunito', sans-serif;
+    font-size: 0.92rem; font-weight: 800; cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s;
     box-shadow: 0 4px 14px rgba(0,0,0,0.13);
   }
@@ -177,13 +113,10 @@
   .footer { text-align: center; margin-top: 20px; font-size: 0.75rem; color: #ccc; }
 
   #toast {
-    position: fixed; bottom: 28px; left: 50%;
-    transform: translateX(-50%);
-    background: #6b4f9e; color: white;
-    padding: 10px 26px; border-radius: 50px;
-    font-family: 'Nunito', sans-serif; font-weight: 700;
-    font-size: 0.88rem; opacity: 0; pointer-events: none;
-    transition: opacity 0.3s; z-index: 999;
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: #6b4f9e; color: white; padding: 10px 26px; border-radius: 50px;
+    font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.88rem;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 999;
   }
   #toast.show { opacity: 1; }
 
@@ -192,8 +125,9 @@
     .page { box-shadow: none; border-radius: 0; padding: 12px; }
     .btn-row, .footer { display: none !important; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cell-edit { border-style: solid !important; }
+    .cell-edit:empty::before { content: ''; }
   }
-
   @media (max-width: 700px) {
     .header h1 { font-size: 1.3rem; }
     .page { padding: 18px 10px; }
@@ -203,7 +137,6 @@
 </head>
 <body>
 <div class="page">
-
   <div class="header">
     <div class="emojis">🌟 🥦 🍎 🥣 🍗 🌟</div>
     <h1>🍽️ Mi Plan de Alimentación Semanal</h1>
@@ -232,13 +165,13 @@
         <tr>
           <th class="empty-corner" style="width:88px;"></th>
           <th class="empty-corner" style="width:78px;"></th>
-          <th class="day-header">🌙<br>Lunes</th>
-          <th class="day-header">🔥<br>Martes</th>
-          <th class="day-header">⚡<br>Miércoles</th>
-          <th class="day-header">🌈<br>Jueves</th>
-          <th class="day-header">🎉<br>Viernes</th>
-          <th class="day-header">⭐<br>Sábado</th>
-          <th class="day-header">🌞<br>Domingo</th>
+          <th class="day-header">🌙<br>1</th>
+          <th class="day-header">🔥<br>2</th>
+          <th class="day-header">⚡<br>3</th>
+          <th class="day-header">🌈<br>4</th>
+          <th class="day-header">🎉<br>5</th>
+          <th class="day-header">⭐<br>6</th>
+          <th class="day-header">🌞<br>7</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -250,72 +183,50 @@
     <button class="btn btn-pdf"   onclick="downloadPDF()">📄 Descargar PDF</button>
     <button class="btn btn-clear" onclick="clearAll()">🗑️ Limpiar</button>
   </div>
-
   <div class="footer">✨ Plantilla de alimentación para niños · Datos guardados automáticamente en tu navegador</div>
 </div>
-
 <div id="toast"></div>
 
 <script>
 const DAYS = 7;
-const KEY  = 'mealPlan_v2';
-const MAX_FONT = 12; // px
-const MIN_FONT = 6;  // px
+const KEY  = 'mealPlan_v3';
+const MAX_FS = 12, MIN_FS = 6;
 
 const meals = [
-  {
-    id: 'desayuno', label: '☀️ Desayuno', hClass: 'meal-desayuno',
-    subs: [
-      { id:'cereal',  icon:'🥣', label:'Cereal',  sClass:'sub-cereal',   cClass:'cell-cereal'   },
-      { id:'fruta',   icon:'🍎', label:'Fruta',   sClass:'sub-fruta',    cClass:'cell-fruta'    },
-      { id:'verdura', icon:'🥦', label:'Verdura', sClass:'sub-verdura',  cClass:'cell-verdura'  }
-    ]
-  },
-  {
-    id: 'almuerzo', label: '🌤️ Almuerzo', hClass: 'meal-almuerzo',
-    subs: [
-      { id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',    cClass:'cell-cereal'    },
-      { id:'fruta',    icon:'🍎', label:'Fruta',    sClass:'sub-fruta',     cClass:'cell-fruta'     },
-      { id:'verdura',  icon:'🥦', label:'Verdura',  sClass:'sub-verdura',   cClass:'cell-verdura'   },
-      { id:'proteina', icon:'🍗', label:'Proteína', sClass:'sub-proteina',  cClass:'cell-proteina'  }
-    ]
-  },
-  {
-    id: 'cena', label: '🌙 Cena', hClass: 'meal-cena',
-    subs: [
-      { id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',    cClass:'cell-cereal'    },
-      { id:'fruta',    icon:'🍎', label:'Fruta',    sClass:'sub-fruta',     cClass:'cell-fruta'     },
-      { id:'verdura',  icon:'🥦', label:'Verdura',  sClass:'sub-verdura',   cClass:'cell-verdura'   },
-      { id:'proteina', icon:'🍗', label:'Proteína', sClass:'sub-proteina',  cClass:'cell-proteina'  }
-    ]
-  }
+  { id:'desayuno', label:'☀️ Desayuno', hClass:'meal-desayuno',
+    subs:[
+      {id:'cereal', icon:'🥣', label:'Cereal',  sClass:'sub-cereal',   cClass:'cell-cereal'},
+      {id:'fruta',  icon:'🍎', label:'Fruta',   sClass:'sub-fruta',    cClass:'cell-fruta'},
+      {id:'verdura',icon:'🥦', label:'Verdura', sClass:'sub-verdura',  cClass:'cell-verdura'}
+    ]},
+  { id:'almuerzo', label:'🌤️ Almuerzo', hClass:'meal-almuerzo',
+    subs:[
+      {id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',   cClass:'cell-cereal'},
+      {id:'fruta',    icon:'🍎', label:'Fruta',    sClass:'sub-fruta',    cClass:'cell-fruta'},
+      {id:'verdura',  icon:'🥦', label:'Verdura',  sClass:'sub-verdura',  cClass:'cell-verdura'},
+      {id:'proteina', icon:'🍗', label:'Proteína', sClass:'sub-proteina', cClass:'cell-proteina'}
+    ]},
+  { id:'cena', label:'🌙 Cena', hClass:'meal-cena',
+    subs:[
+      {id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',   cClass:'cell-cereal'},
+      {id:'fruta',    icon:'🍎', label:'Fruta',    sClass:'sub-fruta',    cClass:'cell-fruta'},
+      {id:'verdura',  icon:'🥦', label:'Verdura',  sClass:'sub-verdura',  cClass:'cell-verdura'},
+      {id:'proteina', icon:'🍗', label:'Proteína', sClass:'sub-proteina', cClass:'cell-proteina'}
+    ]}
 ];
 
-/* ── Ajuste automático de fuente ── */
-function fitText(wrap) {
-  const span = wrap.querySelector('.cell-text');
-  const ph   = wrap.querySelector('.cell-placeholder');
-  const inp  = wrap.querySelector('input');
-  const val  = inp.value;
-
-  if (!val) {
-    span.textContent = '';
-    ph.style.display = '';
-    return;
-  }
-  ph.style.display = 'none';
-  span.textContent = val;
-
-  const maxW = wrap.clientWidth - 8; // margen interno
-  let fs = MAX_FONT;
-  span.style.fontSize = fs + 'px';
-
-  // Reducir hasta que quepa o llegue al mínimo
-  while (span.scrollWidth > maxW && fs > MIN_FONT) {
+function fitText(el) {
+  const maxW = el.clientWidth - 8;
+  if (!maxW) return;
+  let fs = MAX_FS;
+  el.style.fontSize = fs + 'px';
+  while (el.scrollWidth > maxW && fs > MIN_FS) {
     fs -= 0.5;
-    span.style.fontSize = fs + 'px';
+    el.style.fontSize = fs + 'px';
   }
 }
+
+function getCellId(mId, sId, d) { return mId + '_' + sId + '_' + d; }
 
 function buildTable() {
   const tb = document.getElementById('tableBody');
@@ -338,32 +249,25 @@ function buildTable() {
         const ctd = document.createElement('td');
         ctd.className = 'cell ' + sub.cClass;
 
-        const wrap = document.createElement('div');
-        wrap.className = 'cell-wrap';
+        const div = document.createElement('div');
+        div.className = 'cell-edit';
+        div.contentEditable = 'true';
+        div.dataset.id = getCellId(meal.id, sub.id, d);
+        div.dataset.placeholder = '...';
+        div.spellcheck = false;
 
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.id = meal.id + '_' + sub.id + '_' + d;
+        div.addEventListener('input', () => { fitText(div); autoSave(); });
+        div.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { e.preventDefault(); div.blur(); }
+        });
+        // Prevent multiline paste
+        div.addEventListener('paste', e => {
+          e.preventDefault();
+          const txt = (e.clipboardData || window.clipboardData).getData('text/plain').replace(/\n/g,' ');
+          document.execCommand('insertText', false, txt);
+        });
 
-        const span = document.createElement('span');
-        span.className = 'cell-text';
-
-        const ph = document.createElement('span');
-        ph.className = 'cell-placeholder';
-        ph.textContent = '...';
-
-        wrap.appendChild(inp);
-        wrap.appendChild(span);
-        wrap.appendChild(ph);
-
-        // Click en el wrap → foco al input
-        wrap.addEventListener('click', () => inp.focus());
-
-        inp.addEventListener('input', () => { fitText(wrap); autoSave(); });
-        inp.addEventListener('focus', () => wrap.style.borderStyle = 'solid');
-        inp.addEventListener('blur',  () => wrap.style.borderStyle = 'dashed');
-
-        ctd.appendChild(wrap);
+        ctd.appendChild(div);
         tr.appendChild(ctd);
       }
       tb.appendChild(tr);
@@ -384,12 +288,9 @@ function collect() {
     weekEnd:   document.getElementById('weekEnd').value,
     cells: {}
   };
-  meals.forEach(m => m.subs.forEach(s => {
-    for (let i = 0; i < DAYS; i++) {
-      const id = m.id+'_'+s.id+'_'+i;
-      d.cells[id] = document.getElementById(id).value;
-    }
-  }));
+  document.querySelectorAll('.cell-edit').forEach(el => {
+    d.cells[el.dataset.id] = el.innerText.trim();
+  });
   return d;
 }
 
@@ -399,11 +300,8 @@ function apply(d) {
   if (d.weekStart) document.getElementById('weekStart').value = d.weekStart;
   if (d.weekEnd)   document.getElementById('weekEnd').value   = d.weekEnd;
   if (d.cells) Object.entries(d.cells).forEach(([id, v]) => {
-    const el = document.getElementById(id);
-    if (el && v) {
-      el.value = v;
-      fitText(el.closest('.cell-wrap'));
-    }
+    const el = document.querySelector('[data-id="' + id + '"]');
+    if (el && v) { el.innerText = v; fitText(el); }
   });
 }
 
@@ -411,23 +309,17 @@ function saveData() {
   try { localStorage.setItem(KEY, JSON.stringify(collect())); toast('💾 ¡Guardado!'); }
   catch(e) { toast('⚠️ Error al guardar'); }
 }
-
 function autoSave() {
   try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch(e) {}
 }
-
 function clearAll() {
   if (!confirm('¿Borrar todo? 🗑️')) return;
-  meals.forEach(m => m.subs.forEach(s => {
-    for (let i = 0; i < DAYS; i++) {
-      const el = document.getElementById(m.id+'_'+s.id+'_'+i);
-      if (el) { el.value = ''; fitText(el.closest('.cell-wrap')); }
-    }
-  }));
+  document.querySelectorAll('.cell-edit').forEach(el => {
+    el.innerText = ''; el.style.fontSize = MAX_FS + 'px';
+  });
   ['childName','weekStart','weekEnd'].forEach(id => document.getElementById(id).value = '');
   try { localStorage.removeItem(KEY); } catch(e) {}
 }
-
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -450,36 +342,33 @@ function downloadPDF() {
     document.head.appendChild(s);
   });
 }
-
 function runPDF() {
   const name = document.getElementById('childName').value || 'plan-alimentacion';
-  const filename = name.trim().replace(/\s+/g, '_') + '.pdf';
+  const filename = name.trim().replace(/\s+/g,'_') + '.pdf';
   const btnRow = document.querySelector('.btn-row');
   const footer = document.querySelector('.footer');
   btnRow.style.display = 'none';
   if (footer) footer.style.display = 'none';
   const el = document.querySelector('.page');
   html2canvas(el, {
-    scale: 2, useCORS: true,
-    scrollX: 0, scrollY: -window.scrollY,
-    windowWidth: 1200,
-    width: el.scrollWidth, height: el.scrollHeight
+    scale:2, useCORS:true, scrollX:0, scrollY:-window.scrollY,
+    windowWidth:1200, width:el.scrollWidth, height:el.scrollHeight
   }).then(canvas => {
-    const imgData = canvas.toDataURL('image/jpeg', 1.0);
-    const pageW = 297, pageH = 210, margin = 5;
-    const maxW = pageW - margin*2, maxH = pageH - margin*2;
-    const ratio = canvas.width / canvas.height;
-    let iW = maxW, iH = maxW / ratio;
-    if (iH > maxH) { iH = maxH; iW = maxH * ratio; }
-    const pdf = new window.jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-    pdf.addImage(imgData, 'JPEG', (pageW-iW)/2, (pageH-iH)/2, iW, iH);
+    const imgData = canvas.toDataURL('image/jpeg',1.0);
+    const pageW=297, pageH=210, margin=5;
+    const maxW=pageW-margin*2, maxH=pageH-margin*2;
+    const ratio=canvas.width/canvas.height;
+    let iW=maxW, iH=maxW/ratio;
+    if (iH>maxH){iH=maxH;iW=maxH*ratio;}
+    const pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    pdf.addImage(imgData,'JPEG',(pageW-iW)/2,(pageH-iH)/2,iW,iH);
     pdf.save(filename);
-    btnRow.style.display = '';
-    if (footer) footer.style.display = '';
-    toast('✅ PDF descargado: ' + filename);
-  }).catch(() => {
-    btnRow.style.display = '';
-    if (footer) footer.style.display = '';
+    btnRow.style.display='';
+    if(footer) footer.style.display='';
+    toast('✅ PDF descargado: '+filename);
+  }).catch(()=>{
+    btnRow.style.display='';
+    if(footer) footer.style.display='';
     toast('❌ Error al generar PDF');
   });
 }
