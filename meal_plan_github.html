@@ -24,13 +24,11 @@
     margin: 0 auto;
   }
 
-  /* HEADER */
   .header { text-align: center; margin-bottom: 22px; }
   .header .emojis { font-size: 1.8rem; letter-spacing: 6px; margin-bottom: 6px; }
   .header h1 { font-size: 1.9rem; font-weight: 800; color: #6b4f9e; }
   .header p  { font-size: 0.9rem; color: #aaa; margin-top: 4px; }
 
-  /* NAME ROW */
   .name-row {
     display: flex; flex-wrap: wrap; gap: 12px;
     align-items: center;
@@ -45,7 +43,6 @@
     padding: 2px 6px; flex: 1; min-width: 120px;
   }
 
-  /* LEGEND */
   .legend {
     display: flex; flex-wrap: wrap; gap: 14px;
     justify-content: center; margin-bottom: 18px;
@@ -57,7 +54,6 @@
   .dot-verdura  { background: #b5ead7; }
   .dot-proteina { background: #d4b3f0; }
 
-  /* TABLE */
   .table-wrap { overflow-x: auto; }
 
   table {
@@ -100,18 +96,66 @@
   .cell-verdura  { background: #f0fbf5; }
   .cell-proteina { background: #f7f0ff; }
 
-  td.cell input[type="text"] {
-    width: 100%; border: 1.5px dashed #ccc;
-    border-radius: 6px; padding: 5px 5px;
-    font-family: 'Nunito', sans-serif; font-size: 0.76rem;
-    color: #444; background: transparent; outline: none;
-    transition: border-color 0.2s;
+  /* ── Celda con texto auto-ajustable ── */
+  td.cell .cell-wrap {
+    position: relative;
+    width: 100%;
+    height: 36px; /* altura fija del recuadro */
+    border: 1.5px dashed #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: text;
+    transition: border-color 0.2s, background 0.2s;
   }
-  td.cell input[type="text"]:focus { border-color: #9b7fd4; background: #faf5ff; }
+  td.cell .cell-wrap:focus-within {
+    border-color: #9b7fd4;
+    background: #faf5ff;
+  }
+
+  /* Input invisible — solo captura teclado */
+  td.cell .cell-wrap input[type="text"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%; height: 100%;
+    border: none; outline: none;
+    cursor: text;
+    background: transparent;
+    font-size: 0px;
+  }
+
+  /* Span visible con el texto renderizado */
+  td.cell .cell-wrap .cell-text {
+    position: absolute;
+    width: calc(100% - 6px);
+    text-align: center;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 600;
+    color: #444;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    font-size: 0.76rem; /* tamaño inicial; JS lo ajustará */
+    transition: font-size 0.1s;
+  }
+
+  /* Placeholder */
+  td.cell .cell-wrap .cell-placeholder {
+    position: absolute;
+    width: calc(100% - 6px);
+    text-align: center;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.7rem;
+    color: #bbb;
+    pointer-events: none;
+    user-select: none;
+  }
 
   tr.spacer td { height: 8px; background: transparent; }
 
-  /* BUTTONS */
   .btn-row {
     display: flex; flex-wrap: wrap;
     justify-content: center; gap: 14px; margin-top: 26px;
@@ -127,14 +171,11 @@
   .btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
   .btn:active { transform: translateY(0); }
   .btn-save  { background: linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; }
-  .btn-print { background: linear-gradient(135deg,#86efac,#22c55e); color:#fff; }
   .btn-pdf   { background: linear-gradient(135deg,#f9a8d4,#ec4899); color:#fff; }
   .btn-clear { background: linear-gradient(135deg,#fca5a5,#ef4444); color:#fff; }
 
-  /* FOOTER */
   .footer { text-align: center; margin-top: 20px; font-size: 0.75rem; color: #ccc; }
 
-  /* TOAST */
   #toast {
     position: fixed; bottom: 28px; left: 50%;
     transform: translateX(-50%);
@@ -146,7 +187,6 @@
   }
   #toast.show { opacity: 1; }
 
-  /* PRINT */
   @media print {
     body { background: white; padding: 0; }
     .page { box-shadow: none; border-radius: 0; padding: 12px; }
@@ -154,7 +194,6 @@
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 
-  /* RESPONSIVE */
   @media (max-width: 700px) {
     .header h1 { font-size: 1.3rem; }
     .page { padding: 18px 10px; }
@@ -220,6 +259,8 @@
 <script>
 const DAYS = 7;
 const KEY  = 'mealPlan_v2';
+const MAX_FONT = 12; // px
+const MIN_FONT = 6;  // px
 
 const meals = [
   {
@@ -250,6 +291,32 @@ const meals = [
   }
 ];
 
+/* ── Ajuste automático de fuente ── */
+function fitText(wrap) {
+  const span = wrap.querySelector('.cell-text');
+  const ph   = wrap.querySelector('.cell-placeholder');
+  const inp  = wrap.querySelector('input');
+  const val  = inp.value;
+
+  if (!val) {
+    span.textContent = '';
+    ph.style.display = '';
+    return;
+  }
+  ph.style.display = 'none';
+  span.textContent = val;
+
+  const maxW = wrap.clientWidth - 8; // margen interno
+  let fs = MAX_FONT;
+  span.style.fontSize = fs + 'px';
+
+  // Reducir hasta que quepa o llegue al mínimo
+  while (span.scrollWidth > maxW && fs > MIN_FONT) {
+    fs -= 0.5;
+    span.style.fontSize = fs + 'px';
+  }
+}
+
 function buildTable() {
   const tb = document.getElementById('tableBody');
   meals.forEach((meal, mi) => {
@@ -270,12 +337,33 @@ function buildTable() {
       for (let d = 0; d < DAYS; d++) {
         const ctd = document.createElement('td');
         ctd.className = 'cell ' + sub.cClass;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cell-wrap';
+
         const inp = document.createElement('input');
         inp.type = 'text';
         inp.id = meal.id + '_' + sub.id + '_' + d;
-        inp.placeholder = '...';
-        inp.addEventListener('input', autoSave);
-        ctd.appendChild(inp);
+
+        const span = document.createElement('span');
+        span.className = 'cell-text';
+
+        const ph = document.createElement('span');
+        ph.className = 'cell-placeholder';
+        ph.textContent = '...';
+
+        wrap.appendChild(inp);
+        wrap.appendChild(span);
+        wrap.appendChild(ph);
+
+        // Click en el wrap → foco al input
+        wrap.addEventListener('click', () => inp.focus());
+
+        inp.addEventListener('input', () => { fitText(wrap); autoSave(); });
+        inp.addEventListener('focus', () => wrap.style.borderStyle = 'solid');
+        inp.addEventListener('blur',  () => wrap.style.borderStyle = 'dashed');
+
+        ctd.appendChild(wrap);
         tr.appendChild(ctd);
       }
       tb.appendChild(tr);
@@ -311,7 +399,11 @@ function apply(d) {
   if (d.weekStart) document.getElementById('weekStart').value = d.weekStart;
   if (d.weekEnd)   document.getElementById('weekEnd').value   = d.weekEnd;
   if (d.cells) Object.entries(d.cells).forEach(([id, v]) => {
-    const el = document.getElementById(id); if (el) el.value = v;
+    const el = document.getElementById(id);
+    if (el && v) {
+      el.value = v;
+      fitText(el.closest('.cell-wrap'));
+    }
   });
 }
 
@@ -328,7 +420,8 @@ function clearAll() {
   if (!confirm('¿Borrar todo? 🗑️')) return;
   meals.forEach(m => m.subs.forEach(s => {
     for (let i = 0; i < DAYS; i++) {
-      const el = document.getElementById(m.id+'_'+s.id+'_'+i); if(el) el.value='';
+      const el = document.getElementById(m.id+'_'+s.id+'_'+i);
+      if (el) { el.value = ''; fitText(el.closest('.cell-wrap')); }
     }
   }));
   ['childName','weekStart','weekEnd'].forEach(id => document.getElementById(id).value = '');
@@ -343,8 +436,8 @@ function toast(msg) {
 
 function downloadPDF() {
   const libs = [
-    { id:'jspdf',      src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',        check:() => window.jspdf },
-    { id:'html2canvas',src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', check:() => window.html2canvas }
+    { src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',        check:() => window.jspdf },
+    { src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', check:() => window.html2canvas }
   ];
   toast('⏳ Preparando PDF...');
   let loaded = 0;
@@ -353,7 +446,7 @@ function downloadPDF() {
     const s = document.createElement('script');
     s.src = lib.src;
     s.onload = () => { if (++loaded === libs.length) runPDF(); };
-    s.onerror = () => toast('❌ Sin conexión, no se pudo generar el PDF');
+    s.onerror = () => toast('❌ Sin conexión');
     document.head.appendChild(s);
   });
 }
@@ -361,56 +454,26 @@ function downloadPDF() {
 function runPDF() {
   const name = document.getElementById('childName').value || 'plan-alimentacion';
   const filename = name.trim().replace(/\s+/g, '_') + '.pdf';
-
   const btnRow = document.querySelector('.btn-row');
   const footer = document.querySelector('.footer');
   btnRow.style.display = 'none';
   if (footer) footer.style.display = 'none';
-
   const el = document.querySelector('.page');
-  const W = el.scrollWidth;
-  const H = el.scrollHeight;
-
-  // Use html2canvas to capture full element, then fit into one A4 landscape PDF
-  if (!window.html2canvas) {
-    const s2 = document.createElement('script');
-    s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    s2.onload = () => capture(el, W, H, filename, btnRow, footer);
-    document.head.appendChild(s2);
-  } else {
-    capture(el, W, H, filename, btnRow, footer);
-  }
-}
-
-function capture(el, W, H, filename, btnRow, footer) {
-  toast('⏳ Generando PDF...');
   html2canvas(el, {
-    scale: 2,
-    useCORS: true,
+    scale: 2, useCORS: true,
     scrollX: 0, scrollY: -window.scrollY,
     windowWidth: 1200,
-    width: el.scrollWidth,
-    height: el.scrollHeight
+    width: el.scrollWidth, height: el.scrollHeight
   }).then(canvas => {
     const imgData = canvas.toDataURL('image/jpeg', 1.0);
-
-    // A4 landscape in mm
-    const pageW = 297, pageH = 210;
-    const margin = 5;
-    const maxW = pageW - margin * 2;
-    const maxH = pageH - margin * 2;
-
-    // Scale image to fit page keeping aspect ratio
+    const pageW = 297, pageH = 210, margin = 5;
+    const maxW = pageW - margin*2, maxH = pageH - margin*2;
     const ratio = canvas.width / canvas.height;
     let iW = maxW, iH = maxW / ratio;
     if (iH > maxH) { iH = maxH; iW = maxH * ratio; }
-    const x = (pageW - iW) / 2;
-    const y = (pageH - iH) / 2;
-
     const pdf = new window.jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-    pdf.addImage(imgData, 'JPEG', x, y, iW, iH);
+    pdf.addImage(imgData, 'JPEG', (pageW-iW)/2, (pageH-iH)/2, iW, iH);
     pdf.save(filename);
-
     btnRow.style.display = '';
     if (footer) footer.style.display = '';
     toast('✅ PDF descargado: ' + filename);
