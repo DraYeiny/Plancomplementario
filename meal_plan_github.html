@@ -101,8 +101,23 @@ body {
 .tab-btn:hover { background: #f0e6ff; }
 .tab-btn.active { background: #7c3aed; color: white; border-color: #7c3aed; }
 
-.week-sheet { display: none; }
-.week-sheet.visible { display: block; }
+/* FIX: no usar display:none para ocultar sheets — innerText devuelve ""
+   en elementos con display:none en Chrome, borrando datos al hacer autoSave.
+   En su lugar ocultamos visualmente pero mantenemos el elemento en el layout. */
+.week-sheet {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  height: 0;
+  overflow: hidden;
+}
+.week-sheet.visible {
+  position: static;
+  visibility: visible;
+  pointer-events: auto;
+  height: auto;
+  overflow: visible;
+}
 .sheet-title {
   text-align: center; font-size: 0.88rem; font-weight: 800; color: #6b4f9e;
   margin-bottom: 10px; background: #f8f0ff; border-radius: 12px; padding: 6px;
@@ -315,7 +330,7 @@ function acReposition(){
 function acShow(div){
   /* FIX: leer categoría desde dataset en lugar de closure */
   const category = div.dataset.category;
-  const text     = div.innerText.trim();
+  const text     = div.textContent.trim();
 
   if(!text){ acHide(); return; }
 
@@ -362,7 +377,7 @@ function acHide(){
 
 function acSelect(i){
   if(!acCurrent || i < 0 || i >= acList.length) return;
-  acCurrent.innerText = acList[i];
+  acCurrent.textContent = acList[i];
   /* mover cursor al final */
   const range = document.createRange();
   const sel   = window.getSelection();
@@ -593,8 +608,7 @@ function buildTable(wi, dayHeaders){
         div.addEventListener('blur', () => setTimeout(acHide, 180));
 
         div.addEventListener('focus', () => {
-          /* Al volver a enfocar, si hay texto, mostrar sugerencias */
-          if(div.innerText.trim()) acShow(div);
+          if(div.textContent.trim()) acShow(div);
         });
 
         div.addEventListener('paste', e => {
@@ -621,14 +635,20 @@ function buildTable(wi, dayHeaders){
 /* ── PERSISTENCIA ── */
 function collectCells(){
   const out={};
-  document.querySelectorAll('.cell-edit').forEach(el=>{ out[el.dataset.id]=el.innerText.trim(); });
+  /* FIX: usar textContent (no innerText) — innerText retorna "" en elementos
+     ocultos con visibility:hidden o display:none en Chrome, lo que causaba
+     que cambiar de tab sobreescribiera los datos de las semanas no visibles */
+  document.querySelectorAll('.cell-edit').forEach(el=>{
+    const val = el.textContent.trim();
+    out[el.dataset.id] = val;
+  });
   return out;
 }
 function restoreCells(cells){
   if(!cells) return;
   Object.entries(cells).forEach(([id,v])=>{
     const el=document.querySelector(`[data-id="${id}"]`);
-    if(el&&v) el.innerText=v;
+    if(el&&v) el.textContent=v;
   });
 }
 function collect(){
@@ -694,10 +714,14 @@ async function runPDF(){
   const tabsBar=document.getElementById('tabsBar');
   btnRow.style.display='none'; footer.style.display='none'; tabsBar.style.display='none';
   const CAPTURE_W=3508;
+  /* Guardar datos ANTES de manipular el DOM para el PDF */
+  const savedCells = collectCells();
+
   const pageImages=[];
   for(let w=0;w<numWeeks;w++){
-    document.querySelectorAll('.week-sheet').forEach(s=>s.style.display='none');
-    document.getElementById('sheet-'+w).style.display='block';
+    /* FIX: en lugar de display:none (que rompe textContent), removemos visible */
+    document.querySelectorAll('.week-sheet').forEach(s=>s.classList.remove('visible'));
+    document.getElementById('sheet-'+w).classList.add('visible');
     await new Promise(r=>setTimeout(r,150));
     const el=document.querySelector('.page');
     const canvas=await html2canvas(el,{
@@ -708,8 +732,9 @@ async function runPDF(){
     pageImages.push({dataUrl:canvas.toDataURL('image/png'),w:canvas.width,h:canvas.height});
   }
   btnRow.style.display=''; footer.style.display=''; tabsBar.style.display='';
-  document.querySelectorAll('.week-sheet').forEach((s,i)=>s.style.display=i===0?'block':'none');
+  /* Restaurar tab 0 y reponer datos guardados */
   switchTab(0);
+  restoreCells(savedCells);
   toast('⏳ Ensamblando PDF...');
   const {PDFDocument}=window.PDFLib;
   const planDoc=await PDFDocument.create();
