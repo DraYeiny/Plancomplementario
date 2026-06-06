@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Plan de Alimentación Semanal</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #fff9f0 0%, #f0e6ff 100%);
+    min-height: 100vh;
+    padding: 24px 12px;
+  }
+
+  .page {
+    background: white;
+    border-radius: 28px;
+    padding: 32px 28px;
+    box-shadow: 0 8px 32px rgba(107,79,158,0.12);
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 22px; }
+  .header .emojis { font-size: 1.8rem; letter-spacing: 6px; margin-bottom: 6px; }
+  .header h1 { font-size: 1.9rem; font-weight: 800; color: #6b4f9e; }
+  .header p  { font-size: 0.9rem; color: #aaa; margin-top: 4px; }
+
+  /* NAME ROW */
+  .name-row {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: center;
+    background: #f8f0ff; border-radius: 16px;
+    padding: 12px 20px; margin-bottom: 18px;
+  }
+  .name-row label { font-weight: 700; color: #6b4f9e; font-size: 0.9rem; white-space: nowrap; }
+  .name-row input {
+    border: none; border-bottom: 2px dashed #c9a8f0;
+    background: transparent; font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem; color: #444; outline: none;
+    padding: 2px 6px; flex: 1; min-width: 120px;
+  }
+
+  /* LEGEND */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    justify-content: center; margin-bottom: 18px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #555; }
+  .legend-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
+  .dot-cereal   { background: #ffe082; }
+  .dot-fruta    { background: #ffb3b3; }
+  .dot-verdura  { background: #b5ead7; }
+  .dot-proteina { background: #d4b3f0; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%; border-collapse: separate;
+    border-spacing: 3px; font-size: 0.8rem;
+  }
+
+  th.day-header {
+    background: #f0e6ff; color: #6b4f9e;
+    font-weight: 800; font-size: 0.82rem;
+    text-align: center; padding: 10px 4px;
+    border-radius: 10px; letter-spacing: 0.3px;
+  }
+  th.empty-corner { background: transparent; }
+
+  td.meal-header {
+    font-weight: 800; font-size: 0.85rem;
+    text-align: center; padding: 6px 8px;
+    border-radius: 10px; vertical-align: middle;
+    white-space: nowrap;
+  }
+  .meal-desayuno { background: #fff3cd; color: #b8860b; }
+  .meal-almuerzo { background: #d4edda; color: #276a3e; }
+  .meal-cena     { background: #dce8ff; color: #2a56a8; }
+
+  td.sub-header {
+    font-weight: 700; font-size: 0.76rem;
+    padding: 5px 8px; border-radius: 8px;
+    text-align: right; white-space: nowrap;
+    vertical-align: middle;
+  }
+  .sub-cereal   { background: #fff8dc; color: #997a00; }
+  .sub-fruta    { background: #ffe4e4; color: #b03030; }
+  .sub-verdura  { background: #e8f5ee; color: #2e7d52; }
+  .sub-proteina { background: #f0e6ff; color: #6b4f9e; }
+
+  td.cell { padding: 3px; border-radius: 8px; vertical-align: middle; }
+  .cell-cereal   { background: #fffbea; }
+  .cell-fruta    { background: #fff0f0; }
+  .cell-verdura  { background: #f0fbf5; }
+  .cell-proteina { background: #f7f0ff; }
+
+  td.cell input[type="text"] {
+    width: 100%; border: 1.5px dashed #ccc;
+    border-radius: 6px; padding: 5px 5px;
+    font-family: 'Nunito', sans-serif; font-size: 0.76rem;
+    color: #444; background: transparent; outline: none;
+    transition: border-color 0.2s;
+  }
+  td.cell input[type="text"]:focus { border-color: #9b7fd4; background: #faf5ff; }
+
+  tr.spacer td { height: 8px; background: transparent; }
+
+  /* BUTTONS */
+  .btn-row {
+    display: flex; flex-wrap: wrap;
+    justify-content: center; gap: 14px; margin-top: 26px;
+  }
+  .btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 26px; border: none; border-radius: 50px;
+    font-family: 'Nunito', sans-serif; font-size: 0.92rem;
+    font-weight: 800; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.13);
+  }
+  .btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+  .btn:active { transform: translateY(0); }
+  .btn-save  { background: linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; }
+  .btn-print { background: linear-gradient(135deg,#86efac,#22c55e); color:#fff; }
+  .btn-pdf   { background: linear-gradient(135deg,#f9a8d4,#ec4899); color:#fff; }
+  .btn-clear { background: linear-gradient(135deg,#fca5a5,#ef4444); color:#fff; }
+
+  /* FOOTER */
+  .footer { text-align: center; margin-top: 20px; font-size: 0.75rem; color: #ccc; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%);
+    background: #6b4f9e; color: white;
+    padding: 10px 26px; border-radius: 50px;
+    font-family: 'Nunito', sans-serif; font-weight: 700;
+    font-size: 0.88rem; opacity: 0; pointer-events: none;
+    transition: opacity 0.3s; z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+
+  /* PRINT */
+  @media print {
+    body { background: white; padding: 0; }
+    .page { box-shadow: none; border-radius: 0; padding: 12px; }
+    .btn-row, .footer { display: none !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .header h1 { font-size: 1.3rem; }
+    .page { padding: 18px 10px; }
+    td.meal-header, td.sub-header { font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="emojis">🌟 🥦 🍎 🥣 🍗 🌟</div>
+    <h1>🍽️ Mi Plan de Alimentación Semanal</h1>
+    <p>¡Comer bien es divertido y delicioso!</p>
+  </div>
+
+  <div class="name-row">
+    <label>👦 Nombre:</label>
+    <input type="text" id="childName" placeholder="Escribe tu nombre aquí...">
+    <label style="margin-left:10px;">📅 Del:</label>
+    <input type="text" id="weekStart" placeholder="dd/mm/aaaa" style="max-width:120px;">
+    <label>al:</label>
+    <input type="text" id="weekEnd" placeholder="dd/mm/aaaa" style="max-width:120px;">
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot dot-cereal"></span>Cereal / Carbohidratos</div>
+    <div class="legend-item"><span class="legend-dot dot-fruta"></span>Fruta</div>
+    <div class="legend-item"><span class="legend-dot dot-verdura"></span>Verdura</div>
+    <div class="legend-item"><span class="legend-dot dot-proteina"></span>Proteína</div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="mealTable">
+      <thead>
+        <tr>
+          <th class="empty-corner" style="width:88px;"></th>
+          <th class="empty-corner" style="width:78px;"></th>
+          <th class="day-header">🌙<br>Lunes</th>
+          <th class="day-header">🔥<br>Martes</th>
+          <th class="day-header">⚡<br>Miércoles</th>
+          <th class="day-header">🌈<br>Jueves</th>
+          <th class="day-header">🎉<br>Viernes</th>
+          <th class="day-header">⭐<br>Sábado</th>
+          <th class="day-header">🌞<br>Domingo</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-save"  onclick="saveData()">💾 Guardar</button>
+    <button class="btn btn-pdf"   onclick="downloadPDF()">📄 Descargar PDF</button>
+    <button class="btn btn-clear" onclick="clearAll()">🗑️ Limpiar</button>
+  </div>
+
+  <div class="footer">✨ Plantilla de alimentación para niños · Datos guardados automáticamente en tu navegador</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const DAYS = 7;
+const KEY  = 'mealPlan_v2';
+
+const meals = [
+  {
+    id: 'desayuno', label: '☀️ Desayuno', hClass: 'meal-desayuno',
+    subs: [
+      { id:'cereal',  icon:'🥣', label:'Cereal',  sClass:'sub-cereal',   cClass:'cell-cereal'   },
+      { id:'fruta',   icon:'🍎', label:'Fruta',   sClass:'sub-fruta',    cClass:'cell-fruta'    },
+      { id:'verdura', icon:'🥦', label:'Verdura', sClass:'sub-verdura',  cClass:'cell-verdura'  }
+    ]
+  },
+  {
+    id: 'almuerzo', label: '🌤️ Almuerzo', hClass: 'meal-almuerzo',
+    subs: [
+      { id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',    cClass:'cell-cereal'    },
+      { id:'fruta',    icon:'🍎', label:'Fruta',    sClass:'sub-fruta',     cClass:'cell-fruta'     },
+      { id:'verdura',  icon:'🥦', label:'Verdura',  sClass:'sub-verdura',   cClass:'cell-verdura'   },
+      { id:'proteina', icon:'🍗', label:'Proteína', sClass:'sub-proteina',  cClass:'cell-proteina'  }
+    ]
+  },
+  {
+    id: 'cena', label: '🌙 Cena', hClass: 'meal-cena',
+    subs: [
+      { id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',    cClass:'cell-cereal'    },
+      { id:'fruta',    icon:'🍎', label:'Fruta',    sClass:'sub-fruta',     cClass:'cell-fruta'     },
+      { id:'verdura',  icon:'🥦', label:'Verdura',  sClass:'sub-verdura',   cClass:'cell-verdura'   },
+      { id:'proteina', icon:'🍗', label:'Proteína', sClass:'sub-proteina',  cClass:'cell-proteina'  }
+    ]
+  }
+];
+
+function buildTable() {
+  const tb = document.getElementById('tableBody');
+  meals.forEach((meal, mi) => {
+    meal.subs.forEach((sub, si) => {
+      const tr = document.createElement('tr');
+      if (si === 0) {
+        const td = document.createElement('td');
+        td.rowSpan = meal.subs.length;
+        td.className = 'meal-header ' + meal.hClass;
+        td.innerHTML = meal.label.replace(' ','<br>');
+        tr.appendChild(td);
+      }
+      const std = document.createElement('td');
+      std.className = 'sub-header ' + sub.sClass;
+      std.innerHTML = sub.icon + ' ' + sub.label;
+      tr.appendChild(std);
+
+      for (let d = 0; d < DAYS; d++) {
+        const ctd = document.createElement('td');
+        ctd.className = 'cell ' + sub.cClass;
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.id = meal.id + '_' + sub.id + '_' + d;
+        inp.placeholder = '...';
+        inp.addEventListener('input', autoSave);
+        ctd.appendChild(inp);
+        tr.appendChild(ctd);
+      }
+      tb.appendChild(tr);
+    });
+    if (mi < meals.length - 1) {
+      const sp = document.createElement('tr');
+      sp.className = 'spacer';
+      const td = document.createElement('td'); td.colSpan = 2 + DAYS;
+      sp.appendChild(td); tb.appendChild(sp);
+    }
+  });
+}
+
+function collect() {
+  const d = {
+    childName: document.getElementById('childName').value,
+    weekStart: document.getElementById('weekStart').value,
+    weekEnd:   document.getElementById('weekEnd').value,
+    cells: {}
+  };
+  meals.forEach(m => m.subs.forEach(s => {
+    for (let i = 0; i < DAYS; i++) {
+      const id = m.id+'_'+s.id+'_'+i;
+      d.cells[id] = document.getElementById(id).value;
+    }
+  }));
+  return d;
+}
+
+function apply(d) {
+  if (!d) return;
+  if (d.childName) document.getElementById('childName').value = d.childName;
+  if (d.weekStart) document.getElementById('weekStart').value = d.weekStart;
+  if (d.weekEnd)   document.getElementById('weekEnd').value   = d.weekEnd;
+  if (d.cells) Object.entries(d.cells).forEach(([id, v]) => {
+    const el = document.getElementById(id); if (el) el.value = v;
+  });
+}
+
+function saveData() {
+  try { localStorage.setItem(KEY, JSON.stringify(collect())); toast('💾 ¡Guardado!'); }
+  catch(e) { toast('⚠️ Error al guardar'); }
+}
+
+function autoSave() {
+  try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch(e) {}
+}
+
+function clearAll() {
+  if (!confirm('¿Borrar todo? 🗑️')) return;
+  meals.forEach(m => m.subs.forEach(s => {
+    for (let i = 0; i < DAYS; i++) {
+      const el = document.getElementById(m.id+'_'+s.id+'_'+i); if(el) el.value='';
+    }
+  }));
+  ['childName','weekStart','weekEnd'].forEach(id => document.getElementById(id).value = '');
+  try { localStorage.removeItem(KEY); } catch(e) {}
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function downloadPDF() {
+  // Load html2pdf from CDN if not already loaded
+  if (window.html2pdf) { runPDF(); return; }
+  toast('⏳ Cargando generador PDF...');
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+  s.onload = runPDF;
+  s.onerror = () => toast('❌ Sin conexión, usa Ctrl+P para imprimir');
+  document.head.appendChild(s);
+}
+
+function runPDF() {
+  const name = document.getElementById('childName').value || 'plan-alimentacion';
+  const filename = name.trim().replace(/\s+/g,'_') + '.pdf';
+
+  // Temporarily hide buttons
+  const btnRow = document.querySelector('.btn-row');
+  btnRow.style.display = 'none';
+
+  const el = document.getElementById('mainPage') || document.querySelector('.page');
+
+  html2pdf().set({
+    margin:        [8, 6, 8, 6],
+    filename:      filename,
+    image:         { type: 'jpeg', quality: 0.98 },
+    html2canvas:   { scale: 2, useCORS: true, logging: false },
+    jsPDF:         { unit: 'mm', format: 'a4', orientation: 'landscape' },
+    pagebreak:     { mode: 'avoid-all' }
+  }).from(el).save().then(() => {
+    btnRow.style.display = '';
+    toast('✅ PDF descargado: ' + filename);
+  }).catch(() => {
+    btnRow.style.display = '';
+    toast('❌ Error al generar PDF');
+  });
+}
+
+buildTable();
+try { apply(JSON.parse(localStorage.getItem(KEY))); } catch(e) {}
+</script>
+</body>
+</html>
