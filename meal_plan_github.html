@@ -1042,7 +1042,8 @@ async function runPDF(){
   toast('⏳ Generando PDF del plan...');
   const childName=document.getElementById('childName').value.trim();
   const name=childName?childName+' - Plan de alimentacion':'Plan de alimentacion';
-  const pdfUrl='https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIA.pdf';
+  const pdfUrl1='https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIA.pdf';
+  const pdfUrl2='https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIAFINAL.pdf';
   const btnRow=document.querySelector('.btn-row');
   const footer=document.querySelector('.footer');
   const tabsBar=document.getElementById('tabsBar');
@@ -1087,7 +1088,22 @@ async function runPDF(){
   const mmToPt=mm=>mm*2.8346;
   const pageW=mmToPt(297), pageH=mmToPt(210), margin=mmToPt(4);
 
-  /* Páginas del plan semanal */
+  /* Helper para añadir páginas de un PDF externo */
+  async function appendExternalPDF(url, label){
+    try{
+      toast('⏳ Cargando ' + label + '...');
+      const bytes=await fetch(url).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); });
+      const doc=await PDFDocument.load(bytes,{ignoreEncryption:true});
+      const pages=await planDoc.copyPages(doc,doc.getPageIndices());
+      pages.forEach(p=>planDoc.addPage(p));
+    } catch(err){
+      console.warn('No se pudo cargar '+label+':',err);
+      toast('⚠️ No se pudo adjuntar: '+label);
+      await new Promise(r=>setTimeout(r,1800));
+    }
+  }
+
+  /* Helper para añadir una imagen capturada como página del PDF */
   async function addImagePage(img){
     const imgBytes=await fetch(img.dataUrl).then(r=>r.arrayBuffer());
     const embedded=await planDoc.embedPng(imgBytes);
@@ -1099,9 +1115,21 @@ async function runPDF(){
     page.drawImage(embedded,{x:(pageW-iW)/2,y:(pageH-iH)/2,width:iW,height:iH});
   }
 
+  /* ── ORDEN FINAL DEL PDF ──────────────────────────────────────
+     1. ALIMENTACIONCOMPLEMENTARIA.pdf  (intro/portada)
+     2. Plantillas generadas (semanas del plan + registro)
+     3. ALIMENTACIONCOMPLEMENTARIAFINAL.pdf  (cierre)
+     ─────────────────────────────────────────────────────────── */
+
+  /* 1 — PDF inicial */
+  await appendExternalPDF(pdfUrl1, 'PDF inicial');
+
+  /* 2a — Páginas del plan semanal */
+  toast('⏳ Añadiendo semanas del plan...');
   for(const img of pageImages) await addImagePage(img);
 
-  /* Página del registro — A4 horizontal, imagen anclada arriba */
+  /* 2b — Página del registro */
+  toast('⏳ Añadiendo registro de alimentación...');
   const regPageW = mmToPt(297), regPageH = mmToPt(210);
   const regBytes = await fetch(regImg.dataUrl).then(r=>r.arrayBuffer());
   const regEmbedded = await planDoc.embedPng(regBytes);
@@ -1112,20 +1140,10 @@ async function runPDF(){
   if(rH > rMaxH){ rH = rMaxH; rW = rMaxH * regRatio; }
   regPage.drawImage(regEmbedded, { x: margin, y: regPageH - margin - rH, width: rW, height: rH });
 
-  /* PDF adjunto externo */
-  try{
-    toast('⏳ Cargando PDF de alimentación complementaria...');
-    const extBytes=await fetch(pdfUrl).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); });
-    const extDoc=await PDFDocument.load(extBytes,{ignoreEncryption:true});
-    const extPages=await planDoc.copyPages(extDoc,extDoc.getPageIndices());
-    extPages.forEach(p=>planDoc.addPage(p));
-    toast('✅ PDF combinado listo');
-  } catch(err){
-    console.warn('No se pudo cargar el PDF externo:',err);
-    toast('⚠️ No se pudo adjuntar el PDF externo');
-    await new Promise(r=>setTimeout(r,2000));
-  }
+  /* 3 — PDF final */
+  await appendExternalPDF(pdfUrl2, 'PDF final');
 
+  toast('✅ PDF combinado — guardando...');
   const pdfBytes=await planDoc.save();
   const blob=new Blob([pdfBytes],{type:'application/pdf'});
   const url=URL.createObjectURL(blob);
