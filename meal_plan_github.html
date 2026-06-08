@@ -931,7 +931,7 @@ function downloadAllPDF(){
 async function captureRegistroPage(){
   const childName = document.getElementById('childName').value.trim();
 
-  /* Contenedor externo — ancho A4 vertical en px a 96dpi ≈ 794px; usamos 1122 para calidad */
+  /* Contenedor externo — proporciones A4 horizontal (297×210mm) */
   const wrapper = document.createElement('div');
   wrapper.style.cssText = `
     position: fixed;
@@ -940,8 +940,8 @@ async function captureRegistroPage(){
     font-family: 'Nunito', sans-serif;
     background: linear-gradient(135deg, #fff9f0 0%, #f0e6ff 100%);
     padding: 24px 12px;
-    width: 1122px;
-    min-height: 1587px;
+    width: 1587px;
+    min-height: 1122px;
     box-sizing: border-box;
   `;
 
@@ -1101,8 +1101,8 @@ async function runPDF(){
 
   for(const img of pageImages) await addImagePage(img);
 
-  /* Página del registro — A4 vertical, imagen anclada arriba */
-  const regPageW = mmToPt(210), regPageH = mmToPt(297);
+  /* Página del registro — A4 horizontal, imagen anclada arriba */
+  const regPageW = mmToPt(297), regPageH = mmToPt(210);
   const regBytes = await fetch(regImg.dataUrl).then(r=>r.arrayBuffer());
   const regEmbedded = await planDoc.embedPng(regBytes);
   const regPage = planDoc.addPage([regPageW, regPageH]);
