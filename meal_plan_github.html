@@ -927,47 +927,74 @@ function downloadAllPDF(){
   });
 }
 
-/* Genera un canvas del div del registro para el PDF */
+/* Genera un canvas del registro para el PDF — header idéntico al plan */
 async function captureRegistroPage(){
-  /* Creamos un contenedor temporal con estilos propios para capturar */
+  const childName = document.getElementById('childName').value.trim();
+
+  /* Contenedor externo — ancho A4 vertical en px a 96dpi ≈ 794px; usamos 1122 para calidad */
   const wrapper = document.createElement('div');
   wrapper.style.cssText = `
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
     font-family: 'Nunito', sans-serif;
-    background: white;
-    padding: 40px 48px;
+    background: linear-gradient(135deg, #fff9f0 0%, #f0e6ff 100%);
+    padding: 24px 12px;
     width: 1122px;
+    min-height: 1587px;
     box-sizing: border-box;
   `;
 
-  /* Título */
-  const title = document.createElement('div');
-  title.style.cssText = 'text-align:center;font-size:22px;font-weight:800;color:#6b4f9e;margin-bottom:6px;';
-  title.textContent = '📋 Registro de Alimentación';
-  wrapper.appendChild(title);
+  /* Tarjeta blanca — igual que .page */
+  const page = document.createElement('div');
+  page.style.cssText = `
+    background: white;
+    border-radius: 28px;
+    padding: 28px 24px;
+    box-shadow: 0 8px 32px rgba(107,79,158,0.12);
+    max-width: 1080px;
+    margin: 0 auto;
+  `;
 
-  const childName = document.getElementById('childName').value.trim();
-  if(childName){
-    const sub = document.createElement('div');
-    sub.style.cssText = 'text-align:center;font-size:13px;color:#aaa;margin-bottom:20px;font-weight:700;';
-    sub.textContent = '👦 ' + childName;
-    wrapper.appendChild(sub);
-  }
+  /* ── HEADER (igual que el plan) ── */
+  const header = document.createElement('div');
+  header.style.cssText = 'text-align:center;margin-bottom:18px;';
 
-  /* Tabla */
+  const emojis = document.createElement('div');
+  emojis.style.cssText = 'font-size:1.6rem;letter-spacing:6px;margin-bottom:4px;';
+  emojis.textContent = '🌟 🥦 🍎 🥣 🍗 🌟';
+
+  const h1 = document.createElement('h1');
+  h1.style.cssText = 'font-size:1.7rem;font-weight:800;color:#6b4f9e;font-family:Nunito,sans-serif;';
+  h1.textContent = '📋 Registro de Alimentación';
+
+  const sub = document.createElement('p');
+  sub.style.cssText = 'font-size:0.85rem;color:#aaa;margin-top:3px;font-family:Nunito,sans-serif;';
+  sub.textContent = childName ? '👦 ' + childName : '¡Comer bien es divertido y delicioso!';
+
+  header.appendChild(emojis);
+  header.appendChild(h1);
+  header.appendChild(sub);
+  page.appendChild(header);
+
+  /* ── TABLA ── */
+  const tblWrap = document.createElement('div');
+  tblWrap.style.cssText = 'overflow:hidden;border-radius:16px;border:2px solid #e0d4f7;background:#fdfbff;margin-top:8px;';
+
   const tbl = document.createElement('table');
-  tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+  tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;font-family:Nunito,sans-serif;';
 
-  /* Header */
+  /* Header tabla */
   const thead = document.createElement('thead');
   const htr = document.createElement('tr');
-  htr.style.background = '#f0e6ff';
+  htr.style.background = 'linear-gradient(135deg,#f0e6ff,#e8d5ff)';
 
   const th1 = document.createElement('th');
-  th1.style.cssText = 'width:140px;padding:10px 14px;font-weight:800;color:#6b4f9e;text-align:center;border:1.5px solid #e0d4f7;border-radius:8px;';
+  th1.style.cssText = 'width:160px;padding:10px 14px;font-weight:800;color:#6b4f9e;text-align:center;border-bottom:2px solid #e0d4f7;';
   th1.textContent = '🕐 Hora';
 
   const th2 = document.createElement('th');
-  th2.style.cssText = 'padding:10px 14px;font-weight:800;color:#6b4f9e;text-align:center;border:1.5px solid #e0d4f7;';
+  th2.style.cssText = 'padding:10px 14px;font-weight:800;color:#6b4f9e;text-align:center;border-bottom:2px solid #e0d4f7;';
   th2.textContent = '🥗 Alimentación';
 
   htr.appendChild(th1); htr.appendChild(th2);
@@ -978,22 +1005,25 @@ async function captureRegistroPage(){
   rows.forEach((row, i) => {
     const tr = document.createElement('tr');
     tr.style.background = i % 2 === 0 ? 'white' : '#fdfbff';
+    tr.style.borderBottom = '1px solid #f0eaff';
 
     const td1 = document.createElement('td');
-    td1.style.cssText = 'padding:9px 14px;text-align:center;font-weight:700;color:#6b4f9e;border:1px solid #e0d4f7;';
+    td1.style.cssText = 'padding:9px 14px;text-align:center;font-weight:700;color:#6b4f9e;border-right:1px solid #f0eaff;';
     td1.textContent = row.hora || '—';
 
     const td2 = document.createElement('td');
-    td2.style.cssText = 'padding:9px 16px;text-align:center;font-weight:600;color:#444;border:1px solid #e0d4f7;';
+    td2.style.cssText = 'padding:9px 16px;text-align:center;font-weight:600;color:#444;';
     td2.textContent = row.alim || '';
 
     tr.appendChild(td1); tr.appendChild(td2);
     tbody.appendChild(tr);
   });
   tbl.appendChild(tbody);
-  wrapper.appendChild(tbl);
-
+  tblWrap.appendChild(tbl);
+  page.appendChild(tblWrap);
+  wrapper.appendChild(page);
   document.body.appendChild(wrapper);
+
   const CAPTURE_W = 3508;
   const canvas = await html2canvas(wrapper, {
     scale: CAPTURE_W / wrapper.scrollWidth,
@@ -1002,7 +1032,7 @@ async function captureRegistroPage(){
     windowWidth: wrapper.scrollWidth,
     width: wrapper.scrollWidth,
     height: wrapper.scrollHeight,
-    backgroundColor: '#ffffff'
+    backgroundColor: null
   });
   document.body.removeChild(wrapper);
   return { dataUrl: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height };
@@ -1071,7 +1101,7 @@ async function runPDF(){
 
   for(const img of pageImages) await addImagePage(img);
 
-  /* Página del registro — en formato vertical A4 */
+  /* Página del registro — A4 vertical, imagen anclada arriba */
   const regPageW = mmToPt(210), regPageH = mmToPt(297);
   const regBytes = await fetch(regImg.dataUrl).then(r=>r.arrayBuffer());
   const regEmbedded = await planDoc.embedPng(regBytes);
@@ -1080,7 +1110,7 @@ async function runPDF(){
   const rMaxW = regPageW - margin*2, rMaxH = regPageH - margin*2;
   let rW = rMaxW, rH = rMaxW / regRatio;
   if(rH > rMaxH){ rH = rMaxH; rW = rMaxH * regRatio; }
-  regPage.drawImage(regEmbedded, { x:(regPageW-rW)/2, y:(regPageH-rH)/2, width:rW, height:rH });
+  regPage.drawImage(regEmbedded, { x: margin, y: regPageH - margin - rH, width: rW, height: rH });
 
   /* PDF adjunto externo */
   try{
