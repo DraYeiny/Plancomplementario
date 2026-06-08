@@ -101,9 +101,6 @@ body {
 .tab-btn:hover { background: #f0e6ff; }
 .tab-btn.active { background: #7c3aed; color: white; border-color: #7c3aed; }
 
-/* FIX: no usar display:none para ocultar sheets — innerText devuelve ""
-   en elementos con display:none en Chrome, borrando datos al hacer autoSave.
-   En su lugar ocultamos visualmente pero mantenemos el elemento en el layout. */
 .week-sheet {
   position: absolute;
   visibility: hidden;
@@ -162,7 +159,6 @@ td.cell { padding: 2px; border-radius: 7px; vertical-align: middle; }
 tr.spacer td { height: 6px; background: transparent; }
 
 /* ── AUTOCOMPLETE DROPDOWN ── */
-/* FIX: position:fixed para que no se corte por overflow:hidden de la tabla */
 #acDropdown {
   position: fixed;
   z-index: 99998;
@@ -175,7 +171,6 @@ tr.spacer td { height: 6px; background: transparent; }
   max-width: 240px;
   border: 1.5px solid #e0d4f7;
   display: none;
-  /* Permite scroll interno sin afectar layout */
   overscroll-behavior: contain;
 }
 #acDropdown.open { display: block; }
@@ -196,6 +191,190 @@ tr.spacer td { height: 6px; background: transparent; }
 .ac-item:hover, .ac-item.active { background: #f0e6ff; color: #6b4f9e; }
 .ac-item strong { color: #7c3aed; }
 
+/* ══════════════════════════════════════════
+   REGISTRO DE ALIMENTACIÓN — TABLA CUSTOM
+   ══════════════════════════════════════════ */
+.registro-section {
+  margin-top: 32px;
+  border-top: 2px dashed #e0d4f7;
+  padding-top: 24px;
+}
+.registro-section h2 {
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #6b4f9e;
+  margin-bottom: 6px;
+}
+.registro-section .registro-sub {
+  text-align: center;
+  font-size: 0.78rem;
+  color: #aaa;
+  margin-bottom: 16px;
+}
+
+.registro-table-wrap {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 2px solid #e0d4f7;
+  background: #fdfbff;
+}
+
+table.registro-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+table.registro-table thead tr {
+  background: linear-gradient(135deg, #f0e6ff, #e8d5ff);
+}
+
+table.registro-table thead th {
+  padding: 10px 14px;
+  font-weight: 800;
+  color: #6b4f9e;
+  text-align: center;
+  border-bottom: 2px solid #e0d4f7;
+  white-space: nowrap;
+}
+
+table.registro-table thead th.col-hora {
+  width: 130px;
+  min-width: 110px;
+}
+
+table.registro-table thead th.col-alim {
+  /* auto */
+}
+
+table.registro-table tbody tr {
+  border-bottom: 1px solid #f0eaff;
+  transition: background 0.12s;
+}
+table.registro-table tbody tr:hover {
+  background: #f9f4ff;
+}
+
+table.registro-table tbody td {
+  padding: 3px 5px;
+  vertical-align: middle;
+}
+
+/* Celda hora — input tipo time */
+.registro-hora-cell {
+  text-align: center;
+}
+.registro-hora-input {
+  width: 100%;
+  text-align: center;
+  border: 1.5px dashed #c9a8f0;
+  border-radius: 8px;
+  padding: 7px 6px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #6b4f9e;
+  background: white;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  /* Centrar el reloj nativo */
+  display: block;
+}
+.registro-hora-input:focus {
+  border-color: #7c3aed;
+  border-style: solid;
+  background: #faf5ff;
+}
+
+/* Celda alimentación — contenteditable autoajustable */
+.registro-alim-cell {
+  width: 100%;
+}
+.registro-alim-edit {
+  display: block;
+  min-height: 36px;
+  width: 100%;
+  border: 1.5px dashed #ccc;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #444;
+  text-align: center;
+  outline: none;
+  cursor: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transition: border-color 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+.registro-alim-edit:focus {
+  border-color: #9b7fd4;
+  border-style: solid;
+  background: #faf5ff;
+}
+.registro-alim-edit:empty::before {
+  content: 'Describe el alimento...';
+  color: #ccc;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+/* Botón eliminar fila */
+.btn-del-row {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #e0b3b3;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.btn-del-row:hover {
+  background: #ffeaea;
+  color: #ef4444;
+}
+
+/* Fila de "añadir fila" */
+.registro-add-row td {
+  padding: 6px 8px;
+  text-align: right;
+}
+.btn-add-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 7px 18px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(124,58,237,0.25);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-add-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(124,58,237,0.35);
+}
+.btn-add-row-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* ── BOTONES PRINCIPALES ── */
 .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 22px; }
 .btn {
   display: flex; align-items: center; gap: 7px; padding: 10px 22px;
@@ -262,6 +441,36 @@ tr.spacer td { height: 6px; background: transparent; }
   <div class="tabs-bar" id="tabsBar"></div>
   <div id="sheetsContainer"></div>
 
+  <!-- ══ TABLA DE REGISTRO ══ -->
+  <div class="registro-section" id="registroSection">
+    <h2>📋 Registro de Alimentación</h2>
+    <p class="registro-sub">Agrega aquí los alimentos con su horario — se incluirá en una página adicional del PDF</p>
+    <div class="registro-table-wrap">
+      <table class="registro-table" id="registroTable">
+        <thead>
+          <tr>
+            <th class="col-hora">🕐 Hora</th>
+            <th class="col-alim">🥗 Alimentación</th>
+            <th style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="registroBody">
+          <!-- filas dinámicas -->
+        </tbody>
+        <tfoot>
+          <tr class="registro-add-row" id="addRowTr">
+            <td colspan="3">
+              <button class="btn-add-row" onclick="addRegistroRow()">
+                <span class="btn-add-row-icon">＋</span> Agregar fila
+              </button>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+  <!-- ══ FIN TABLA DE REGISTRO ══ -->
+
   <div class="btn-row">
     <button class="btn btn-pdf"  onclick="downloadAllPDF()">📄 Descargar PDF</button>
     <button class="btn btn-clear" onclick="clearAll()">🗑️ Limpiar</button>
@@ -269,11 +478,10 @@ tr.spacer td { height: 6px; background: transparent; }
   <div class="footer">✨ Plantilla de alimentación · Datos guardados automáticamente</div>
 </div>
 <div id="toast"></div>
-<!-- FIX: dropdown fuera del .page para que position:fixed funcione bien -->
 <div id="acDropdown"></div>
 
 <script>
-const KEY = 'mealPlan_v5';
+const KEY = 'mealPlan_v6';
 
 /* ── FOOD LISTS PER CATEGORY ── */
 const FOODS = {
@@ -283,44 +491,28 @@ const FOODS = {
   proteina: ['Almendras','Arveja seca','Atún','Camarón','Carne de res','Carne de cerdo','Frijol rojo','Garbanzo','Hígado','Huevo de codorniz','Huevo de gallina','Lenteja','Maní','Pollo','Queso fresco','Róbalo','Salmón','Soya / tofu','Tilapia','Trucha','Yogur sin azúcar']
 };
 
-/* ══════════════════════════════════════════
-   AUTOCOMPLETE — MOTOR CORREGIDO
-   FIX 1: usa getBoundingClientRect() puro (sin sumar scrollY)
-           porque el dropdown es position:fixed
-   FIX 2: reposiciona en scroll para que siga a la celda
-   FIX 3: categoría se lee siempre de div.dataset.category
-          (no de un closure que podría quedar stale)
-   ══════════════════════════════════════════ */
+/* ══ AUTOCOMPLETE ══ */
 const acDrop    = document.getElementById('acDropdown');
 let   acActive  = -1;
 let   acCurrent = null;
 let   acList    = [];
 
-function normalize(s){
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-}
+function normalize(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 
-/* Recalcula y aplica la posición del dropdown según la celda activa */
 function acReposition(){
   if(!acCurrent || !acDrop.classList.contains('open')) return;
   const rect = acCurrent.getBoundingClientRect();
-
-  /* Espacio disponible abajo y arriba */
   const spaceBelow = window.innerHeight - rect.bottom - 6;
   const spaceAbove = rect.top - 6;
-  const dropH      = Math.min(200, acList.length * 37); // aprox altura
-
+  const dropH      = Math.min(200, acList.length * 37);
   let top, maxH;
   if(spaceBelow >= dropH || spaceBelow >= spaceAbove){
-    /* Abajo */
     top  = rect.bottom + 4;
     maxH = Math.min(200, spaceBelow);
   } else {
-    /* Arriba */
     maxH = Math.min(200, spaceAbove);
     top  = rect.top - 4 - Math.min(dropH, maxH);
   }
-
   acDrop.style.top      = top + 'px';
   acDrop.style.left     = rect.left + 'px';
   acDrop.style.minWidth = rect.width + 'px';
@@ -328,24 +520,15 @@ function acReposition(){
 }
 
 function acShow(div){
-  /* FIX: leer categoría desde dataset en lugar de closure */
   const category = div.dataset.category;
   const text     = div.textContent.trim();
-
   if(!text){ acHide(); return; }
-
   const norm   = normalize(text);
   const source = FOODS[category] || [];
-
-  /* FIX: mostrar TODOS los items de la categoría si el texto coincide;
-     búsqueda insensible a acentos y mayúsculas */
   acList = source.filter(f => normalize(f).includes(norm));
-
   if(!acList.length){ acHide(); return; }
-
   acActive  = -1;
   acCurrent = div;
-
   acDrop.innerHTML = acList.map((f, i) => {
     const normF  = normalize(f);
     const idx    = normF.indexOf(norm);
@@ -357,15 +540,10 @@ function acShow(div){
     }
     return `<div class="ac-item" data-i="${i}">${display}</div>`;
   }).join('');
-
   acDrop.classList.add('open');
-  acReposition(); /* posicionar DESPUÉS de que el contenido esté renderizado */
-
+  acReposition();
   acDrop.querySelectorAll('.ac-item').forEach(el => {
-    el.addEventListener('mousedown', e => {
-      e.preventDefault();
-      acSelect(+el.dataset.i);
-    });
+    el.addEventListener('mousedown', e => { e.preventDefault(); acSelect(+el.dataset.i); });
   });
 }
 
@@ -378,7 +556,6 @@ function acHide(){
 function acSelect(i){
   if(!acCurrent || i < 0 || i >= acList.length) return;
   acCurrent.textContent = acList[i];
-  /* mover cursor al final */
   const range = document.createRange();
   const sel   = window.getSelection();
   range.selectNodeContents(acCurrent);
@@ -408,11 +585,8 @@ function acKeyNav(e){
   if(acActive >= 0) items[acActive].scrollIntoView({ block: 'nearest' });
 }
 
-/* FIX: reposicionar al hacer scroll para que el dropdown siga a la celda */
 window.addEventListener('scroll', acReposition, true);
 window.addEventListener('resize', acReposition);
-
-/* Cerrar al hacer click fuera */
 document.addEventListener('mousedown', e => {
   if(!acDrop.contains(e.target) && e.target !== acCurrent) acHide();
 });
@@ -544,11 +718,6 @@ function switchTab(w){
   document.querySelectorAll('.week-sheet').forEach(s=>s.classList.toggle('visible',s.id==='sheet-'+w));
 }
 
-/* ══════════════════════════════════════════
-   BUILD TABLE — CELDAS CON AUTOCOMPLETE
-   FIX: attachamos los listeners directamente aquí,
-        pasando el div ya creado (sin closure sobre sub)
-   ══════════════════════════════════════════ */
 function buildTable(wi, dayHeaders){
   const tbl=document.createElement('table');
   const thead=document.createElement('thead');
@@ -559,24 +728,17 @@ function buildTable(wi, dayHeaders){
   thead.appendChild(hrow); tbl.appendChild(thead);
 
   const tbody=document.createElement('tbody');
-
   meals.forEach((meal, mi)=>{
     meal.subs.forEach((sub, si)=>{
       const tr=document.createElement('tr');
-
-      /* Cabecera de comida (rowspan) */
       if(si===0){
         const td=document.createElement('td');
         td.rowSpan=meal.subs.length; td.className='meal-header '+meal.hClass;
         td.innerHTML=meal.label.replace(' ','<br>'); tr.appendChild(td);
       }
-
-      /* Cabecera de sub-categoría */
       const std=document.createElement('td');
       std.className='sub-header '+sub.sClass;
       std.innerHTML=sub.icon+' '+sub.label; tr.appendChild(std);
-
-      /* Celdas de los 7 días */
       for(let d=0;d<7;d++){
         const ctd=document.createElement('td'); ctd.className='cell '+sub.cClass;
         const div=document.createElement('div');
@@ -584,63 +746,119 @@ function buildTable(wi, dayHeaders){
         div.contentEditable='true';
         div.dataset.id       = `w${wi}_${meal.id}_${sub.id}_${d}`;
         div.dataset.placeholder = '...';
-        div.dataset.category = sub.id;   /* cereal | fruta | verdura | proteina */
+        div.dataset.category = sub.id;
         div.spellcheck=false;
-
-        /* ── LISTENERS — FIX PRINCIPAL ──
-           Se usa una IIFE para capturar sub.id en este ciclo,
-           aunque en realidad leemos div.dataset.category en acShow,
-           lo que elimina cualquier problema de closure stale. */
-        div.addEventListener('input', () => {
-          autoSave();
-          acShow(div); /* FIX: pasamos el div, la categoría se lee dentro */
-        });
-
+        div.addEventListener('input', () => { autoSave(); acShow(div); });
         div.addEventListener('keydown', e => {
           acKeyNav(e);
-          if(e.key === 'Enter' && !acDrop.classList.contains('open')){
-            e.preventDefault(); div.blur();
-          }
+          if(e.key === 'Enter' && !acDrop.classList.contains('open')){ e.preventDefault(); div.blur(); }
         });
-
-        /* FIX: blur con delay para que el click en un item del dropdown
-           se procese antes de que acHide() se ejecute */
         div.addEventListener('blur', () => setTimeout(acHide, 180));
-
-        div.addEventListener('focus', () => {
-          if(div.textContent.trim()) acShow(div);
-        });
-
+        div.addEventListener('focus', () => { if(div.textContent.trim()) acShow(div); });
         div.addEventListener('paste', e => {
           e.preventDefault();
           const t=(e.clipboardData||window.clipboardData).getData('text/plain').replace(/\n/g,' ');
           document.execCommand('insertText', false, t);
         });
-
         ctd.appendChild(div); tr.appendChild(ctd);
       }
       tbody.appendChild(tr);
     });
-
-    /* Spacer entre comidas */
     if(mi < meals.length-1){
       const sp=document.createElement('tr'); sp.className='spacer';
       const td=document.createElement('td'); td.colSpan=9; sp.appendChild(td); tbody.appendChild(sp);
     }
   });
-
   tbl.appendChild(tbody); return tbl;
+}
+
+/* ══════════════════════════════════════════
+   TABLA DE REGISTRO — LÓGICA
+   ══════════════════════════════════════════ */
+let registroRowCount = 0;
+
+function addRegistroRow(hora='', alim=''){
+  const tbody = document.getElementById('registroBody');
+  const rowId = 'reg-' + (registroRowCount++);
+  const tr = document.createElement('tr');
+  tr.dataset.rowid = rowId;
+
+  /* Celda HORA */
+  const tdHora = document.createElement('td');
+  tdHora.className = 'registro-hora-cell';
+  const inp = document.createElement('input');
+  inp.type = 'time';
+  inp.className = 'registro-hora-input';
+  inp.value = hora;
+  inp.addEventListener('change', autoSave);
+  tdHora.appendChild(inp);
+  tr.appendChild(tdHora);
+
+  /* Celda ALIMENTACIÓN */
+  const tdAlim = document.createElement('td');
+  tdAlim.className = 'registro-alim-cell';
+  const div = document.createElement('div');
+  div.className = 'registro-alim-edit';
+  div.contentEditable = 'true';
+  div.spellcheck = false;
+  if(alim) div.textContent = alim;
+  div.addEventListener('input', autoSave);
+  div.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); div.blur(); }
+  });
+  div.addEventListener('paste', e => {
+    e.preventDefault();
+    const t = (e.clipboardData||window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, t);
+  });
+  tdAlim.appendChild(div);
+  tr.appendChild(tdAlim);
+
+  /* Botón eliminar */
+  const tdDel = document.createElement('td');
+  tdDel.style.textAlign = 'center';
+  const btnDel = document.createElement('button');
+  btnDel.className = 'btn-del-row';
+  btnDel.innerHTML = '✕';
+  btnDel.title = 'Eliminar fila';
+  btnDel.addEventListener('click', () => {
+    tr.remove();
+    autoSave();
+  });
+  tdDel.appendChild(btnDel);
+  tr.appendChild(tdDel);
+
+  tbody.appendChild(tr);
+  autoSave();
+  return tr;
+}
+
+function collectRegistro(){
+  const rows = [];
+  document.querySelectorAll('#registroBody tr').forEach(tr => {
+    const inp = tr.querySelector('.registro-hora-input');
+    const div = tr.querySelector('.registro-alim-edit');
+    if(!inp || !div) return;
+    rows.push({ hora: inp.value, alim: div.textContent.trim() });
+  });
+  return rows;
+}
+
+function restoreRegistro(rows){
+  document.getElementById('registroBody').innerHTML = '';
+  registroRowCount = 0;
+  if(!rows || !rows.length){
+    addRegistroRow(); /* siempre al menos 1 fila */
+    return;
+  }
+  rows.forEach(r => addRegistroRow(r.hora || '', r.alim || ''));
 }
 
 /* ── PERSISTENCIA ── */
 function collectCells(){
   const out={};
-  /* FIX: usar textContent (no innerText) — innerText retorna "" en elementos
-     ocultos con visibility:hidden o display:none en Chrome, lo que causaba
-     que cambiar de tab sobreescribiera los datos de las semanas no visibles */
   document.querySelectorAll('.cell-edit').forEach(el=>{
-    const val = el.textContent.trim();
-    out[el.dataset.id] = val;
+    out[el.dataset.id] = el.textContent.trim();
   });
   return out;
 }
@@ -656,7 +874,8 @@ function collect(){
     childName: document.getElementById('childName').value,
     dateStart: startDate ? fmt(startDate) : '',
     dateEnd:   endDate   ? fmt(endDate)   : '',
-    cells: collectCells()
+    cells: collectCells(),
+    registro: collectRegistro()
   };
 }
 function apply(d){
@@ -672,12 +891,14 @@ function apply(d){
   }
   onDatesChange();
   if(d.cells) restoreCells(d.cells);
+  restoreRegistro(d.registro || []);
 }
 function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} }
 function clearAll(){
   if(!confirm('¿Borrar todo el contenido? 🗑️')) return;
-  document.querySelectorAll('.cell-edit').forEach(el=>el.innerText='');
+  document.querySelectorAll('.cell-edit').forEach(el=>el.textContent='');
   document.getElementById('childName').value='';
+  restoreRegistro([]);
   try{ localStorage.removeItem(KEY); }catch(e){}
 }
 function toast(msg){
@@ -686,7 +907,9 @@ function toast(msg){
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-/* ── PDF DOWNLOAD ── */
+/* ══════════════════════════════════════════
+   PDF DOWNLOAD — con página extra de REGISTRO
+   ══════════════════════════════════════════ */
 function downloadAllPDF(){
   toast('⏳ Cargando librerías...');
   const libs=[
@@ -704,6 +927,87 @@ function downloadAllPDF(){
   });
 }
 
+/* Genera un canvas del div del registro para el PDF */
+async function captureRegistroPage(){
+  /* Creamos un contenedor temporal con estilos propios para capturar */
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = `
+    font-family: 'Nunito', sans-serif;
+    background: white;
+    padding: 40px 48px;
+    width: 1122px;
+    box-sizing: border-box;
+  `;
+
+  /* Título */
+  const title = document.createElement('div');
+  title.style.cssText = 'text-align:center;font-size:22px;font-weight:800;color:#6b4f9e;margin-bottom:6px;';
+  title.textContent = '📋 Registro de Alimentación';
+  wrapper.appendChild(title);
+
+  const childName = document.getElementById('childName').value.trim();
+  if(childName){
+    const sub = document.createElement('div');
+    sub.style.cssText = 'text-align:center;font-size:13px;color:#aaa;margin-bottom:20px;font-weight:700;';
+    sub.textContent = '👦 ' + childName;
+    wrapper.appendChild(sub);
+  }
+
+  /* Tabla */
+  const tbl = document.createElement('table');
+  tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;';
+
+  /* Header */
+  const thead = document.createElement('thead');
+  const htr = document.createElement('tr');
+  htr.style.background = '#f0e6ff';
+
+  const th1 = document.createElement('th');
+  th1.style.cssText = 'width:140px;padding:10px 14px;font-weight:800;color:#6b4f9e;text-align:center;border:1.5px solid #e0d4f7;border-radius:8px;';
+  th1.textContent = '🕐 Hora';
+
+  const th2 = document.createElement('th');
+  th2.style.cssText = 'padding:10px 14px;font-weight:800;color:#6b4f9e;text-align:center;border:1.5px solid #e0d4f7;';
+  th2.textContent = '🥗 Alimentación';
+
+  htr.appendChild(th1); htr.appendChild(th2);
+  thead.appendChild(htr); tbl.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  const rows = collectRegistro();
+  rows.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    tr.style.background = i % 2 === 0 ? 'white' : '#fdfbff';
+
+    const td1 = document.createElement('td');
+    td1.style.cssText = 'padding:9px 14px;text-align:center;font-weight:700;color:#6b4f9e;border:1px solid #e0d4f7;';
+    td1.textContent = row.hora || '—';
+
+    const td2 = document.createElement('td');
+    td2.style.cssText = 'padding:9px 16px;text-align:center;font-weight:600;color:#444;border:1px solid #e0d4f7;';
+    td2.textContent = row.alim || '';
+
+    tr.appendChild(td1); tr.appendChild(td2);
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  wrapper.appendChild(tbl);
+
+  document.body.appendChild(wrapper);
+  const CAPTURE_W = 3508;
+  const canvas = await html2canvas(wrapper, {
+    scale: CAPTURE_W / wrapper.scrollWidth,
+    useCORS: true,
+    scrollX: 0, scrollY: 0,
+    windowWidth: wrapper.scrollWidth,
+    width: wrapper.scrollWidth,
+    height: wrapper.scrollHeight,
+    backgroundColor: '#ffffff'
+  });
+  document.body.removeChild(wrapper);
+  return { dataUrl: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height };
+}
+
 async function runPDF(){
   toast('⏳ Generando PDF del plan...');
   const childName=document.getElementById('childName').value.trim();
@@ -712,14 +1016,18 @@ async function runPDF(){
   const btnRow=document.querySelector('.btn-row');
   const footer=document.querySelector('.footer');
   const tabsBar=document.getElementById('tabsBar');
-  btnRow.style.display='none'; footer.style.display='none'; tabsBar.style.display='none';
+  const registroSection=document.getElementById('registroSection');
+
+  btnRow.style.display='none';
+  footer.style.display='none';
+  tabsBar.style.display='none';
+  registroSection.style.display='none';
+
   const CAPTURE_W=3508;
-  /* Guardar datos ANTES de manipular el DOM para el PDF */
   const savedCells = collectCells();
 
   const pageImages=[];
   for(let w=0;w<numWeeks;w++){
-    /* FIX: en lugar de display:none (que rompe textContent), removemos visible */
     document.querySelectorAll('.week-sheet').forEach(s=>s.classList.remove('visible'));
     document.getElementById('sheet-'+w).classList.add('visible');
     await new Promise(r=>setTimeout(r,150));
@@ -731,16 +1039,26 @@ async function runPDF(){
     });
     pageImages.push({dataUrl:canvas.toDataURL('image/png'),w:canvas.width,h:canvas.height});
   }
-  btnRow.style.display=''; footer.style.display=''; tabsBar.style.display='';
-  /* Restaurar tab 0 y reponer datos guardados */
+
+  btnRow.style.display='';
+  footer.style.display='';
+  tabsBar.style.display='';
+  registroSection.style.display='';
   switchTab(0);
   restoreCells(savedCells);
+
+  /* Capturar la página del registro */
+  toast('⏳ Generando página de registro...');
+  const regImg = await captureRegistroPage();
+
   toast('⏳ Ensamblando PDF...');
   const {PDFDocument}=window.PDFLib;
   const planDoc=await PDFDocument.create();
   const mmToPt=mm=>mm*2.8346;
   const pageW=mmToPt(297), pageH=mmToPt(210), margin=mmToPt(4);
-  for(const img of pageImages){
+
+  /* Páginas del plan semanal */
+  async function addImagePage(img){
     const imgBytes=await fetch(img.dataUrl).then(r=>r.arrayBuffer());
     const embedded=await planDoc.embedPng(imgBytes);
     const page=planDoc.addPage([pageW,pageH]);
@@ -750,6 +1068,21 @@ async function runPDF(){
     if(iH>maxH){ iH=maxH; iW=maxH*ratio; }
     page.drawImage(embedded,{x:(pageW-iW)/2,y:(pageH-iH)/2,width:iW,height:iH});
   }
+
+  for(const img of pageImages) await addImagePage(img);
+
+  /* Página del registro — en formato vertical A4 */
+  const regPageW = mmToPt(210), regPageH = mmToPt(297);
+  const regBytes = await fetch(regImg.dataUrl).then(r=>r.arrayBuffer());
+  const regEmbedded = await planDoc.embedPng(regBytes);
+  const regPage = planDoc.addPage([regPageW, regPageH]);
+  const regRatio = regImg.w / regImg.h;
+  const rMaxW = regPageW - margin*2, rMaxH = regPageH - margin*2;
+  let rW = rMaxW, rH = rMaxW / regRatio;
+  if(rH > rMaxH){ rH = rMaxH; rW = rMaxH * regRatio; }
+  regPage.drawImage(regEmbedded, { x:(regPageW-rW)/2, y:(regPageH-rH)/2, width:rW, height:rH });
+
+  /* PDF adjunto externo */
   try{
     toast('⏳ Cargando PDF de alimentación complementaria...');
     const extBytes=await fetch(pdfUrl).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); });
@@ -762,6 +1095,7 @@ async function runPDF(){
     toast('⚠️ No se pudo adjuntar el PDF externo');
     await new Promise(r=>setTimeout(r,2000));
   }
+
   const pdfBytes=await planDoc.save();
   const blob=new Blob([pdfBytes],{type:'application/pdf'});
   const url=URL.createObjectURL(blob);
@@ -776,7 +1110,16 @@ startDate=new Date(today); endDate=new Date(today);
 document.getElementById('lblStart').textContent=fmt(startDate);
 document.getElementById('lblEnd').textContent=fmt(endDate);
 onDatesChange();
-try{ apply(JSON.parse(localStorage.getItem(KEY))); }catch(e){}
+try{
+  const saved = JSON.parse(localStorage.getItem(KEY));
+  if(saved){
+    apply(saved);
+  } else {
+    restoreRegistro([]); /* primera fila vacía */
+  }
+}catch(e){
+  restoreRegistro([]);
+}
 </script>
 </body>
 </html>
