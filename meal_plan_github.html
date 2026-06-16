@@ -388,6 +388,104 @@ table.registro-table tbody td {
 .btn-save {background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;}
 .btn-pdf  {background:linear-gradient(135deg,#f9a8d4,#ec4899);color:#fff;}
 .btn-clear{background:linear-gradient(135deg,#fca5a5,#ef4444);color:#fff;}
+/* ── WEEKS INPUT ── */
+.weeks-input {
+  width: 64px; border: 2px dashed #c9a8f0; border-radius: 10px;
+  padding: 5px 8px; font-family: 'Nunito', sans-serif;
+  font-size: 0.88rem; font-weight: 700; color: #6b4f9e;
+  text-align: center; background: white; outline: none;
+}
+.weeks-input:focus { border-style: solid; border-color: #7c3aed; }
+
+/* ── REPEAT MODAL ── */
+#repeatOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.22); z-index: 9100;
+  align-items: center; justify-content: center; padding: 16px;
+}
+#repeatOverlay.open { display: flex; }
+#repeatBox {
+  background: white; border-radius: 20px; padding: 22px 24px;
+  box-shadow: 0 12px 40px rgba(107,79,158,0.3);
+  max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;
+}
+#repeatBox h3 { font-size: 1rem; font-weight: 800; color: #6b4f9e; margin-bottom: 3px; }
+#repeatBox .repeat-sub { font-size: 0.78rem; color: #aaa; margin-bottom: 14px; }
+.repeat-week-group { margin-bottom: 12px; }
+.repeat-week-label { font-size: 0.8rem; font-weight: 800; color: #6b4f9e; margin-bottom: 6px; }
+.repeat-days-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.repeat-day-item {
+  display: flex; align-items: center; gap: 4px;
+  background: #f8f0ff; border-radius: 8px; padding: 5px 9px;
+  font-size: 0.78rem; font-weight: 700; color: #6b4f9e;
+  cursor: pointer; user-select: none;
+  border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s;
+}
+.repeat-day-item:hover { background: #ede5ff; }
+.repeat-day-item.checked { border-color: #7c3aed; background: #f0e6ff; }
+.repeat-day-item input[type=checkbox] { display: none; }
+.repeat-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; justify-content: flex-end;
+}
+.btn-repeat-selall, .btn-repeat-clear {
+  background: #f0e6ff; border: none; border-radius: 50px; padding: 6px 14px;
+  font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 800;
+  color: #6b4f9e; cursor: pointer;
+}
+.btn-repeat-apply {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white;
+  border: none; border-radius: 50px; padding: 7px 20px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(124,58,237,0.25);
+}
+.btn-repeat-cancel {
+  background: #f0e6ff; border: none; border-radius: 50px; padding: 7px 16px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800;
+  color: #6b4f9e; cursor: pointer;
+}
+
+/* ── OBSERVACIONES ── */
+.observaciones-section {
+  margin-top: 24px; border-top: 2px dashed #e0d4f7; padding-top: 20px;
+}
+.observaciones-section h2 {
+  text-align: center; font-size: 1.15rem; font-weight: 800;
+  color: #6b4f9e; margin-bottom: 14px;
+}
+.obs-list { display: flex; flex-direction: column; gap: 8px; }
+.obs-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: #faf5ff; border-radius: 12px; padding: 10px 12px;
+  border: 1.5px dashed #e0d4f7;
+}
+.obs-num { font-size: 0.78rem; font-weight: 800; color: #a78bfa; min-width: 22px; padding-top: 4px; flex-shrink: 0; }
+.obs-text {
+  flex: 1; min-height: 36px; border: none; background: transparent;
+  font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 600;
+  color: #444; outline: none; resize: none; padding: 2px 0;
+  white-space: pre-wrap; word-break: break-word;
+}
+.obs-text:empty::before { content: 'Escribe una observación...'; color: #ccc; font-weight: 400; }
+.btn-del-obs {
+  background: none; border: none; cursor: pointer; font-size: 1rem; color: #e0b3b3;
+  border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; transition: background 0.15s, color 0.15s;
+}
+.btn-del-obs:hover { background: #ffeaea; color: #ef4444; }
+.obs-add-row { display: flex; justify-content: flex-start; margin-top: 10px; }
+.btn-add-obs {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white;
+  border: none; border-radius: 50px; padding: 7px 18px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800; cursor: pointer;
+  box-shadow: 0 3px 10px rgba(124,58,237,0.25); transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-add-obs:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(124,58,237,0.35); }
+
+/* ── EXPORT / IMPORT ── */
+.btn-export { background: linear-gradient(135deg, #6ee7b7, #10b981); color: #fff; }
+.btn-import { background: linear-gradient(135deg, #93c5fd, #3b82f6); color: #fff; }
+
 .footer { text-align: center; margin-top: 16px; font-size: 0.72rem; color: #ccc; }
 
 #toast {
@@ -414,6 +512,21 @@ table.registro-table tbody td {
   </div>
 </div>
 
+<!-- REPEAT MODAL -->
+<div id="repeatOverlay">
+  <div id="repeatBox">
+    <h3>¿Repetir en otros cuadros?</h3>
+    <p class="repeat-sub" id="repeatSub"></p>
+    <div id="repeatGroups"></div>
+    <div class="repeat-actions">
+      <button class="btn-repeat-selall" onclick="repeatSelectAll()">Seleccionar todo</button>
+      <button class="btn-repeat-clear" onclick="repeatClearAll()">Limpiar</button>
+      <button class="btn-repeat-cancel" onclick="closeRepeatModal()">Cancelar</button>
+      <button class="btn-repeat-apply" onclick="applyRepeat()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
 <div class="page">
   <div class="header">
     <div class="emojis">🌟 🥦 🍎 🥣 🍗 🌟</div>
@@ -426,9 +539,9 @@ table.registro-table tbody td {
     <input type="text" id="childName" placeholder="Escribe tu nombre aquí..." oninput="autoSave()">
     <label>Del:</label>
     <button class="date-btn" id="btnStart">📅 <span id="lblStart">Seleccionar</span></button>
-    <label>al:</label>
-    <button class="date-btn" id="btnEnd">📅 <span id="lblEnd">Seleccionar</span></button>
-    <span class="week-badge" id="weekBadge">—</span>
+    <label># Semanas:</label>
+    <input type="number" id="weeksInput" class="weeks-input" min="1" max="52" value="1" oninput="onWeeksChange()">
+    <span class="week-badge" id="weekBadge">1 semana</span>
   </div>
 
   <div class="legend">
@@ -471,8 +584,23 @@ table.registro-table tbody td {
   </div>
   <!-- ══ FIN TABLA DE REGISTRO ══ -->
 
+  <!-- ══ OBSERVACIONES ══ -->
+  <div class="observaciones-section" id="observacionesSection">
+    <h2>📝 Observaciones</h2>
+    <div class="obs-list" id="obsList"></div>
+    <div class="obs-add-row">
+      <button class="btn-add-obs" onclick="addObservacion()">
+        <span>＋</span> Agregar nueva observación
+      </button>
+    </div>
+  </div>
+  <!-- ══ FIN OBSERVACIONES ══ -->
+
   <div class="btn-row">
     <button class="btn btn-pdf"  onclick="downloadAllPDF()">📄 Descargar PDF</button>
+    <button class="btn btn-export" onclick="exportData()">💾 Exportar datos</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="btn btn-import" onclick="document.getElementById('importFile').click()">📂 Importar datos</button>
     <button class="btn btn-clear" onclick="clearAll()">🗑️ Limpiar</button>
   </div>
   <div class="footer">✨ Plantilla de alimentación · Datos guardados automáticamente</div>
@@ -621,7 +749,7 @@ const meals = [
 ];
 
 /* ── FECHAS ── */
-let startDate = null, endDate = null, numWeeks = 0;
+let startDate = null, endDate = null, numWeeks = 1;
 
 function fmt(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
 function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
@@ -637,7 +765,7 @@ function renderCal(){
   const firstDow    = new Date(y,m,1).getDay();
   const daysInMonth = new Date(y,m+1,0).getDate();
   const today       = new Date();
-  const selDate     = calTarget==='start' ? startDate : endDate;
+  const selDate     = startDate;
   let html = DOWS.map(d=>`<div class="dow">${d}</div>`).join('');
   for(let i=0;i<firstDow;i++) html+=`<div></div>`;
   for(let d=1;d<=daysInMonth;d++){
@@ -651,21 +779,15 @@ function renderCal(){
   document.querySelectorAll('#calGrid .day').forEach(el=>{
     el.addEventListener('click',()=>{
       const picked=new Date(+el.dataset.y,+el.dataset.m,+el.dataset.d);
-      if(calTarget==='start'){
-        startDate=picked;
-        document.getElementById('lblStart').textContent=fmt(picked);
-        if(endDate&&endDate<startDate){ endDate=new Date(startDate); document.getElementById('lblEnd').textContent=fmt(endDate); }
-      } else {
-        if(startDate&&picked<startDate){ alert('La fecha final no puede ser anterior al inicio.'); return; }
-        endDate=picked; document.getElementById('lblEnd').textContent=fmt(picked);
-      }
+      startDate=picked;
+      document.getElementById('lblStart').textContent=fmt(picked);
       closeCalModal(); onDatesChange();
     });
   });
 }
 function openCalModal(target){
   calTarget=target;
-  calCur=target==='start'?(startDate?new Date(startDate):new Date()):(endDate?new Date(endDate):new Date());
+  calCur=startDate?new Date(startDate):new Date();
   document.getElementById('calOverlay').classList.add('open'); renderCal();
 }
 function closeCalModal(){ document.getElementById('calOverlay').classList.remove('open'); }
@@ -674,13 +796,20 @@ document.getElementById('calNext').onclick=()=>{ calCur.setMonth(calCur.getMonth
 document.getElementById('calClose').onclick=closeCalModal;
 document.getElementById('calOverlay').addEventListener('click',e=>{ if(e.target===document.getElementById('calOverlay')) closeCalModal(); });
 document.getElementById('btnStart').onclick=()=>openCalModal('start');
-document.getElementById('btnEnd').onclick=()=>openCalModal('end');
 
 /* ── SHEETS ── */
+function onWeeksChange(){
+  numWeeks = Math.max(1, Math.min(52, parseInt(document.getElementById('weeksInput').value) || 1));
+  document.getElementById('weeksInput').value = numWeeks;
+  document.getElementById('weekBadge').textContent = numWeeks + (numWeeks === 1 ? ' semana' : ' semanas');
+  if(startDate){ endDate = addDays(startDate, numWeeks * 7 - 1); rebuildSheets(); autoSave(); }
+}
+
 function onDatesChange(){
-  if(!startDate||!endDate) return;
-  numWeeks=weeksBetween(startDate,endDate);
-  document.getElementById('weekBadge').textContent=numWeeks+(numWeeks===1?' semana':' semanas');
+  if(!startDate) return;
+  numWeeks = Math.max(1, Math.min(52, parseInt(document.getElementById('weeksInput').value) || 1));
+  endDate = addDays(startDate, numWeeks * 7 - 1);
+  document.getElementById('weekBadge').textContent = numWeeks + (numWeeks === 1 ? ' semana' : ' semanas');
   rebuildSheets(); autoSave();
 }
 
@@ -751,7 +880,12 @@ function buildTable(wi, dayHeaders){
         div.addEventListener('input', () => { autoSave(); acShow(div); });
         div.addEventListener('keydown', e => {
           acKeyNav(e);
-          if(e.key === 'Enter' && !acDrop.classList.contains('open')){ e.preventDefault(); div.blur(); }
+          if(e.key === 'Enter' && !acDrop.classList.contains('open')){
+            e.preventDefault();
+            div.blur();
+            const text = div.textContent.trim();
+            if(text) showRepeatModal(div);
+          }
         });
         div.addEventListener('blur', () => setTimeout(acHide, 180));
         div.addEventListener('focus', () => { if(div.textContent.trim()) acShow(div); });
@@ -854,6 +988,178 @@ function restoreRegistro(rows){
   rows.forEach(r => addRegistroRow(r.hora || '', r.alim || ''));
 }
 
+/* ══ REPEAT MODAL ══ */
+let repeatSrcDiv = null;
+
+function showRepeatModal(div){
+  const text = div.textContent.trim();
+  if(!text || numWeeks === 0) return;
+  const id = div.dataset.id;
+  const parts = id.match(/^w(\d+)_(.+)_(.+)_(\d+)$/);
+  if(!parts) return;
+  const [, wi, mealId, subId, dayStr] = parts;
+  const srcW = parseInt(wi), srcD = parseInt(dayStr);
+
+  repeatSrcDiv = div;
+  document.getElementById('repeatSub').textContent = `"${text}"`;
+
+  const groups = document.getElementById('repeatGroups');
+  groups.innerHTML = '';
+
+  for(let w = 0; w < numWeeks; w++){
+    const ws = addDays(startDate, w * 7);
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'repeat-week-group';
+    const lbl = document.createElement('div');
+    lbl.className = 'repeat-week-label';
+    lbl.textContent = `Semana ${w + 1} — del ${fmt(ws)} al ${fmt(addDays(ws, 6))}`;
+    groupDiv.appendChild(lbl);
+    const grid = document.createElement('div');
+    grid.className = 'repeat-days-grid';
+    for(let d = 0; d < 7; d++){
+      if(w === srcW && d === srcD) continue;
+      const cellId = `w${w}_${mealId}_${subId}_${d}`;
+      const dd = addDays(ws, d);
+      const item = document.createElement('label');
+      item.className = 'repeat-day-item';
+      item.dataset.cellId = cellId;
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.value = cellId;
+      item.appendChild(cb);
+      item.appendChild(document.createTextNode(`${DAY_ICONS_ALL[dd.getDay()]} ${DAY_NAMES_ES[dd.getDay()]} ${dd.getDate()}/${dd.getMonth()+1}`));
+      item.addEventListener('click', e => {
+        e.preventDefault();
+        cb.checked = !cb.checked;
+        item.classList.toggle('checked', cb.checked);
+      });
+      grid.appendChild(item);
+    }
+    groupDiv.appendChild(grid);
+    groups.appendChild(groupDiv);
+  }
+  document.getElementById('repeatOverlay').classList.add('open');
+}
+
+function closeRepeatModal(){
+  document.getElementById('repeatOverlay').classList.remove('open');
+  repeatSrcDiv = null;
+}
+document.getElementById('repeatOverlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('repeatOverlay')) closeRepeatModal();
+});
+
+function repeatSelectAll(){
+  document.querySelectorAll('#repeatGroups .repeat-day-item').forEach(item => {
+    item.querySelector('input').checked = true; item.classList.add('checked');
+  });
+}
+function repeatClearAll(){
+  document.querySelectorAll('#repeatGroups .repeat-day-item').forEach(item => {
+    item.querySelector('input').checked = false; item.classList.remove('checked');
+  });
+}
+function applyRepeat(){
+  if(!repeatSrcDiv){ closeRepeatModal(); return; }
+  const text = repeatSrcDiv.textContent.trim();
+  let count = 0;
+  document.querySelectorAll('#repeatGroups input[type=checkbox]:checked').forEach(cb => {
+    const el = document.querySelector(`[data-id="${cb.value}"]`);
+    if(el){ el.textContent = text; count++; }
+  });
+  closeRepeatModal();
+  autoSave();
+  if(count > 0) toast(`✅ Texto copiado en ${count} cuadro${count > 1 ? 's' : ''}`);
+}
+
+/* ══ OBSERVACIONES ══ */
+let obsCount = 0;
+
+function addObservacion(text=''){
+  const list = document.getElementById('obsList');
+  obsCount++;
+  const row = document.createElement('div');
+  row.className = 'obs-row';
+
+  const num = document.createElement('span');
+  num.className = 'obs-num';
+  num.textContent = (list.children.length + 1) + '.';
+
+  const div = document.createElement('div');
+  div.className = 'obs-text';
+  div.contentEditable = 'true';
+  div.spellcheck = false;
+  if(text) div.textContent = text;
+  div.addEventListener('input', () => { autoSave(); });
+  div.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); div.blur(); }
+  });
+  div.addEventListener('paste', e => {
+    e.preventDefault();
+    const t = (e.clipboardData||window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, t);
+  });
+
+  const btnDel = document.createElement('button');
+  btnDel.className = 'btn-del-obs';
+  btnDel.innerHTML = '✕';
+  btnDel.title = 'Eliminar observación';
+  btnDel.addEventListener('click', () => { row.remove(); renumberObs(); autoSave(); });
+
+  row.appendChild(num); row.appendChild(div); row.appendChild(btnDel);
+  list.appendChild(row);
+  autoSave();
+  return row;
+}
+
+function renumberObs(){
+  document.querySelectorAll('#obsList .obs-row').forEach((row, i) => {
+    row.querySelector('.obs-num').textContent = (i + 1) + '.';
+  });
+}
+
+function collectObservaciones(){
+  const obs = [];
+  document.querySelectorAll('#obsList .obs-text').forEach(div => {
+    obs.push(div.textContent.trim());
+  });
+  return obs;
+}
+
+function restoreObservaciones(obs){
+  document.getElementById('obsList').innerHTML = '';
+  obsCount = 0;
+  if(!obs || !obs.length) return;
+  obs.forEach(text => addObservacion(text));
+}
+
+/* ══ EXPORT / IMPORT ══ */
+function exportData(){
+  const data = collect();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (data.childName || 'plan').replace(/\s+/g,'_') + '_alimentacion.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ Datos exportados');
+}
+
+function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(!confirm('¿Cargar los datos del archivo? Se reemplazará el contenido actual.')) return;
+      apply(data); autoSave(); toast('✅ Datos importados correctamente');
+    } catch(err){ toast('❌ Archivo inválido'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
 /* ── PERSISTENCIA ── */
 function collectCells(){
   const out={};
@@ -873,9 +1179,10 @@ function collect(){
   return {
     childName: document.getElementById('childName').value,
     dateStart: startDate ? fmt(startDate) : '',
-    dateEnd:   endDate   ? fmt(endDate)   : '',
+    numWeeks:  numWeeks,
     cells: collectCells(),
-    registro: collectRegistro()
+    registro: collectRegistro(),
+    observaciones: collectObservaciones()
   };
 }
 function apply(d){
@@ -885,13 +1192,19 @@ function apply(d){
     const p=d.dateStart.split('/'); startDate=new Date(+p[2],+p[1]-1,+p[0]);
     document.getElementById('lblStart').textContent=d.dateStart;
   }
-  if(d.dateEnd){
-    const p=d.dateEnd.split('/'); endDate=new Date(+p[2],+p[1]-1,+p[0]);
-    document.getElementById('lblEnd').textContent=d.dateEnd;
+  if(d.numWeeks){
+    numWeeks = d.numWeeks;
+    document.getElementById('weeksInput').value = numWeeks;
+  } else if(d.dateEnd && startDate){
+    /* backward compat: derive numWeeks from stored dateEnd */
+    const p=d.dateEnd.split('/'); const ed=new Date(+p[2],+p[1]-1,+p[0]);
+    numWeeks = Math.max(1, weeksBetween(startDate, ed));
+    document.getElementById('weeksInput').value = numWeeks;
   }
   onDatesChange();
   if(d.cells) restoreCells(d.cells);
   restoreRegistro(d.registro || []);
+  restoreObservaciones(d.observaciones || []);
 }
 function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} }
 function clearAll(){
@@ -899,6 +1212,7 @@ function clearAll(){
   document.querySelectorAll('.cell-edit').forEach(el=>el.textContent='');
   document.getElementById('childName').value='';
   restoreRegistro([]);
+  restoreObservaciones([]);
   try{ localStorage.removeItem(KEY); }catch(e){}
 }
 function toast(msg){
@@ -1048,11 +1362,13 @@ async function runPDF(){
   const footer=document.querySelector('.footer');
   const tabsBar=document.getElementById('tabsBar');
   const registroSection=document.getElementById('registroSection');
+  const observacionesSection=document.getElementById('observacionesSection');
 
   btnRow.style.display='none';
   footer.style.display='none';
   tabsBar.style.display='none';
   registroSection.style.display='none';
+  observacionesSection.style.display='none';
 
   const CAPTURE_W=3508;
   const savedCells = collectCells();
@@ -1063,11 +1379,19 @@ async function runPDF(){
     document.getElementById('sheet-'+w).classList.add('visible');
     await new Promise(r=>setTimeout(r,150));
     const el=document.querySelector('.page');
+    /* expand table wraps so html2canvas captures full width without scroll clipping */
+    const tableWraps=el.querySelectorAll('.table-wrap');
+    tableWraps.forEach(tw=>{ tw.style.overflow='visible'; });
+    el.style.maxWidth='none'; el.style.width='max-content';
+    await new Promise(r=>setTimeout(r,60));
+    const captW=el.scrollWidth;
     const canvas=await html2canvas(el,{
-      scale:CAPTURE_W/el.scrollWidth, useCORS:true,
+      scale:CAPTURE_W/captW, useCORS:true,
       scrollX:0, scrollY:-window.scrollY,
-      windowWidth:el.scrollWidth, width:el.scrollWidth, height:el.scrollHeight
+      windowWidth:captW, width:captW, height:el.scrollHeight
     });
+    tableWraps.forEach(tw=>{ tw.style.overflow=''; });
+    el.style.maxWidth=''; el.style.width='';
     pageImages.push({dataUrl:canvas.toDataURL('image/png'),w:canvas.width,h:canvas.height});
   }
 
@@ -1075,6 +1399,7 @@ async function runPDF(){
   footer.style.display='';
   tabsBar.style.display='';
   registroSection.style.display='';
+  observacionesSection.style.display='';
   switchTab(0);
   restoreCells(savedCells);
 
@@ -1154,16 +1479,17 @@ async function runPDF(){
 
 /* ── BOOT ── */
 const today=new Date();
-startDate=new Date(today); endDate=new Date(today);
+startDate=new Date(today);
 document.getElementById('lblStart').textContent=fmt(startDate);
-document.getElementById('lblEnd').textContent=fmt(endDate);
+document.getElementById('weeksInput').value=1;
+numWeeks=1;
 onDatesChange();
 try{
   const saved = JSON.parse(localStorage.getItem(KEY));
   if(saved){
     apply(saved);
   } else {
-    restoreRegistro([]); /* primera fila vacía */
+    restoreRegistro([]);
   }
 }catch(e){
   restoreRegistro([]);
