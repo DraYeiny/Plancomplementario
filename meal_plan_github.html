@@ -480,42 +480,37 @@ table.registro-table tbody td {
 .btn-plan:hover { background: #bbf7d0; }
 .btn-plan-del { background: #fee2e2; color: #b91c1c; }
 .btn-plan-del:hover { background: #fecaca; }
-/* ── MODAL CÓDIGO ── */
-#codigoOverlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.22);
+#planesStatus { font-size: 0.72rem; font-weight: 700; color: #16a34a; white-space: nowrap; margin-left: 4px; }
+/* ── MODAL SETUP SHEET ── */
+#setupOverlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25);
   z-index: 9300; align-items: center; justify-content: center; padding: 16px;
 }
-#codigoOverlay.open { display: flex; }
-#codigoBox {
-  background: white; border-radius: 20px; padding: 22px 24px;
-  box-shadow: 0 12px 40px rgba(107,79,158,0.3);
-  max-width: 480px; width: 100%;
+#setupOverlay.open { display: flex; }
+#setupBox {
+  background: white; border-radius: 20px; padding: 24px 26px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2); max-width: 500px; width: 100%;
 }
-#codigoBox h3 { font-size: 1rem; font-weight: 800; color: #166534; margin-bottom: 4px; }
-#codigoBox p  { font-size: 0.78rem; color: #888; margin-bottom: 12px; }
-.codigo-textarea {
-  width: 100%; height: 90px; border: 1.5px solid #86efac; border-radius: 10px;
-  padding: 8px 10px; font-family: monospace; font-size: 0.72rem; color: #444;
-  resize: none; outline: none; box-sizing: border-box; word-break: break-all;
+#setupBox h3 { font-size: 1rem; font-weight: 800; color: #166534; margin-bottom: 8px; }
+#setupBox ol { font-size: 0.8rem; color: #555; padding-left: 18px; line-height: 1.8; margin-bottom: 14px; }
+#setupBox ol strong { color: #166534; }
+#setupUrlInput {
+  width: 100%; border: 1.5px solid #86efac; border-radius: 10px; padding: 9px 12px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; outline: none; box-sizing: border-box;
+  color: #444; margin-bottom: 12px;
 }
-.codigo-textarea:focus { border-color: #22c55e; }
-.codigo-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: flex-end; }
-.btn-codigo-copy {
+#setupUrlInput:focus { border-color: #22c55e; }
+.setup-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-setup-save {
   background: linear-gradient(135deg,#34d399,#10b981); color: white; border: none;
-  border-radius: 50px; padding: 7px 18px; font-family: 'Nunito', sans-serif;
+  border-radius: 50px; padding: 8px 20px; font-family: 'Nunito', sans-serif;
   font-size: 0.82rem; font-weight: 800; cursor: pointer;
 }
-.btn-codigo-load {
-  background: linear-gradient(135deg,#a78bfa,#7c3aed); color: white; border: none;
-  border-radius: 50px; padding: 7px 18px; font-family: 'Nunito', sans-serif;
-  font-size: 0.82rem; font-weight: 800; cursor: pointer;
-}
-.btn-codigo-close {
+.btn-setup-cancel {
   background: #f0e6ff; color: #6b4f9e; border: none; border-radius: 50px;
-  padding: 7px 14px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
+  padding: 8px 16px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
   font-weight: 800; cursor: pointer;
 }
-.codigo-divider { border: none; border-top: 1.5px dashed #e0d4f7; margin: 14px 0; }
 
 .footer { text-align: center; margin-top: 16px; font-size: 0.72rem; color: #ccc; }
 
@@ -564,25 +559,25 @@ table.registro-table tbody td {
     <button class="btn-plan" onclick="cargarPlan()">⬆️ Cargar</button>
     <button class="btn-plan" onclick="guardarPlan()">💾 Guardar como...</button>
     <button class="btn-plan btn-plan-del" onclick="eliminarPlan()">🗑️ Eliminar</button>
-    <button class="btn-plan" onclick="abrirCodigo()" style="background:#dbeafe;color:#1e40af;">🔗 Otro dispositivo</button>
+    <button class="btn-plan" onclick="abrirSetup()" style="background:#dbeafe;color:#1e40af;">⚙️ Configurar</button>
+    <span id="planesStatus"></span>
   </div>
 
-  <!-- MODAL CÓDIGO -->
-  <div id="codigoOverlay">
-    <div id="codigoBox">
-      <h3>🔗 Compartir planes entre dispositivos</h3>
-      <p><strong>Paso 1:</strong> Copia este código y envíatelo por WhatsApp, correo o notas.</p>
-      <textarea class="codigo-textarea" id="codigoExport" readonly></textarea>
-      <div class="codigo-actions">
-        <button class="btn-codigo-close" onclick="cerrarCodigo()">Cerrar</button>
-        <button class="btn-codigo-copy" onclick="copiarCodigo()">📋 Copiar código</button>
-      </div>
-      <hr class="codigo-divider">
-      <p><strong>Paso 2 (en el otro dispositivo):</strong> Pega el código aquí para cargar los planes.</p>
-      <textarea class="codigo-textarea" id="codigoImport" placeholder="Pega aquí el código copiado..."></textarea>
-      <div class="codigo-actions">
-        <button class="btn-codigo-close" onclick="cerrarCodigo()">Cancelar</button>
-        <button class="btn-codigo-load" onclick="cargarDesdeCodigo()">📥 Cargar planes</button>
+  <!-- MODAL SETUP GOOGLE SHEET -->
+  <div id="setupOverlay">
+    <div id="setupBox">
+      <h3>⚙️ Conectar con Google Sheets</h3>
+      <ol>
+        <li>Abre tu Google Sheet → <strong>Extensiones → Apps Script</strong></li>
+        <li>Borra el código existente y pega el contenido del archivo <strong>code.gs</strong> del repositorio</li>
+        <li>Guarda (Ctrl+S) y luego: <strong>Implementar → Nueva implementación</strong></li>
+        <li>Tipo: <strong>Aplicación web</strong> &nbsp;·&nbsp; Ejecutar como: <strong>Yo</strong> &nbsp;·&nbsp; Acceso: <strong>Cualquier persona</strong></li>
+        <li>Autoriza y copia la <strong>URL</strong> que aparece → pégala abajo</li>
+      </ol>
+      <input type="url" id="setupUrlInput" placeholder="https://script.google.com/macros/s/...">
+      <div class="setup-actions">
+        <button class="btn-setup-cancel" onclick="cerrarSetup()">Cancelar</button>
+        <button class="btn-setup-save" onclick="guardarSetup()">Guardar y conectar</button>
       </div>
     </div>
   </div>
@@ -1176,91 +1171,118 @@ function restoreObservaciones(obs){
   obs.forEach(text => addObservacion(text));
 }
 
-/* ══ PLANES GUARDADOS (localStorage) ══ */
-const PLANES_KEY = 'mealPlan_planes_v1';
+/* ══ PLANES — GOOGLE SHEETS API ══ */
+const SHEET_URL_KEY = 'mealPlan_sheetUrl_v1';
+let planesCache = [];
 
-function getPlanes(){ try{ return JSON.parse(localStorage.getItem(PLANES_KEY)) || []; }catch(e){ return []; } }
-function setPlanes(p){ try{ localStorage.setItem(PLANES_KEY, JSON.stringify(p)); }catch(e){} }
+function getSheetUrl(){ return localStorage.getItem(SHEET_URL_KEY) || ''; }
+
+function setEstado(msg){ const el = document.getElementById('planesStatus'); if(el) el.textContent = msg; }
 
 function renderPlanesSelect(){
   const sel = document.getElementById('planesSelect');
   const cur = sel.value;
   sel.innerHTML = '<option value="">— Seleccionar plan —</option>';
-  getPlanes().forEach(p => {
+  planesCache.forEach(p => {
     const o = document.createElement('option');
     o.value = p.id; o.textContent = p.name; sel.appendChild(o);
   });
   if(cur) sel.value = cur;
 }
 
-function guardarPlan(){
-  const nombre = prompt('Nombre del plan:');
-  if(!nombre || !nombre.trim()) return;
-  const planes = getPlanes();
-  const existente = planes.find(p => p.name.toLowerCase() === nombre.trim().toLowerCase());
-  if(existente){
-    if(!confirm(`Ya existe un plan llamado "${existente.name}". ¿Sobreescribir?`)) return;
-    existente.data = collect(); existente.updated = new Date().toISOString();
-    setPlanes(planes);
-  } else {
-    planes.push({ id: 'plan_'+Date.now(), name: nombre.trim(), created: new Date().toISOString(), data: collect() });
-    setPlanes(planes);
-  }
-  renderPlanesSelect();
-  document.getElementById('planesSelect').value = planes.find(p => p.name.trim().toLowerCase() === nombre.trim().toLowerCase())?.id || '';
-  toast('✅ Plan guardado: ' + nombre.trim());
+async function sheetGet(){
+  const url = getSheetUrl();
+  if(!url) return [];
+  const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now());
+  const j = await r.json();
+  return j.ok ? (j.plans || []) : [];
 }
 
-function cargarPlan(){
+async function sheetPost(body){
+  const url = getSheetUrl();
+  if(!url) return false;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  const j = await r.json();
+  return !!j.ok;
+}
+
+async function refrescarPlanes(){
+  if(!getSheetUrl()) return;
+  setEstado('🔄');
+  try{
+    planesCache = await sheetGet();
+    renderPlanesSelect();
+    setEstado('✅ ' + planesCache.length + ' plan(es)');
+  } catch(e){ setEstado('⚠️ Sin conexión'); }
+}
+
+async function guardarPlan(){
+  if(!getSheetUrl()){ abrirSetup(); return; }
+  const nombre = prompt('Nombre del plan:');
+  if(!nombre?.trim()) return;
+  const existente = planesCache.find(p => p.name.toLowerCase() === nombre.trim().toLowerCase());
+  if(existente && !confirm(`Ya existe "${existente.name}". ¿Sobreescribir?`)) return;
+  const id = existente ? existente.id : 'plan_' + Date.now();
+  const plan = { id, name: nombre.trim(), created: existente?.created || new Date().toISOString(), data: collect() };
+  setEstado('💾 Guardando...');
+  try{
+    const ok = await sheetPost({ action: 'save', plan });
+    if(ok){
+      const i = planesCache.findIndex(p => p.id === id);
+      if(i >= 0) planesCache[i] = plan; else planesCache.push(plan);
+      renderPlanesSelect();
+      document.getElementById('planesSelect').value = id;
+      setEstado('✅ Guardado');
+      toast('✅ Plan guardado: ' + plan.name);
+    } else { setEstado('⚠️ Error'); toast('❌ No se pudo guardar'); }
+  } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
+}
+
+async function cargarPlan(){
   const id = document.getElementById('planesSelect').value;
   if(!id){ toast('Selecciona un plan primero'); return; }
-  const plan = getPlanes().find(p => p.id === id);
-  if(!plan) return;
-  if(!confirm(`¿Cargar el plan "${plan.name}"? Se reemplazará el contenido actual.`)) return;
+  const plan = planesCache.find(p => p.id === id);
+  if(!plan || !confirm(`¿Cargar el plan "${plan.name}"?`)) return;
   apply(plan.data); autoSave(); toast('✅ Plan cargado: ' + plan.name);
 }
 
-function eliminarPlan(){
+async function eliminarPlan(){
   const id = document.getElementById('planesSelect').value;
   if(!id){ toast('Selecciona un plan primero'); return; }
-  const plan = getPlanes().find(p => p.id === id);
+  const plan = planesCache.find(p => p.id === id);
   if(!plan || !confirm(`¿Eliminar el plan "${plan.name}"?`)) return;
-  setPlanes(getPlanes().filter(p => p.id !== id));
-  renderPlanesSelect();
-  toast('🗑️ Plan eliminado');
-}
-
-/* ══ CÓDIGO PARA COMPARTIR ENTRE DISPOSITIVOS ══ */
-function abrirCodigo(){
-  const planes = getPlanes();
-  if(!planes.length){ toast('No hay planes guardados aún'); return; }
-  document.getElementById('codigoExport').value = btoa(unescape(encodeURIComponent(JSON.stringify(planes))));
-  document.getElementById('codigoImport').value = '';
-  document.getElementById('codigoOverlay').classList.add('open');
-}
-function cerrarCodigo(){ document.getElementById('codigoOverlay').classList.remove('open'); }
-document.getElementById('codigoOverlay').addEventListener('click', e => {
-  if(e.target === document.getElementById('codigoOverlay')) cerrarCodigo();
-});
-
-function copiarCodigo(){
-  const ta = document.getElementById('codigoExport');
-  navigator.clipboard.writeText(ta.value).then(() => toast('✅ Código copiado al portapapeles'))
-    .catch(() => { ta.select(); document.execCommand('copy'); toast('✅ Código copiado'); });
-}
-
-function cargarDesdeCodigo(){
-  const raw = document.getElementById('codigoImport').value.trim();
-  if(!raw){ toast('Pega el código primero'); return; }
+  setEstado('🗑️ Eliminando...');
   try{
-    const planes = JSON.parse(decodeURIComponent(escape(atob(raw))));
-    if(!Array.isArray(planes) || !planes.length) throw new Error();
-    if(!confirm(`Se encontraron ${planes.length} plan(es). ¿Cargar y reemplazar los actuales?`)) return;
-    setPlanes(planes);
-    renderPlanesSelect();
-    cerrarCodigo();
-    toast(`✅ ${planes.length} plan(es) cargados`);
-  } catch(e){ toast('❌ Código inválido — asegúrate de copiarlo completo'); }
+    const ok = await sheetPost({ action: 'delete', id });
+    if(ok){
+      planesCache = planesCache.filter(p => p.id !== id);
+      renderPlanesSelect();
+      setEstado('✅');
+      toast('🗑️ Plan eliminado');
+    } else { setEstado('⚠️ Error'); toast('❌ No se pudo eliminar'); }
+  } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
+}
+
+/* ══ SETUP MODAL ══ */
+function abrirSetup(){
+  document.getElementById('setupUrlInput').value = getSheetUrl();
+  document.getElementById('setupOverlay').classList.add('open');
+}
+function cerrarSetup(){ document.getElementById('setupOverlay').classList.remove('open'); }
+document.getElementById('setupOverlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('setupOverlay')) cerrarSetup();
+});
+async function guardarSetup(){
+  const url = document.getElementById('setupUrlInput').value.trim();
+  if(!url){ alert('Pega la URL del Apps Script'); return; }
+  localStorage.setItem(SHEET_URL_KEY, url);
+  cerrarSetup();
+  toast('🔄 Conectando con Google Sheets...');
+  await refrescarPlanes();
 }
 
 /* ── PERSISTENCIA ── */
@@ -1616,7 +1638,7 @@ try{
   const saved = JSON.parse(localStorage.getItem(KEY));
   if(saved){ apply(saved); } else { restoreRegistro([]); }
 }catch(e){ restoreRegistro([]); }
-renderPlanesSelect();
+refrescarPlanes();
 </script>
 </body>
 </html>
