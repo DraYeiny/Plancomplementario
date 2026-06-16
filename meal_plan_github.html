@@ -194,6 +194,27 @@ td.cell { padding: 2px; border-radius: 8px; vertical-align: middle; }
 .cell-edit.cell-selectable:hover { background: #fef3c7 !important; }
 .cell-edit.cell-selected   { border: 2.5px solid #f59e0b !important; background: #fde68a !important; }
 
+/* ── COPY WEEK BAR ── */
+#copyWeekBar {
+  display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
+  background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 14px;
+  padding: 10px 18px; margin-bottom: 14px; font-family: 'Nunito', sans-serif;
+}
+#copyWeekBar.open { display: flex; }
+#copyWeekMsg { font-size: 0.84rem; font-weight: 700; color: #1e40af; }
+.btn-copy-yes {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6); color: white; border: none;
+  border-radius: 50px; padding: 6px 16px; font-family: 'Nunito', sans-serif;
+  font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: transform 0.1s;
+}
+.btn-copy-yes:hover { transform: translateY(-1px); }
+.btn-copy-no {
+  background: #dbeafe; color: #1e40af; border: none; border-radius: 50px;
+  padding: 6px 14px; font-family: 'Nunito', sans-serif; font-size: 0.8rem;
+  font-weight: 800; cursor: pointer; transition: background 0.15s;
+}
+.btn-copy-no:hover { background: #bfdbfe; }
+
 /* ── REPEAT BAR ── */
 #repeatBar {
   display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
@@ -382,6 +403,11 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
 
   <div class="tabs-bar" id="tabsBar"></div>
+  <div id="copyWeekBar">
+    <span id="copyWeekMsg"></span>
+    <button class="btn-copy-yes" onclick="doCopyWeek()">✓ Sí, copiar</button>
+    <button class="btn-copy-no"  onclick="hideCopyBar()">✕ No</button>
+  </div>
   <div id="sheetsContainer"></div>
 
   <!-- ══ TABLA DE REGISTRO ══ -->
@@ -685,9 +711,37 @@ function rebuildSheets(){
   restoreCells(existing);
 }
 
+function weekHasData(w){
+  return [...document.querySelectorAll(`[data-id^="w${w}_"]`)].some(el=>el.textContent.trim()!=='');
+}
+
+let _copyFrom = -1, _copyTo = -1;
+
+function showCopyBar(from, to){
+  _copyFrom = from; _copyTo = to;
+  document.getElementById('copyWeekMsg').textContent =
+    `¿Copiar el contenido de la Semana ${from+1} a la Semana ${to+1}?`;
+  document.getElementById('copyWeekBar').classList.add('open');
+}
+function hideCopyBar(){
+  document.getElementById('copyWeekBar').classList.remove('open');
+  _copyFrom = -1; _copyTo = -1;
+}
+function doCopyWeek(){
+  if(_copyFrom<0||_copyTo<0) return;
+  document.querySelectorAll(`[data-id^="w${_copyTo}_"]`).forEach(el=>{
+    const srcId = el.dataset.id.replace(`w${_copyTo}_`,`w${_copyFrom}_`);
+    const src = document.querySelector(`[data-id="${srcId}"]`);
+    if(src) el.textContent = src.textContent;
+  });
+  autoSave(); hideCopyBar(); toast(`✅ Semana ${_copyFrom+1} copiada a Semana ${_copyTo+1}`);
+}
+
 function switchTab(w){
+  hideCopyBar();
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',+b.dataset.week===w));
   document.querySelectorAll('.week-sheet').forEach(s=>s.classList.toggle('visible',s.id==='sheet-'+w));
+  if(w>0 && weekHasData(w-1) && !weekHasData(w)) showCopyBar(w-1, w);
 }
 
 function buildTable(wi, dayHeaders){
