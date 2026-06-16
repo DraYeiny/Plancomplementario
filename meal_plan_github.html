@@ -146,16 +146,89 @@ td.cell { padding: 2px; border-radius: 7px; vertical-align: middle; }
 .cell-cereal  {background:#fffbea;} .cell-fruta   {background:#fff0f0;}
 .cell-verdura {background:#f0fbf5;} .cell-proteina{background:#f7f0ff;}
 .cell-edit {
-  display: flex; align-items: center; justify-content: center;
-  height: 36px; border: 1.5px dashed #ccc; border-radius: 6px;
-  padding: 0 5px; cursor: text; overflow: hidden;
+  display: block; min-height: 36px; border: 1.5px dashed #ccc; border-radius: 6px;
+  padding: 4px 5px; cursor: text; overflow: visible;
   transition: border-color 0.2s, background 0.2s;
   font-family: 'Nunito', sans-serif; font-weight: 700;
   color: #444; font-size: 13px; text-align: center;
-  line-height: 36px; white-space: nowrap; outline: none;
+  white-space: pre-wrap; word-break: break-word; outline: none;
 }
 .cell-edit:focus { border-color: #9b7fd4; border-style: solid; background: #faf5ff; }
 .cell-edit:empty::before { content: attr(data-placeholder); color: #ccc; font-size: 11px; font-weight: 400; }
+/* ── INLINE REPEAT MODE ── */
+.cell-edit.cell-source  { border: 2.5px solid #f59e0b !important; border-style: solid !important; background: #fffbeb !important; }
+.cell-edit.cell-selectable { border: 2px dashed #f59e0b !important; background: #fef9ee !important; cursor: pointer !important; }
+.cell-edit.cell-selectable:hover { background: #fef3c7 !important; }
+.cell-edit.cell-selected { border: 2.5px solid #f59e0b !important; border-style: solid !important; background: #fde68a !important; }
+/* ── REPEAT ACTION BAR ── */
+#repeatBar {
+  display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: white; border-radius: 50px; padding: 10px 20px;
+  box-shadow: 0 8px 28px rgba(107,79,158,0.3); border: 1.5px solid #e0d4f7;
+  z-index: 9200; align-items: center; gap: 12px; white-space: nowrap;
+  font-family: 'Nunito', sans-serif;
+}
+#repeatBar.open { display: flex; }
+#repeatBarCount { font-size: 0.85rem; font-weight: 700; color: #6b4f9e; }
+.btn-rbar-apply {
+  background: linear-gradient(135deg,#a78bfa,#7c3aed); color: white; border: none;
+  border-radius: 50px; padding: 6px 16px; font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem; font-weight: 800; cursor: pointer;
+}
+.btn-rbar-cancel {
+  background: #f0e6ff; color: #6b4f9e; border: none; border-radius: 50px;
+  padding: 6px 14px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
+  font-weight: 800; cursor: pointer;
+}
+/* ── SYNC & PROFILES ── */
+.sync-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  background: #f0fdf4; border-radius: 12px; padding: 8px 16px; margin-bottom: 10px;
+  border: 1.5px dashed #86efac; font-family: 'Nunito', sans-serif;
+}
+.sync-bar label { font-size: 0.8rem; font-weight: 800; color: #166534; white-space: nowrap; }
+#profileSelect {
+  border: 1.5px solid #86efac; border-radius: 8px; padding: 4px 8px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
+  color: #166534; background: white; outline: none; flex: 1; min-width: 140px;
+}
+#syncStatus { font-size: 0.72rem; color: #16a34a; font-weight: 700; margin-left: auto; }
+.btn-sync-sm {
+  background: #dcfce7; border: none; border-radius: 50px; padding: 5px 12px;
+  font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 800;
+  color: #166534; cursor: pointer; white-space: nowrap;
+}
+.btn-sync-sm:hover { background: #bbf7d0; }
+/* ── SYNC SETTINGS MODAL ── */
+#syncModal {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.22);
+  z-index: 9300; align-items: center; justify-content: center; padding: 16px;
+}
+#syncModal.open { display: flex; }
+#syncBox {
+  background: white; border-radius: 20px; padding: 22px 24px;
+  box-shadow: 0 12px 40px rgba(107,79,158,0.3); max-width: 420px; width: 100%;
+}
+#syncBox h3 { font-size: 1rem; font-weight: 800; color: #166534; margin-bottom: 6px; }
+#syncBox p  { font-size: 0.78rem; color: #aaa; margin-bottom: 14px; }
+.sync-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.sync-field label { font-size: 0.78rem; font-weight: 800; color: #555; }
+.sync-field input {
+  border: 1.5px solid #d1fae5; border-radius: 8px; padding: 7px 10px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; outline: none;
+}
+.sync-field input:focus { border-color: #34d399; }
+.sync-modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+.btn-sync-save {
+  background: linear-gradient(135deg,#34d399,#10b981); color: white; border: none;
+  border-radius: 50px; padding: 7px 18px; font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem; font-weight: 800; cursor: pointer;
+}
+.btn-sync-cancel2 {
+  background: #f0fdf4; color: #166534; border: none; border-radius: 50px;
+  padding: 7px 14px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
+  font-weight: 800; cursor: pointer;
+}
 tr.spacer td { height: 6px; background: transparent; }
 
 /* ── AUTOCOMPLETE DROPDOWN ── */
@@ -397,52 +470,6 @@ table.registro-table tbody td {
 }
 .weeks-input:focus { border-style: solid; border-color: #7c3aed; }
 
-/* ── REPEAT MODAL ── */
-#repeatOverlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.22); z-index: 9100;
-  align-items: center; justify-content: center; padding: 16px;
-}
-#repeatOverlay.open { display: flex; }
-#repeatBox {
-  background: white; border-radius: 20px; padding: 22px 24px;
-  box-shadow: 0 12px 40px rgba(107,79,158,0.3);
-  max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;
-}
-#repeatBox h3 { font-size: 1rem; font-weight: 800; color: #6b4f9e; margin-bottom: 3px; }
-#repeatBox .repeat-sub { font-size: 0.78rem; color: #aaa; margin-bottom: 14px; }
-.repeat-week-group { margin-bottom: 12px; }
-.repeat-week-label { font-size: 0.8rem; font-weight: 800; color: #6b4f9e; margin-bottom: 6px; }
-.repeat-days-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-.repeat-day-item {
-  display: flex; align-items: center; gap: 4px;
-  background: #f8f0ff; border-radius: 8px; padding: 5px 9px;
-  font-size: 0.78rem; font-weight: 700; color: #6b4f9e;
-  cursor: pointer; user-select: none;
-  border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s;
-}
-.repeat-day-item:hover { background: #ede5ff; }
-.repeat-day-item.checked { border-color: #7c3aed; background: #f0e6ff; }
-.repeat-day-item input[type=checkbox] { display: none; }
-.repeat-actions {
-  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; justify-content: flex-end;
-}
-.btn-repeat-selall, .btn-repeat-clear {
-  background: #f0e6ff; border: none; border-radius: 50px; padding: 6px 14px;
-  font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 800;
-  color: #6b4f9e; cursor: pointer;
-}
-.btn-repeat-apply {
-  background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white;
-  border: none; border-radius: 50px; padding: 7px 20px;
-  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800; cursor: pointer;
-  box-shadow: 0 3px 10px rgba(124,58,237,0.25);
-}
-.btn-repeat-cancel {
-  background: #f0e6ff; border: none; border-radius: 50px; padding: 7px 16px;
-  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800;
-  color: #6b4f9e; cursor: pointer;
-}
 
 /* ── OBSERVACIONES ── */
 .observaciones-section {
@@ -512,17 +539,29 @@ table.registro-table tbody td {
   </div>
 </div>
 
-<!-- REPEAT MODAL -->
-<div id="repeatOverlay">
-  <div id="repeatBox">
-    <h3>¿Repetir en otros cuadros?</h3>
-    <p class="repeat-sub" id="repeatSub"></p>
-    <div id="repeatGroups"></div>
-    <div class="repeat-actions">
-      <button class="btn-repeat-selall" onclick="repeatSelectAll()">Seleccionar todo</button>
-      <button class="btn-repeat-clear" onclick="repeatClearAll()">Limpiar</button>
-      <button class="btn-repeat-cancel" onclick="closeRepeatModal()">Cancelar</button>
-      <button class="btn-repeat-apply" onclick="applyRepeat()">Aplicar</button>
+<!-- REPEAT ACTION BAR -->
+<div id="repeatBar">
+  <span id="repeatBarCount">Haz clic en las casillas donde repetir el texto</span>
+  <button class="btn-rbar-apply" onclick="applyRepeatInline()">✓ Aplicar</button>
+  <button class="btn-rbar-cancel" onclick="exitRepeatMode()">✕ Cancelar</button>
+</div>
+
+<!-- SYNC SETTINGS MODAL -->
+<div id="syncModal">
+  <div id="syncBox">
+    <h3>🔄 Configuración de sincronización</h3>
+    <p>Ingresa tu Token de GitHub (PAT) con permiso <strong>gist</strong> para sincronizar entre dispositivos. El token se guarda solo en este navegador.</p>
+    <div class="sync-field">
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="syncPatInput" placeholder="ghp_xxxxxxxxxxxx">
+    </div>
+    <div class="sync-field">
+      <label>ID de Gist (se genera automáticamente la primera vez)</label>
+      <input type="text" id="syncGistInput" placeholder="Se llenará automáticamente">
+    </div>
+    <div class="sync-modal-actions">
+      <button class="btn-sync-cancel2" onclick="closeSyncModal()">Cancelar</button>
+      <button class="btn-sync-save" onclick="saveSyncSettings()">Guardar y sincronizar</button>
     </div>
   </div>
 </div>
@@ -532,6 +571,18 @@ table.registro-table tbody td {
     <div class="emojis">🌟 🥦 🍎 🥣 🍗 🌟</div>
     <h1>🍽️ Mi Plan de Alimentación Semanal</h1>
     <p>¡Comer bien es divertido y delicioso!</p>
+  </div>
+
+  <!-- SYNC & PROFILES BAR -->
+  <div class="sync-bar">
+    <label>📋 Perfil:</label>
+    <select id="profileSelect" onchange="loadSelectedProfile()">
+      <option value="">— Seleccionar perfil —</option>
+    </select>
+    <button class="btn-sync-sm" onclick="saveAsProfile()">💾 Guardar perfil</button>
+    <button class="btn-sync-sm" onclick="deleteSelectedProfile()">🗑️</button>
+    <button class="btn-sync-sm" onclick="openSyncModal()">🔄 Sincronizar</button>
+    <span id="syncStatus"></span>
   </div>
 
   <div class="controls-bar">
@@ -878,17 +929,22 @@ function buildTable(wi, dayHeaders){
         div.dataset.category = sub.id;
         div.spellcheck=false;
         div.addEventListener('input', () => { autoSave(); acShow(div); });
+        div.addEventListener('click', () => {
+          if(repeatMode) {
+            if(div.classList.contains('cell-selectable')){
+              div.classList.toggle('cell-selected');
+              updateRepeatBar();
+            }
+          }
+        });
         div.addEventListener('keydown', e => {
           acKeyNav(e);
           if(e.key === 'Enter'){
             e.preventDefault();
-            /* use setTimeout so acSelect (inside acKeyNav) finishes writing the text
-               before we read it and open the repeat modal */
             setTimeout(() => {
-              acHide();
-              div.blur();
+              acHide(); div.blur();
               const text = div.textContent.trim();
-              if(text) showRepeatModal(div);
+              if(text) enterRepeatMode(div);
             }, 30);
           }
         });
@@ -993,87 +1049,216 @@ function restoreRegistro(rows){
   rows.forEach(r => addRegistroRow(r.hora || '', r.alim || ''));
 }
 
-/* ══ REPEAT MODAL ══ */
+/* ══ INLINE REPEAT MODE ══ */
+let repeatMode = false;
 let repeatSrcDiv = null;
+let repeatMealId = '', repeatSubId = '';
 
-function showRepeatModal(div){
+function enterRepeatMode(div){
   const text = div.textContent.trim();
   if(!text || numWeeks === 0) return;
   const id = div.dataset.id;
   const parts = id.match(/^w(\d+)_(.+)_(.+)_(\d+)$/);
   if(!parts) return;
-  const [, wi, mealId, subId, dayStr] = parts;
-  const srcW = parseInt(wi), srcD = parseInt(dayStr);
+  const [, , mealId, subId] = parts;
 
+  repeatMode = true;
   repeatSrcDiv = div;
-  document.getElementById('repeatSub').textContent = `"${text}"`;
+  repeatMealId = mealId;
+  repeatSubId = subId;
 
-  const groups = document.getElementById('repeatGroups');
-  groups.innerHTML = '';
+  div.classList.add('cell-source');
+  div.contentEditable = 'false';
 
-  for(let w = 0; w < numWeeks; w++){
-    const ws = addDays(startDate, w * 7);
-    const groupDiv = document.createElement('div');
-    groupDiv.className = 'repeat-week-group';
-    const lbl = document.createElement('div');
-    lbl.className = 'repeat-week-label';
-    lbl.textContent = `Semana ${w + 1} — del ${fmt(ws)} al ${fmt(addDays(ws, 6))}`;
-    groupDiv.appendChild(lbl);
-    const grid = document.createElement('div');
-    grid.className = 'repeat-days-grid';
-    for(let d = 0; d < 7; d++){
-      if(w === srcW && d === srcD) continue;
-      const cellId = `w${w}_${mealId}_${subId}_${d}`;
-      const dd = addDays(ws, d);
-      const item = document.createElement('label');
-      item.className = 'repeat-day-item';
-      item.dataset.cellId = cellId;
-      const cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.value = cellId;
-      item.appendChild(cb);
-      item.appendChild(document.createTextNode(`${DAY_ICONS_ALL[dd.getDay()]} ${DAY_NAMES_ES[dd.getDay()]} ${dd.getDate()}/${dd.getMonth()+1}`));
-      item.addEventListener('click', e => {
-        e.preventDefault();
-        cb.checked = !cb.checked;
-        item.classList.toggle('checked', cb.checked);
-      });
-      grid.appendChild(item);
+  document.querySelectorAll('.cell-edit').forEach(cell => {
+    if(cell === div) return;
+    const cp = (cell.dataset.id||'').match(/^w\d+_(.+)_(.+)_\d+$/);
+    if(cp && cp[1] === mealId && cp[2] === subId){
+      cell.classList.add('cell-selectable');
+      cell.contentEditable = 'false';
     }
-    groupDiv.appendChild(grid);
-    groups.appendChild(groupDiv);
-  }
-  document.getElementById('repeatOverlay').classList.add('open');
+  });
+
+  updateRepeatBar();
+  document.getElementById('repeatBar').classList.add('open');
 }
 
-function closeRepeatModal(){
-  document.getElementById('repeatOverlay').classList.remove('open');
-  repeatSrcDiv = null;
+function updateRepeatBar(){
+  const n = document.querySelectorAll('.cell-edit.cell-selected').length;
+  document.getElementById('repeatBarCount').textContent =
+    n === 0 ? 'Haz clic en las casillas donde repetir el texto'
+            : `${n} casilla${n>1?'s':''} seleccionada${n>1?'s':''}`;
 }
-document.getElementById('repeatOverlay').addEventListener('click', e => {
-  if(e.target === document.getElementById('repeatOverlay')) closeRepeatModal();
-});
 
-function repeatSelectAll(){
-  document.querySelectorAll('#repeatGroups .repeat-day-item').forEach(item => {
-    item.querySelector('input').checked = true; item.classList.add('checked');
-  });
-}
-function repeatClearAll(){
-  document.querySelectorAll('#repeatGroups .repeat-day-item').forEach(item => {
-    item.querySelector('input').checked = false; item.classList.remove('checked');
-  });
-}
-function applyRepeat(){
-  if(!repeatSrcDiv){ closeRepeatModal(); return; }
+function applyRepeatInline(){
+  if(!repeatSrcDiv){ exitRepeatMode(); return; }
   const text = repeatSrcDiv.textContent.trim();
   let count = 0;
-  document.querySelectorAll('#repeatGroups input[type=checkbox]:checked').forEach(cb => {
-    const el = document.querySelector(`[data-id="${cb.value}"]`);
-    if(el){ el.textContent = text; count++; }
+  document.querySelectorAll('.cell-edit.cell-selected').forEach(cell => {
+    cell.textContent = text; count++;
   });
-  closeRepeatModal();
+  exitRepeatMode();
   autoSave();
-  if(count > 0) toast(`✅ Texto copiado en ${count} cuadro${count > 1 ? 's' : ''}`);
+  if(count > 0) toast(`✅ Texto copiado en ${count} casilla${count>1?'s':''}`);
+}
+
+function exitRepeatMode(){
+  repeatMode = false;
+  if(repeatSrcDiv){ repeatSrcDiv.classList.remove('cell-source'); repeatSrcDiv.contentEditable='true'; repeatSrcDiv=null; }
+  document.querySelectorAll('.cell-edit.cell-selectable,.cell-edit.cell-selected').forEach(c => {
+    c.classList.remove('cell-selectable','cell-selected'); c.contentEditable='true';
+  });
+  document.getElementById('repeatBar').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape' && repeatMode) exitRepeatMode(); });
+
+/* ══ GITHUB GIST SYNC ══ */
+const SYNC_KEY = 'mealPlan_sync_v1';
+let syncCfg = null;
+let syncTimer = null;
+
+function loadSyncCfg(){ try{ syncCfg = JSON.parse(localStorage.getItem(SYNC_KEY)) || null; }catch(e){} }
+function saveSyncCfg(){ try{ localStorage.setItem(SYNC_KEY, JSON.stringify(syncCfg)); }catch(e){} }
+
+function openSyncModal(){
+  loadSyncCfg();
+  document.getElementById('syncPatInput').value  = syncCfg?.pat  || '';
+  document.getElementById('syncGistInput').value = syncCfg?.gistId || '';
+  document.getElementById('syncModal').classList.add('open');
+}
+function closeSyncModal(){ document.getElementById('syncModal').classList.remove('open'); }
+document.getElementById('syncModal').addEventListener('click', e => {
+  if(e.target === document.getElementById('syncModal')) closeSyncModal();
+});
+
+async function saveSyncSettings(){
+  const pat    = document.getElementById('syncPatInput').value.trim();
+  const gistId = document.getElementById('syncGistInput').value.trim();
+  if(!pat){ alert('Ingresa tu GitHub Personal Access Token'); return; }
+  syncCfg = { pat, gistId: gistId || null };
+  saveSyncCfg();
+  closeSyncModal();
+  await syncPush();
+}
+
+async function gistFetch(method, path, body){
+  const r = await fetch('https://api.github.com' + path, {
+    method,
+    headers: { 'Authorization':'token '+syncCfg.pat, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if(!r.ok) throw new Error('GitHub '+r.status);
+  return r.json();
+}
+
+async function syncPush(){
+  if(!syncCfg?.pat) return;
+  setSyncStatus('🔄 Sincronizando...');
+  try{
+    const payload = JSON.stringify({ updated: new Date().toISOString(), data: collect() });
+    const files = { 'meal_plan_sync.json': { content: payload } };
+    if(syncCfg.gistId){
+      await gistFetch('PATCH', '/gists/'+syncCfg.gistId, { files });
+    } else {
+      const g = await gistFetch('POST', '/gists', { description:'GASTROPEDIA Meal Plan', public:false, files });
+      syncCfg.gistId = g.id;
+      saveSyncCfg();
+      document.getElementById('syncGistInput').value = g.id;
+    }
+    setSyncStatus('✅ '+new Date().toLocaleTimeString());
+  } catch(e){ setSyncStatus('⚠️ Error'); }
+}
+
+async function syncPull(){
+  if(!syncCfg?.pat || !syncCfg?.gistId) return;
+  try{
+    const g = await gistFetch('GET', '/gists/'+syncCfg.gistId);
+    const file = g.files['meal_plan_sync.json'];
+    if(!file) return;
+    const remote = JSON.parse(file.content);
+    if(confirm('¿Cargar los datos guardados en la nube?')){ apply(remote.data); autoSave(); toast('✅ Datos cargados desde la nube'); }
+  } catch(e){ toast('⚠️ No se pudo cargar desde la nube'); }
+}
+
+function setSyncStatus(msg){ const el=document.getElementById('syncStatus'); if(el) el.textContent=msg; }
+function scheduleSyncPush(){ if(!syncCfg?.pat) return; clearTimeout(syncTimer); syncTimer=setTimeout(syncPush,3000); }
+
+/* ══ PROFILES (GitHub repo: DraYeiny/Plancomplementario/profiles.json) ══ */
+const PROFILES_PATH = '/repos/DraYeiny/Plancomplementario/contents/profiles.json';
+let profilesSha = null;
+
+async function loadProfiles(){
+  if(!syncCfg?.pat) return;
+  try{
+    const r = await gistFetch('GET', PROFILES_PATH);
+    profilesSha = r.sha;
+    const profiles = JSON.parse(atob(r.content.replace(/\n/g,'')));
+    renderProfileSelect(profiles);
+  } catch(e){ if(!e.message.includes('404')) console.warn('profiles load:', e); }
+}
+
+async function saveProfiles(profiles){
+  if(!syncCfg?.pat) return;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(profiles, null, 2))));
+  const body = { message:'Update profiles', content, ...(profilesSha ? {sha:profilesSha} : {}) };
+  const r = await gistFetch('PUT', PROFILES_PATH, body);
+  profilesSha = r.content.sha;
+}
+
+function renderProfileSelect(profiles){
+  const sel = document.getElementById('profileSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Seleccionar perfil —</option>';
+  (profiles||[]).forEach(p => {
+    const o = document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o);
+  });
+  if(cur) sel.value = cur;
+}
+
+async function getProfiles(){
+  if(!syncCfg?.pat) return [];
+  try{
+    const r = await gistFetch('GET', PROFILES_PATH);
+    profilesSha = r.sha;
+    return JSON.parse(atob(r.content.replace(/\n/g,'')));
+  } catch(e){ return []; }
+}
+
+async function saveAsProfile(){
+  if(!syncCfg?.pat){ alert('Configura la sincronización primero (botón 🔄 Sincronizar)'); return; }
+  const name = prompt('Nombre del perfil:');
+  if(!name) return;
+  const profiles = await getProfiles();
+  const id = 'p_' + Date.now();
+  profiles.push({ id, name, created: new Date().toISOString(), data: collect() });
+  await saveProfiles(profiles);
+  renderProfileSelect(profiles);
+  document.getElementById('profileSelect').value = id;
+  toast('✅ Perfil guardado: ' + name);
+}
+
+async function loadSelectedProfile(){
+  const id = document.getElementById('profileSelect').value;
+  if(!id) return;
+  if(!syncCfg?.pat){ alert('Configura la sincronización primero'); document.getElementById('profileSelect').value=''; return; }
+  const profiles = await getProfiles();
+  const profile = profiles.find(p => p.id === id);
+  if(!profile) return;
+  if(!confirm(`¿Cargar perfil "${profile.name}"? Se reemplazará el contenido actual.`)){ document.getElementById('profileSelect').value=''; return; }
+  apply(profile.data); autoSave(); toast('✅ Perfil cargado: ' + profile.name);
+}
+
+async function deleteSelectedProfile(){
+  const id = document.getElementById('profileSelect').value;
+  if(!id){ toast('Selecciona un perfil primero'); return; }
+  if(!syncCfg?.pat){ alert('Configura la sincronización primero'); return; }
+  const profiles = await getProfiles();
+  const profile = profiles.find(p => p.id === id);
+  if(!profile || !confirm(`¿Eliminar perfil "${profile.name}"?`)) return;
+  await saveProfiles(profiles.filter(p => p.id !== id));
+  renderProfileSelect(profiles.filter(p => p.id !== id));
+  toast('🗑️ Perfil eliminado');
 }
 
 /* ══ OBSERVACIONES ══ */
@@ -1211,7 +1396,7 @@ function apply(d){
   restoreRegistro(d.registro || []);
   restoreObservaciones(d.observaciones || []);
 }
-function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} }
+function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} scheduleSyncPush(); }
 function clearAll(){
   if(!confirm('¿Borrar todo el contenido? 🗑️')) return;
   document.querySelectorAll('.cell-edit').forEach(el=>el.textContent='');
@@ -1340,6 +1525,31 @@ async function captureRegistroPage(){
   tbl.appendChild(tbody);
   tblWrap.appendChild(tbl);
   page.appendChild(tblWrap);
+
+  /* ── OBSERVACIONES en la misma página ── */
+  const obsData = collectObservaciones().filter(o => o);
+  if(obsData.length > 0){
+    const obsSection = document.createElement('div');
+    obsSection.style.cssText = 'margin-top:18px;border-top:2px dashed #e0d4f7;padding-top:14px;';
+    const obsH = document.createElement('h2');
+    obsH.style.cssText = 'font-size:1rem;font-weight:800;color:#6b4f9e;margin-bottom:10px;font-family:Nunito,sans-serif;';
+    obsH.textContent = '📝 Observaciones';
+    obsSection.appendChild(obsH);
+    obsData.forEach((o, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:8px;margin-bottom:6px;font-family:Nunito,sans-serif;';
+      const num = document.createElement('span');
+      num.style.cssText = 'font-size:0.78rem;font-weight:800;color:#a78bfa;min-width:20px;';
+      num.textContent = (i+1)+'.';
+      const txt = document.createElement('span');
+      txt.style.cssText = 'font-size:0.85rem;font-weight:600;color:#444;';
+      txt.textContent = o;
+      row.appendChild(num); row.appendChild(txt);
+      obsSection.appendChild(row);
+    });
+    page.appendChild(obsSection);
+  }
+
   wrapper.appendChild(page);
   document.body.appendChild(wrapper);
 
@@ -1483,6 +1693,7 @@ async function runPDF(){
 }
 
 /* ── BOOT ── */
+loadSyncCfg();
 const today=new Date();
 startDate=new Date(today);
 document.getElementById('lblStart').textContent=fmt(startDate);
@@ -1491,14 +1702,10 @@ numWeeks=1;
 onDatesChange();
 try{
   const saved = JSON.parse(localStorage.getItem(KEY));
-  if(saved){
-    apply(saved);
-  } else {
-    restoreRegistro([]);
-  }
-}catch(e){
-  restoreRegistro([]);
-}
+  if(saved){ apply(saved); } else { restoreRegistro([]); }
+}catch(e){ restoreRegistro([]); }
+/* load profiles if PAT is configured */
+if(syncCfg?.pat) loadProfiles();
 </script>
 </body>
 </html>
