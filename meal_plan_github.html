@@ -480,6 +480,42 @@ table.registro-table tbody td {
 .btn-plan:hover { background: #bbf7d0; }
 .btn-plan-del { background: #fee2e2; color: #b91c1c; }
 .btn-plan-del:hover { background: #fecaca; }
+/* ── MODAL CÓDIGO ── */
+#codigoOverlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.22);
+  z-index: 9300; align-items: center; justify-content: center; padding: 16px;
+}
+#codigoOverlay.open { display: flex; }
+#codigoBox {
+  background: white; border-radius: 20px; padding: 22px 24px;
+  box-shadow: 0 12px 40px rgba(107,79,158,0.3);
+  max-width: 480px; width: 100%;
+}
+#codigoBox h3 { font-size: 1rem; font-weight: 800; color: #166534; margin-bottom: 4px; }
+#codigoBox p  { font-size: 0.78rem; color: #888; margin-bottom: 12px; }
+.codigo-textarea {
+  width: 100%; height: 90px; border: 1.5px solid #86efac; border-radius: 10px;
+  padding: 8px 10px; font-family: monospace; font-size: 0.72rem; color: #444;
+  resize: none; outline: none; box-sizing: border-box; word-break: break-all;
+}
+.codigo-textarea:focus { border-color: #22c55e; }
+.codigo-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: flex-end; }
+.btn-codigo-copy {
+  background: linear-gradient(135deg,#34d399,#10b981); color: white; border: none;
+  border-radius: 50px; padding: 7px 18px; font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem; font-weight: 800; cursor: pointer;
+}
+.btn-codigo-load {
+  background: linear-gradient(135deg,#a78bfa,#7c3aed); color: white; border: none;
+  border-radius: 50px; padding: 7px 18px; font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem; font-weight: 800; cursor: pointer;
+}
+.btn-codigo-close {
+  background: #f0e6ff; color: #6b4f9e; border: none; border-radius: 50px;
+  padding: 7px 14px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
+  font-weight: 800; cursor: pointer;
+}
+.codigo-divider { border: none; border-top: 1.5px dashed #e0d4f7; margin: 14px 0; }
 
 .footer { text-align: center; margin-top: 16px; font-size: 0.72rem; color: #ccc; }
 
@@ -528,6 +564,27 @@ table.registro-table tbody td {
     <button class="btn-plan" onclick="cargarPlan()">⬆️ Cargar</button>
     <button class="btn-plan" onclick="guardarPlan()">💾 Guardar como...</button>
     <button class="btn-plan btn-plan-del" onclick="eliminarPlan()">🗑️ Eliminar</button>
+    <button class="btn-plan" onclick="abrirCodigo()" style="background:#dbeafe;color:#1e40af;">🔗 Otro dispositivo</button>
+  </div>
+
+  <!-- MODAL CÓDIGO -->
+  <div id="codigoOverlay">
+    <div id="codigoBox">
+      <h3>🔗 Compartir planes entre dispositivos</h3>
+      <p><strong>Paso 1:</strong> Copia este código y envíatelo por WhatsApp, correo o notas.</p>
+      <textarea class="codigo-textarea" id="codigoExport" readonly></textarea>
+      <div class="codigo-actions">
+        <button class="btn-codigo-close" onclick="cerrarCodigo()">Cerrar</button>
+        <button class="btn-codigo-copy" onclick="copiarCodigo()">📋 Copiar código</button>
+      </div>
+      <hr class="codigo-divider">
+      <p><strong>Paso 2 (en el otro dispositivo):</strong> Pega el código aquí para cargar los planes.</p>
+      <textarea class="codigo-textarea" id="codigoImport" placeholder="Pega aquí el código copiado..."></textarea>
+      <div class="codigo-actions">
+        <button class="btn-codigo-close" onclick="cerrarCodigo()">Cancelar</button>
+        <button class="btn-codigo-load" onclick="cargarDesdeCodigo()">📥 Cargar planes</button>
+      </div>
+    </div>
   </div>
 
   <div class="controls-bar">
@@ -1171,6 +1228,39 @@ function eliminarPlan(){
   setPlanes(getPlanes().filter(p => p.id !== id));
   renderPlanesSelect();
   toast('🗑️ Plan eliminado');
+}
+
+/* ══ CÓDIGO PARA COMPARTIR ENTRE DISPOSITIVOS ══ */
+function abrirCodigo(){
+  const planes = getPlanes();
+  if(!planes.length){ toast('No hay planes guardados aún'); return; }
+  document.getElementById('codigoExport').value = btoa(unescape(encodeURIComponent(JSON.stringify(planes))));
+  document.getElementById('codigoImport').value = '';
+  document.getElementById('codigoOverlay').classList.add('open');
+}
+function cerrarCodigo(){ document.getElementById('codigoOverlay').classList.remove('open'); }
+document.getElementById('codigoOverlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('codigoOverlay')) cerrarCodigo();
+});
+
+function copiarCodigo(){
+  const ta = document.getElementById('codigoExport');
+  navigator.clipboard.writeText(ta.value).then(() => toast('✅ Código copiado al portapapeles'))
+    .catch(() => { ta.select(); document.execCommand('copy'); toast('✅ Código copiado'); });
+}
+
+function cargarDesdeCodigo(){
+  const raw = document.getElementById('codigoImport').value.trim();
+  if(!raw){ toast('Pega el código primero'); return; }
+  try{
+    const planes = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if(!Array.isArray(planes) || !planes.length) throw new Error();
+    if(!confirm(`Se encontraron ${planes.length} plan(es). ¿Cargar y reemplazar los actuales?`)) return;
+    setPlanes(planes);
+    renderPlanesSelect();
+    cerrarCodigo();
+    toast(`✅ ${planes.length} plan(es) cargados`);
+  } catch(e){ toast('❌ Código inválido — asegúrate de copiarlo completo'); }
 }
 
 /* ── PERSISTENCIA ── */
