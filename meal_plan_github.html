@@ -481,37 +481,6 @@ table.registro-table tbody td {
 .btn-plan-del { background: #fee2e2; color: #b91c1c; }
 .btn-plan-del:hover { background: #fecaca; }
 #planesStatus { font-size: 0.72rem; font-weight: 700; color: #16a34a; white-space: nowrap; margin-left: 4px; }
-/* ── MODAL SETUP SHEET ── */
-#setupOverlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25);
-  z-index: 9300; align-items: center; justify-content: center; padding: 16px;
-}
-#setupOverlay.open { display: flex; }
-#setupBox {
-  background: white; border-radius: 20px; padding: 24px 26px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.2); max-width: 500px; width: 100%;
-}
-#setupBox h3 { font-size: 1rem; font-weight: 800; color: #166534; margin-bottom: 8px; }
-#setupBox ol { font-size: 0.8rem; color: #555; padding-left: 18px; line-height: 1.8; margin-bottom: 14px; }
-#setupBox ol strong { color: #166534; }
-#setupUrlInput {
-  width: 100%; border: 1.5px solid #86efac; border-radius: 10px; padding: 9px 12px;
-  font-family: 'Nunito', sans-serif; font-size: 0.82rem; outline: none; box-sizing: border-box;
-  color: #444; margin-bottom: 12px;
-}
-#setupUrlInput:focus { border-color: #22c55e; }
-.setup-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.btn-setup-save {
-  background: linear-gradient(135deg,#34d399,#10b981); color: white; border: none;
-  border-radius: 50px; padding: 8px 20px; font-family: 'Nunito', sans-serif;
-  font-size: 0.82rem; font-weight: 800; cursor: pointer;
-}
-.btn-setup-cancel {
-  background: #f0e6ff; color: #6b4f9e; border: none; border-radius: 50px;
-  padding: 8px 16px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
-  font-weight: 800; cursor: pointer;
-}
-
 .footer { text-align: center; margin-top: 16px; font-size: 0.72rem; color: #ccc; }
 
 #toast {
@@ -559,27 +528,7 @@ table.registro-table tbody td {
     <button class="btn-plan" onclick="cargarPlan()">⬆️ Cargar</button>
     <button class="btn-plan" onclick="guardarPlan()">💾 Guardar como...</button>
     <button class="btn-plan btn-plan-del" onclick="eliminarPlan()">🗑️ Eliminar</button>
-    <button class="btn-plan" onclick="abrirSetup()" style="background:#dbeafe;color:#1e40af;">⚙️ Configurar</button>
     <span id="planesStatus"></span>
-  </div>
-
-  <!-- MODAL SETUP GOOGLE SHEET -->
-  <div id="setupOverlay">
-    <div id="setupBox">
-      <h3>⚙️ Conectar con Google Sheets</h3>
-      <ol>
-        <li>Abre tu Google Sheet → <strong>Extensiones → Apps Script</strong></li>
-        <li>Borra el código existente y pega el contenido del archivo <strong>code.gs</strong> del repositorio</li>
-        <li>Guarda (Ctrl+S) y luego: <strong>Implementar → Nueva implementación</strong></li>
-        <li>Tipo: <strong>Aplicación web</strong> &nbsp;·&nbsp; Ejecutar como: <strong>Yo</strong> &nbsp;·&nbsp; Acceso: <strong>Cualquier persona</strong></li>
-        <li>Autoriza y copia la <strong>URL</strong> que aparece → pégala abajo</li>
-      </ol>
-      <input type="url" id="setupUrlInput" placeholder="https://script.google.com/macros/s/...">
-      <div class="setup-actions">
-        <button class="btn-setup-cancel" onclick="cerrarSetup()">Cancelar</button>
-        <button class="btn-setup-save" onclick="guardarSetup()">Guardar y conectar</button>
-      </div>
-    </div>
   </div>
 
   <div class="controls-bar">
@@ -1172,10 +1121,10 @@ function restoreObservaciones(obs){
 }
 
 /* ══ PLANES — GOOGLE SHEETS API ══ */
-const SHEET_URL_KEY = 'mealPlan_sheetUrl_v1';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbx3YD1WXm8pVwlo4PdLXJFGvV0ZP9h6R4-vU7B78kx0ajHefBV7eVn_c9f0erCd_SE/exec';
 let planesCache = [];
 
-function getSheetUrl(){ return localStorage.getItem(SHEET_URL_KEY) || ''; }
+function getSheetUrl(){ return SHEET_URL; }
 
 function setEstado(msg){ const el = document.getElementById('planesStatus'); if(el) el.textContent = msg; }
 
@@ -1221,7 +1170,6 @@ async function refrescarPlanes(){
 }
 
 async function guardarPlan(){
-  if(!getSheetUrl()){ abrirSetup(); return; }
   const nombre = prompt('Nombre del plan:');
   if(!nombre?.trim()) return;
   const existente = planesCache.find(p => p.name.toLowerCase() === nombre.trim().toLowerCase());
@@ -1269,24 +1217,6 @@ async function eliminarPlan(){
     setEstado('✅ ' + planesCache.length + ' plan(es)');
     toast('🗑️ Plan eliminado');
   } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
-}
-
-/* ══ SETUP MODAL ══ */
-function abrirSetup(){
-  document.getElementById('setupUrlInput').value = getSheetUrl();
-  document.getElementById('setupOverlay').classList.add('open');
-}
-function cerrarSetup(){ document.getElementById('setupOverlay').classList.remove('open'); }
-document.getElementById('setupOverlay').addEventListener('click', e => {
-  if(e.target === document.getElementById('setupOverlay')) cerrarSetup();
-});
-async function guardarSetup(){
-  const url = document.getElementById('setupUrlInput').value.trim();
-  if(!url){ alert('Pega la URL del Apps Script'); return; }
-  localStorage.setItem(SHEET_URL_KEY, url);
-  cerrarSetup();
-  toast('🔄 Conectando con Google Sheets...');
-  await refrescarPlanes();
 }
 
 /* ── PERSISTENCIA ── */
