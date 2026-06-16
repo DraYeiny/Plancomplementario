@@ -880,11 +880,16 @@ function buildTable(wi, dayHeaders){
         div.addEventListener('input', () => { autoSave(); acShow(div); });
         div.addEventListener('keydown', e => {
           acKeyNav(e);
-          if(e.key === 'Enter' && !acDrop.classList.contains('open')){
+          if(e.key === 'Enter'){
             e.preventDefault();
-            div.blur();
-            const text = div.textContent.trim();
-            if(text) showRepeatModal(div);
+            /* use setTimeout so acSelect (inside acKeyNav) finishes writing the text
+               before we read it and open the repeat modal */
+            setTimeout(() => {
+              acHide();
+              div.blur();
+              const text = div.textContent.trim();
+              if(text) showRepeatModal(div);
+            }, 30);
           }
         });
         div.addEventListener('blur', () => setTimeout(acHide, 180));
