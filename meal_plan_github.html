@@ -460,9 +460,26 @@ table.registro-table tbody td {
 }
 .btn-add-obs:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(124,58,237,0.35); }
 
-/* ── EXPORT / IMPORT ── */
-.btn-export { background: linear-gradient(135deg, #6ee7b7, #10b981); color: #fff; }
-.btn-import { background: linear-gradient(135deg, #93c5fd, #3b82f6); color: #fff; }
+/* ── PLANES GUARDADOS ── */
+.planes-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  background: #f0fdf4; border-radius: 14px; padding: 8px 16px; margin-bottom: 10px;
+  border: 1.5px dashed #86efac;
+}
+.planes-bar label { font-size: 0.8rem; font-weight: 800; color: #166534; white-space: nowrap; }
+#planesSelect {
+  border: 1.5px solid #86efac; border-radius: 8px; padding: 5px 10px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
+  color: #166534; background: white; outline: none; flex: 1; min-width: 160px; cursor: pointer;
+}
+.btn-plan {
+  background: #dcfce7; border: none; border-radius: 50px; padding: 5px 14px;
+  font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 800;
+  color: #166534; cursor: pointer; white-space: nowrap; transition: background 0.15s;
+}
+.btn-plan:hover { background: #bbf7d0; }
+.btn-plan-del { background: #fee2e2; color: #b91c1c; }
+.btn-plan-del:hover { background: #fecaca; }
 
 .footer { text-align: center; margin-top: 16px; font-size: 0.72rem; color: #ccc; }
 
@@ -502,6 +519,15 @@ table.registro-table tbody td {
     <div class="emojis">🌟 🥦 🍎 🥣 🍗 🌟</div>
     <h1>🍽️ Mi Plan de Alimentación Semanal</h1>
     <p>¡Comer bien es divertido y delicioso!</p>
+  </div>
+
+  <!-- PLANES GUARDADOS -->
+  <div class="planes-bar">
+    <label>📋 Plan:</label>
+    <select id="planesSelect"><option value="">— Seleccionar plan —</option></select>
+    <button class="btn-plan" onclick="cargarPlan()">⬆️ Cargar</button>
+    <button class="btn-plan" onclick="guardarPlan()">💾 Guardar como...</button>
+    <button class="btn-plan btn-plan-del" onclick="eliminarPlan()">🗑️ Eliminar</button>
   </div>
 
   <div class="controls-bar">
@@ -568,9 +594,6 @@ table.registro-table tbody td {
 
   <div class="btn-row">
     <button class="btn btn-pdf"  onclick="downloadAllPDF()">📄 Descargar PDF</button>
-    <button class="btn btn-export" onclick="exportData()">💾 Exportar datos</button>
-    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-    <button class="btn btn-import" onclick="document.getElementById('importFile').click()">📂 Importar datos</button>
     <button class="btn btn-clear" onclick="clearAll()">🗑️ Limpiar</button>
   </div>
   <div class="footer">✨ Plantilla de alimentación · Datos guardados automáticamente</div>
@@ -1096,32 +1119,58 @@ function restoreObservaciones(obs){
   obs.forEach(text => addObservacion(text));
 }
 
-/* ══ EXPORT / IMPORT ══ */
-function exportData(){
-  const data = collect();
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = (data.childName || 'plan').replace(/\s+/g,'_') + '_alimentacion.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('✅ Datos exportados');
+/* ══ PLANES GUARDADOS (localStorage) ══ */
+const PLANES_KEY = 'mealPlan_planes_v1';
+
+function getPlanes(){ try{ return JSON.parse(localStorage.getItem(PLANES_KEY)) || []; }catch(e){ return []; } }
+function setPlanes(p){ try{ localStorage.setItem(PLANES_KEY, JSON.stringify(p)); }catch(e){} }
+
+function renderPlanesSelect(){
+  const sel = document.getElementById('planesSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Seleccionar plan —</option>';
+  getPlanes().forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id; o.textContent = p.name; sel.appendChild(o);
+  });
+  if(cur) sel.value = cur;
 }
 
-function importData(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try{
-      const data = JSON.parse(ev.target.result);
-      if(!confirm('¿Cargar los datos del archivo? Se reemplazará el contenido actual.')) return;
-      apply(data); autoSave(); toast('✅ Datos importados correctamente');
-    } catch(err){ toast('❌ Archivo inválido'); }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
+function guardarPlan(){
+  const nombre = prompt('Nombre del plan:');
+  if(!nombre || !nombre.trim()) return;
+  const planes = getPlanes();
+  const existente = planes.find(p => p.name.toLowerCase() === nombre.trim().toLowerCase());
+  if(existente){
+    if(!confirm(`Ya existe un plan llamado "${existente.name}". ¿Sobreescribir?`)) return;
+    existente.data = collect(); existente.updated = new Date().toISOString();
+    setPlanes(planes);
+  } else {
+    planes.push({ id: 'plan_'+Date.now(), name: nombre.trim(), created: new Date().toISOString(), data: collect() });
+    setPlanes(planes);
+  }
+  renderPlanesSelect();
+  document.getElementById('planesSelect').value = planes.find(p => p.name.trim().toLowerCase() === nombre.trim().toLowerCase())?.id || '';
+  toast('✅ Plan guardado: ' + nombre.trim());
+}
+
+function cargarPlan(){
+  const id = document.getElementById('planesSelect').value;
+  if(!id){ toast('Selecciona un plan primero'); return; }
+  const plan = getPlanes().find(p => p.id === id);
+  if(!plan) return;
+  if(!confirm(`¿Cargar el plan "${plan.name}"? Se reemplazará el contenido actual.`)) return;
+  apply(plan.data); autoSave(); toast('✅ Plan cargado: ' + plan.name);
+}
+
+function eliminarPlan(){
+  const id = document.getElementById('planesSelect').value;
+  if(!id){ toast('Selecciona un plan primero'); return; }
+  const plan = getPlanes().find(p => p.id === id);
+  if(!plan || !confirm(`¿Eliminar el plan "${plan.name}"?`)) return;
+  setPlanes(getPlanes().filter(p => p.id !== id));
+  renderPlanesSelect();
+  toast('🗑️ Plan eliminado');
 }
 
 /* ── PERSISTENCIA ── */
@@ -1477,6 +1526,7 @@ try{
   const saved = JSON.parse(localStorage.getItem(KEY));
   if(saved){ apply(saved); } else { restoreRegistro([]); }
 }catch(e){ restoreRegistro([]); }
+renderPlanesSelect();
 </script>
 </body>
 </html>
