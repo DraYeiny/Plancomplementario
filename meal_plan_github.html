@@ -1200,14 +1200,14 @@ async function sheetGet(){
 
 async function sheetPost(body){
   const url = getSheetUrl();
-  if(!url) return false;
-  const r = await fetch(url, {
+  if(!url) return;
+  /* no-cors: el POST llega al Apps Script aunque no podamos leer la respuesta */
+  await fetch(url, {
     method: 'POST',
+    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(body)
   });
-  const j = await r.json();
-  return !!j.ok;
 }
 
 async function refrescarPlanes(){
@@ -1230,15 +1230,20 @@ async function guardarPlan(){
   const plan = { id, name: nombre.trim(), created: existente?.created || new Date().toISOString(), data: collect() };
   setEstado('💾 Guardando...');
   try{
-    const ok = await sheetPost({ action: 'save', plan });
-    if(ok){
-      const i = planesCache.findIndex(p => p.id === id);
-      if(i >= 0) planesCache[i] = plan; else planesCache.push(plan);
-      renderPlanesSelect();
+    await sheetPost({ action: 'save', plan });
+    /* Verificar via GET que realmente se guardó */
+    await new Promise(r => setTimeout(r, 1200));
+    planesCache = await sheetGet();
+    renderPlanesSelect();
+    const guardado = planesCache.find(p => p.id === id);
+    if(guardado){
       document.getElementById('planesSelect').value = id;
       setEstado('✅ Guardado');
       toast('✅ Plan guardado: ' + plan.name);
-    } else { setEstado('⚠️ Error'); toast('❌ No se pudo guardar'); }
+    } else {
+      setEstado('⚠️ No se confirmó el guardado');
+      toast('⚠️ Revisa la conexión con el Sheet');
+    }
   } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
 }
 
@@ -1257,13 +1262,12 @@ async function eliminarPlan(){
   if(!plan || !confirm(`¿Eliminar el plan "${plan.name}"?`)) return;
   setEstado('🗑️ Eliminando...');
   try{
-    const ok = await sheetPost({ action: 'delete', id });
-    if(ok){
-      planesCache = planesCache.filter(p => p.id !== id);
-      renderPlanesSelect();
-      setEstado('✅');
-      toast('🗑️ Plan eliminado');
-    } else { setEstado('⚠️ Error'); toast('❌ No se pudo eliminar'); }
+    await sheetPost({ action: 'delete', id });
+    await new Promise(r => setTimeout(r, 1200));
+    planesCache = await sheetGet();
+    renderPlanesSelect();
+    setEstado('✅ ' + planesCache.length + ' plan(es)');
+    toast('🗑️ Plan eliminado');
   } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
 }
 
