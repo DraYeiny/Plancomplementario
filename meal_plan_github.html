@@ -180,55 +180,6 @@ td.cell { padding: 2px; border-radius: 7px; vertical-align: middle; }
   padding: 6px 14px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
   font-weight: 800; cursor: pointer;
 }
-/* ── SYNC & PROFILES ── */
-.sync-bar {
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  background: #f0fdf4; border-radius: 12px; padding: 8px 16px; margin-bottom: 10px;
-  border: 1.5px dashed #86efac; font-family: 'Nunito', sans-serif;
-}
-.sync-bar label { font-size: 0.8rem; font-weight: 800; color: #166534; white-space: nowrap; }
-#profileSelect {
-  border: 1.5px solid #86efac; border-radius: 8px; padding: 4px 8px;
-  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
-  color: #166534; background: white; outline: none; flex: 1; min-width: 140px;
-}
-#syncStatus { font-size: 0.72rem; color: #16a34a; font-weight: 700; margin-left: auto; }
-.btn-sync-sm {
-  background: #dcfce7; border: none; border-radius: 50px; padding: 5px 12px;
-  font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 800;
-  color: #166534; cursor: pointer; white-space: nowrap;
-}
-.btn-sync-sm:hover { background: #bbf7d0; }
-/* ── SYNC SETTINGS MODAL ── */
-#syncModal {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.22);
-  z-index: 9300; align-items: center; justify-content: center; padding: 16px;
-}
-#syncModal.open { display: flex; }
-#syncBox {
-  background: white; border-radius: 20px; padding: 22px 24px;
-  box-shadow: 0 12px 40px rgba(107,79,158,0.3); max-width: 420px; width: 100%;
-}
-#syncBox h3 { font-size: 1rem; font-weight: 800; color: #166534; margin-bottom: 6px; }
-#syncBox p  { font-size: 0.78rem; color: #aaa; margin-bottom: 14px; }
-.sync-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-.sync-field label { font-size: 0.78rem; font-weight: 800; color: #555; }
-.sync-field input {
-  border: 1.5px solid #d1fae5; border-radius: 8px; padding: 7px 10px;
-  font-family: 'Nunito', sans-serif; font-size: 0.82rem; outline: none;
-}
-.sync-field input:focus { border-color: #34d399; }
-.sync-modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
-.btn-sync-save {
-  background: linear-gradient(135deg,#34d399,#10b981); color: white; border: none;
-  border-radius: 50px; padding: 7px 18px; font-family: 'Nunito', sans-serif;
-  font-size: 0.82rem; font-weight: 800; cursor: pointer;
-}
-.btn-sync-cancel2 {
-  background: #f0fdf4; color: #166534; border: none; border-radius: 50px;
-  padding: 7px 14px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
-  font-weight: 800; cursor: pointer;
-}
 tr.spacer td { height: 6px; background: transparent; }
 
 /* ── AUTOCOMPLETE DROPDOWN ── */
@@ -546,43 +497,11 @@ table.registro-table tbody td {
   <button class="btn-rbar-cancel" onclick="exitRepeatMode()">✕ Cancelar</button>
 </div>
 
-<!-- SYNC SETTINGS MODAL -->
-<div id="syncModal">
-  <div id="syncBox">
-    <h3>🔄 Configuración de sincronización</h3>
-    <p>Ingresa tu Token de GitHub (PAT) con permiso <strong>gist</strong> para sincronizar entre dispositivos. El token se guarda solo en este navegador.</p>
-    <div class="sync-field">
-      <label>GitHub Personal Access Token</label>
-      <input type="password" id="syncPatInput" placeholder="ghp_xxxxxxxxxxxx">
-    </div>
-    <div class="sync-field">
-      <label>ID de Gist (se genera automáticamente la primera vez)</label>
-      <input type="text" id="syncGistInput" placeholder="Se llenará automáticamente">
-    </div>
-    <div class="sync-modal-actions">
-      <button class="btn-sync-cancel2" onclick="closeSyncModal()">Cancelar</button>
-      <button class="btn-sync-save" onclick="saveSyncSettings()">Guardar y sincronizar</button>
-    </div>
-  </div>
-</div>
-
 <div class="page">
   <div class="header">
     <div class="emojis">🌟 🥦 🍎 🥣 🍗 🌟</div>
     <h1>🍽️ Mi Plan de Alimentación Semanal</h1>
     <p>¡Comer bien es divertido y delicioso!</p>
-  </div>
-
-  <!-- SYNC & PROFILES BAR -->
-  <div class="sync-bar">
-    <label>📋 Perfil:</label>
-    <select id="profileSelect" onchange="loadSelectedProfile()">
-      <option value="">— Seleccionar perfil —</option>
-    </select>
-    <button class="btn-sync-sm" onclick="saveAsProfile()">💾 Guardar perfil</button>
-    <button class="btn-sync-sm" onclick="deleteSelectedProfile()">🗑️</button>
-    <button class="btn-sync-sm" onclick="openSyncModal()">🔄 Sincronizar</button>
-    <span id="syncStatus"></span>
   </div>
 
   <div class="controls-bar">
@@ -1073,7 +992,7 @@ function enterRepeatMode(div){
   document.querySelectorAll('.cell-edit').forEach(cell => {
     if(cell === div) return;
     const cp = (cell.dataset.id||'').match(/^w\d+_(.+)_(.+)_\d+$/);
-    if(cp && cp[1] === mealId && cp[2] === subId){
+    if(cp && cp[2] === subId){  /* same category across ALL meals */
       cell.classList.add('cell-selectable');
       cell.contentEditable = 'false';
     }
@@ -1113,153 +1032,8 @@ function exitRepeatMode(){
 
 document.addEventListener('keydown', e => { if(e.key==='Escape' && repeatMode) exitRepeatMode(); });
 
-/* ══ GITHUB GIST SYNC ══ */
-const SYNC_KEY = 'mealPlan_sync_v1';
-let syncCfg = null;
-let syncTimer = null;
-
-function loadSyncCfg(){ try{ syncCfg = JSON.parse(localStorage.getItem(SYNC_KEY)) || null; }catch(e){} }
-function saveSyncCfg(){ try{ localStorage.setItem(SYNC_KEY, JSON.stringify(syncCfg)); }catch(e){} }
-
-function openSyncModal(){
-  loadSyncCfg();
-  document.getElementById('syncPatInput').value  = syncCfg?.pat  || '';
-  document.getElementById('syncGistInput').value = syncCfg?.gistId || '';
-  document.getElementById('syncModal').classList.add('open');
-}
-function closeSyncModal(){ document.getElementById('syncModal').classList.remove('open'); }
-document.getElementById('syncModal').addEventListener('click', e => {
-  if(e.target === document.getElementById('syncModal')) closeSyncModal();
-});
-
-async function saveSyncSettings(){
-  const pat    = document.getElementById('syncPatInput').value.trim();
-  const gistId = document.getElementById('syncGistInput').value.trim();
-  if(!pat){ alert('Ingresa tu GitHub Personal Access Token'); return; }
-  syncCfg = { pat, gistId: gistId || null };
-  saveSyncCfg();
-  closeSyncModal();
-  await syncPush();
-}
-
-async function gistFetch(method, path, body){
-  const r = await fetch('https://api.github.com' + path, {
-    method,
-    headers: { 'Authorization':'token '+syncCfg.pat, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' },
-    body: body ? JSON.stringify(body) : undefined
-  });
-  if(!r.ok) throw new Error('GitHub '+r.status);
-  return r.json();
-}
-
-async function syncPush(){
-  if(!syncCfg?.pat) return;
-  setSyncStatus('🔄 Sincronizando...');
-  try{
-    const payload = JSON.stringify({ updated: new Date().toISOString(), data: collect() });
-    const files = { 'meal_plan_sync.json': { content: payload } };
-    if(syncCfg.gistId){
-      await gistFetch('PATCH', '/gists/'+syncCfg.gistId, { files });
-    } else {
-      const g = await gistFetch('POST', '/gists', { description:'GASTROPEDIA Meal Plan', public:false, files });
-      syncCfg.gistId = g.id;
-      saveSyncCfg();
-      document.getElementById('syncGistInput').value = g.id;
-    }
-    setSyncStatus('✅ '+new Date().toLocaleTimeString());
-  } catch(e){ setSyncStatus('⚠️ Error'); }
-}
-
-async function syncPull(){
-  if(!syncCfg?.pat || !syncCfg?.gistId) return;
-  try{
-    const g = await gistFetch('GET', '/gists/'+syncCfg.gistId);
-    const file = g.files['meal_plan_sync.json'];
-    if(!file) return;
-    const remote = JSON.parse(file.content);
-    if(confirm('¿Cargar los datos guardados en la nube?')){ apply(remote.data); autoSave(); toast('✅ Datos cargados desde la nube'); }
-  } catch(e){ toast('⚠️ No se pudo cargar desde la nube'); }
-}
-
-function setSyncStatus(msg){ const el=document.getElementById('syncStatus'); if(el) el.textContent=msg; }
-function scheduleSyncPush(){ if(!syncCfg?.pat) return; clearTimeout(syncTimer); syncTimer=setTimeout(syncPush,3000); }
-
-/* ══ PROFILES (GitHub repo: DraYeiny/Plancomplementario/profiles.json) ══ */
-const PROFILES_PATH = '/repos/DraYeiny/Plancomplementario/contents/profiles.json';
-let profilesSha = null;
-
-async function loadProfiles(){
-  if(!syncCfg?.pat) return;
-  try{
-    const r = await gistFetch('GET', PROFILES_PATH);
-    profilesSha = r.sha;
-    const profiles = JSON.parse(atob(r.content.replace(/\n/g,'')));
-    renderProfileSelect(profiles);
-  } catch(e){ if(!e.message.includes('404')) console.warn('profiles load:', e); }
-}
-
-async function saveProfiles(profiles){
-  if(!syncCfg?.pat) return;
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(profiles, null, 2))));
-  const body = { message:'Update profiles', content, ...(profilesSha ? {sha:profilesSha} : {}) };
-  const r = await gistFetch('PUT', PROFILES_PATH, body);
-  profilesSha = r.content.sha;
-}
-
-function renderProfileSelect(profiles){
-  const sel = document.getElementById('profileSelect');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">— Seleccionar perfil —</option>';
-  (profiles||[]).forEach(p => {
-    const o = document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o);
-  });
-  if(cur) sel.value = cur;
-}
-
-async function getProfiles(){
-  if(!syncCfg?.pat) return [];
-  try{
-    const r = await gistFetch('GET', PROFILES_PATH);
-    profilesSha = r.sha;
-    return JSON.parse(atob(r.content.replace(/\n/g,'')));
-  } catch(e){ return []; }
-}
-
-async function saveAsProfile(){
-  if(!syncCfg?.pat){ alert('Configura la sincronización primero (botón 🔄 Sincronizar)'); return; }
-  const name = prompt('Nombre del perfil:');
-  if(!name) return;
-  const profiles = await getProfiles();
-  const id = 'p_' + Date.now();
-  profiles.push({ id, name, created: new Date().toISOString(), data: collect() });
-  await saveProfiles(profiles);
-  renderProfileSelect(profiles);
-  document.getElementById('profileSelect').value = id;
-  toast('✅ Perfil guardado: ' + name);
-}
-
-async function loadSelectedProfile(){
-  const id = document.getElementById('profileSelect').value;
-  if(!id) return;
-  if(!syncCfg?.pat){ alert('Configura la sincronización primero'); document.getElementById('profileSelect').value=''; return; }
-  const profiles = await getProfiles();
-  const profile = profiles.find(p => p.id === id);
-  if(!profile) return;
-  if(!confirm(`¿Cargar perfil "${profile.name}"? Se reemplazará el contenido actual.`)){ document.getElementById('profileSelect').value=''; return; }
-  apply(profile.data); autoSave(); toast('✅ Perfil cargado: ' + profile.name);
-}
-
-async function deleteSelectedProfile(){
-  const id = document.getElementById('profileSelect').value;
-  if(!id){ toast('Selecciona un perfil primero'); return; }
-  if(!syncCfg?.pat){ alert('Configura la sincronización primero'); return; }
-  const profiles = await getProfiles();
-  const profile = profiles.find(p => p.id === id);
-  if(!profile || !confirm(`¿Eliminar perfil "${profile.name}"?`)) return;
-  await saveProfiles(profiles.filter(p => p.id !== id));
-  renderProfileSelect(profiles.filter(p => p.id !== id));
-  toast('🗑️ Perfil eliminado');
-}
+/* stub — autoSave calls this, no-op without sync */
+function scheduleSyncPush(){}
 
 /* ══ OBSERVACIONES ══ */
 let obsCount = 0;
@@ -1693,7 +1467,6 @@ async function runPDF(){
 }
 
 /* ── BOOT ── */
-loadSyncCfg();
 const today=new Date();
 startDate=new Date(today);
 document.getElementById('lblStart').textContent=fmt(startDate);
@@ -1704,8 +1477,6 @@ try{
   const saved = JSON.parse(localStorage.getItem(KEY));
   if(saved){ apply(saved); } else { restoreRegistro([]); }
 }catch(e){ restoreRegistro([]); }
-/* load profiles if PAT is configured */
-if(syncCfg?.pat) loadProfiles();
 </script>
 </body>
 </html>
