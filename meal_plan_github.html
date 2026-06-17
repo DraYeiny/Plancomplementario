@@ -202,6 +202,16 @@ td.cell { padding: 2px; border-radius: 8px; vertical-align: middle; }
 }
 #copyWeekBar.open { display: flex; }
 #copyWeekMsg { font-size: 0.84rem; font-weight: 700; color: #1e40af; }
+.copy-week-select {
+  border: 1.5px solid #bfdbfe; border-radius: 50px; padding: 5px 12px;
+  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800;
+  color: #1e40af; background: white; cursor: pointer; outline: none;
+}
+.copy-week-arrow { font-size: 0.84rem; font-weight: 700; color: #1e40af; }
+#localSaveLabel {
+  font-size: 0.72rem; font-weight: 700; color: #9ca3af;
+  font-family: 'Nunito', sans-serif; margin-left: 6px;
+}
 .btn-copy-yes {
   background: linear-gradient(135deg, #60a5fa, #3b82f6); color: white; border: none;
   border-radius: 50px; padding: 6px 16px; font-family: 'Nunito', sans-serif;
@@ -383,6 +393,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
     <button class="btn-plan" onclick="guardarPlan()">💾 Guardar como...</button>
     <button class="btn-plan btn-plan-del" onclick="eliminarPlan()">🗑️ Eliminar</button>
     <span id="planesStatus"></span>
+    <span id="localSaveLabel"></span>
   </div>
 
   <div class="controls-bar">
@@ -404,7 +415,9 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 
   <div class="tabs-bar" id="tabsBar"></div>
   <div id="copyWeekBar">
-    <span id="copyWeekMsg"></span>
+    <span id="copyWeekMsg">📋 Copiar semana:</span>
+    <select id="copyWeekSelect" class="copy-week-select"></select>
+    <span class="copy-week-arrow">→ Semana <span id="copyWeekTo"></span></span>
     <button class="btn-copy-yes" onclick="doCopyWeek()">✓ Sí, copiar</button>
     <button class="btn-copy-no"  onclick="hideCopyBar()">✕ No</button>
   </div>
@@ -715,33 +728,45 @@ function weekHasData(w){
   return [...document.querySelectorAll(`[data-id^="w${w}_"]`)].some(el=>el.textContent.trim()!=='');
 }
 
-let _copyFrom = -1, _copyTo = -1;
+let _copyTo = -1;
 
-function showCopyBar(from, to){
-  _copyFrom = from; _copyTo = to;
-  document.getElementById('copyWeekMsg').textContent =
-    `¿Copiar el contenido de la Semana ${from+1} a la Semana ${to+1}?`;
+function showCopyBar(filledWeeks, to){
+  _copyTo = to;
+  const sel = document.getElementById('copyWeekSelect');
+  sel.innerHTML = '';
+  filledWeeks.forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w;
+    opt.textContent = `Semana ${w + 1}`;
+    sel.appendChild(opt);
+  });
+  document.getElementById('copyWeekTo').textContent = to + 1;
   document.getElementById('copyWeekBar').classList.add('open');
 }
 function hideCopyBar(){
   document.getElementById('copyWeekBar').classList.remove('open');
-  _copyFrom = -1; _copyTo = -1;
+  _copyTo = -1;
 }
 function doCopyWeek(){
-  if(_copyFrom<0||_copyTo<0) return;
+  const from = +document.getElementById('copyWeekSelect').value;
+  if(isNaN(from)||_copyTo<0) return;
   document.querySelectorAll(`[data-id^="w${_copyTo}_"]`).forEach(el=>{
-    const srcId = el.dataset.id.replace(`w${_copyTo}_`,`w${_copyFrom}_`);
+    const srcId = el.dataset.id.replace(`w${_copyTo}_`,`w${from}_`);
     const src = document.querySelector(`[data-id="${srcId}"]`);
     if(src) el.textContent = src.textContent;
   });
-  autoSave(); hideCopyBar(); toast(`✅ Semana ${_copyFrom+1} copiada a Semana ${_copyTo+1}`);
+  autoSave(); hideCopyBar(); toast(`✅ Semana ${from+1} copiada a Semana ${_copyTo+1}`);
 }
 
 function switchTab(w){
   hideCopyBar();
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',+b.dataset.week===w));
   document.querySelectorAll('.week-sheet').forEach(s=>s.classList.toggle('visible',s.id==='sheet-'+w));
-  if(w>0 && weekHasData(w-1) && !weekHasData(w)) showCopyBar(w-1, w);
+  if(!weekHasData(w)){
+    const total = document.querySelectorAll('.tab-btn').length;
+    const filledWeeks = Array.from({length:total},(_,i)=>i).filter(i=>i!==w && weekHasData(i));
+    if(filledWeeks.length > 0) showCopyBar(filledWeeks, w);
+  }
 }
 
 function buildTable(wi, dayHeaders){
@@ -959,8 +984,53 @@ function exitRepeatMode(){
 
 document.addEventListener('keydown', e => { if(e.key==='Escape' && repeatMode) exitRepeatMode(); });
 
-/* stub — autoSave calls this, no-op without sync */
-function scheduleSyncPush(){}
+/* ── LOCAL AUTO-SAVE (hoja LOCAL en Google Sheets) ── */
+let _localTimer = null;
+
+function scheduleLocalSave(){
+  clearTimeout(_localTimer);
+  _localTimer = setTimeout(doLocalSave, 4000);
+}
+
+async function doLocalSave(){
+  const url = getSheetUrl();
+  if(!url) return;
+  try{
+    await fetch(url, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveLocal', data: collect(), timestamp: new Date().toISOString() })
+    });
+    const el = document.getElementById('localSaveLabel');
+    if(el){
+      const d = new Date();
+      el.textContent = `💾 ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+  } catch(e){}
+}
+
+async function checkLocalRestore(){
+  if(sessionStorage.getItem('localChecked')) return;
+  sessionStorage.setItem('localChecked','1');
+  const url = getSheetUrl();
+  if(!url) return;
+  try{
+    const r = await fetch(url + '?action=getLocal&_=' + Date.now());
+    const j = await r.json();
+    if(!j.ok || !j.data) return;
+    const hasCells = j.data.cells && Object.values(j.data.cells).some(v=>v&&v.trim());
+    if(!hasCells) return;
+    const ts = new Date(j.timestamp);
+    const agoMin = Math.round((Date.now()-ts.getTime())/60000);
+    const label = agoMin < 60 ? `hace ${agoMin} min`
+      : agoMin < 1440 ? `hace ${Math.round(agoMin/60)}h`
+      : ts.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+    if(confirm(`📱 Hay trabajo autoguardado (${label}).\n¿Continuar desde donde quedaste?`)){
+      apply(j.data);
+      toast('✅ Sesión restaurada');
+    }
+  } catch(e){}
+}
 
 /* ══ OBSERVACIONES ══ */
 let obsCount = 0;
@@ -1174,7 +1244,7 @@ function apply(d){
   restoreRegistro(d.registro || []);
   restoreObservaciones(d.observaciones || []);
 }
-function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} scheduleSyncPush(); }
+function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} scheduleLocalSave(); }
 function clearAll(){
   if(!confirm('¿Borrar todo el contenido? 🗑️')) return;
   document.querySelectorAll('.cell-edit').forEach(el=>el.textContent='');
@@ -1514,6 +1584,7 @@ try{
   if(saved){ apply(saved); } else { restoreRegistro([]); }
 }catch(e){ restoreRegistro([]); }
 refrescarPlanes();
+checkLocalRestore();
 </script>
 </body>
 </html>

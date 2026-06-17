@@ -1,6 +1,7 @@
 // ══════════════════════════════════════════════════════════════
 //  GASTROPEDIA — Google Apps Script para Planes de Alimentación
 //  Hoja destino: "PLAN ALIMENTARIO"
+//  Hoja de sesión: "LOCAL"
 //
 //  CONFIGURACIÓN (una sola vez):
 //  1. En Google Sheets: Extensiones → Apps Script
@@ -14,6 +15,7 @@
 // ══════════════════════════════════════════════════════════════
 
 const SHEET_NAME = 'PLAN ALIMENTARIO';
+const LOCAL_SHEET_NAME = 'LOCAL';
 
 function getSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -32,8 +34,36 @@ function getSheet() {
   return sheet;
 }
 
+function getLocalSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(LOCAL_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(LOCAL_SHEET_NAME);
+    sheet.getRange(1, 1, 1, 2).setValues([['Timestamp', 'Datos']]);
+    sheet.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#fff9c4').setFontColor('#713f12');
+    sheet.setColumnWidth(1, 200);
+    sheet.setColumnWidth(2, 800);
+  }
+  return sheet;
+}
+
 function doGet(e) {
   try {
+    const action = e.parameter && e.parameter.action;
+
+    if (action === 'getLocal') {
+      const ls = getLocalSheet();
+      if (ls.getLastRow() >= 2) {
+        const row = ls.getRange(2, 1, 1, 2).getValues()[0];
+        if (row[0] && row[1]) {
+          try {
+            return output({ ok: true, timestamp: String(row[0]), data: JSON.parse(row[1]) });
+          } catch(err) {}
+        }
+      }
+      return output({ ok: true, data: null });
+    }
+
     const sheet = getSheet();
     const last = sheet.getLastRow();
     const plans = [];
@@ -56,6 +86,18 @@ function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     const sheet = getSheet();
+
+    if (body.action === 'saveLocal') {
+      const ls = getLocalSheet();
+      const ts = body.timestamp || new Date().toISOString();
+      const vals = [[ts, JSON.stringify(body.data)]];
+      if (ls.getLastRow() >= 2) {
+        ls.getRange(2, 1, 1, 2).setValues(vals);
+      } else {
+        ls.appendRow(vals[0]);
+      }
+      return output({ ok: true });
+    }
 
     if (body.action === 'save') {
       const p = body.plan;
