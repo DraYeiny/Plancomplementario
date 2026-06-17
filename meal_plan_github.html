@@ -998,23 +998,24 @@ function exitRepeatMode(){
 
 document.addEventListener('keydown', e => { if(e.key==='Escape' && repeatMode) exitRepeatMode(); });
 
-/* ── LOCAL AUTO-SAVE (hoja LOCAL en Google Sheets) ── */
+/* ── AUTO-SAVE CROSS-DEVICE (plan oculto _local_autosave) ── */
+const AUTOSAVE_ID = '_local_autosave';
 let _localTimer = null;
 
 function scheduleLocalSave(){
   clearTimeout(_localTimer);
-  _localTimer = setTimeout(doLocalSave, 4000);
+  _localTimer = setTimeout(doLocalSave, 5000);
 }
 
 async function doLocalSave(){
-  const url = getSheetUrl();
-  if(!url) return;
   try{
-    await fetch(url, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'saveLocal', data: collect(), timestamp: new Date().toISOString() })
-    });
+    const plan = {
+      id: AUTOSAVE_ID,
+      name: '__autosave__',
+      created: new Date().toISOString(),
+      data: collect()
+    };
+    await sheetPost({ action: 'save', plan });
     const el = document.getElementById('localSaveLabel');
     if(el){
       const d = new Date();
@@ -1034,26 +1035,21 @@ function doRestore(){
   closeRestoreBar();
 }
 
-async function checkLocalRestore(){
+function checkLocalRestore(){
   if(sessionStorage.getItem('localChecked')) return;
   sessionStorage.setItem('localChecked','1');
-  const url = getSheetUrl();
-  if(!url) return;
-  try{
-    const r = await fetch(url + '?action=getLocal&_=' + Date.now());
-    const j = await r.json();
-    if(!j.ok || !j.data) return;
-    const hasCells = j.data.cells && Object.values(j.data.cells).some(v=>v&&v.trim());
-    if(!hasCells) return;
-    const ts = new Date(j.timestamp);
-    const agoMin = Math.round((Date.now()-ts.getTime())/60000);
-    const label = agoMin < 60 ? `hace ${agoMin} min`
-      : agoMin < 1440 ? `hace ${Math.round(agoMin/60)}h`
-      : ts.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
-    _restoreData = j.data;
-    document.getElementById('restoreMsg').textContent = `📱 Hay trabajo guardado automáticamente (${label}) — ¿continuar desde donde quedaste?`;
-    document.getElementById('restoreBar').classList.add('open');
-  } catch(e){}
+  const autosave = planesCache.find(p => p.id === AUTOSAVE_ID);
+  if(!autosave || !autosave.data) return;
+  const hasCells = autosave.data.cells && Object.values(autosave.data.cells).some(v=>v&&v.trim());
+  if(!hasCells) return;
+  const ts = new Date(autosave.created);
+  const agoMin = Math.round((Date.now()-ts.getTime())/60000);
+  const label = agoMin < 60 ? `hace ${agoMin} min`
+    : agoMin < 1440 ? `hace ${Math.round(agoMin/60)}h`
+    : ts.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+  _restoreData = autosave.data;
+  document.getElementById('restoreMsg').textContent = `📱 Hay trabajo guardado automáticamente (${label}) — ¿continuar desde donde quedaste?`;
+  document.getElementById('restoreBar').classList.add('open');
 }
 
 /* ══ OBSERVACIONES ══ */
@@ -1136,6 +1132,7 @@ function renderPlanesSelect(){
   const cur = sel.value;
   sel.innerHTML = '<option value="">— Seleccionar plan —</option>';
   planesCache.forEach(p => {
+    if(p.id === AUTOSAVE_ID) return;
     const o = document.createElement('option');
     o.value = p.id; o.textContent = p.name; sel.appendChild(o);
   });
@@ -1162,13 +1159,15 @@ async function sheetPost(body){
   });
 }
 
-async function refrescarPlanes(){
+async function refrescarPlanes(afterLoad){
   if(!getSheetUrl()) return;
   setEstado('🔄');
   try{
     planesCache = await sheetGet();
     renderPlanesSelect();
-    setEstado('✅ ' + planesCache.length + ' plan(es)');
+    const visible = planesCache.filter(p => p.id !== AUTOSAVE_ID);
+    setEstado('✅ ' + visible.length + ' plan(es)');
+    if(afterLoad) afterLoad();
   } catch(e){ setEstado('⚠️ Sin conexión'); }
 }
 
@@ -1607,8 +1606,7 @@ try{
   const saved = JSON.parse(localStorage.getItem(KEY));
   if(saved){ apply(saved); } else { restoreRegistro([]); }
 }catch(e){ restoreRegistro([]); }
-refrescarPlanes();
-checkLocalRestore();
+refrescarPlanes(checkLocalRestore);
 </script>
 </body>
 </html>
