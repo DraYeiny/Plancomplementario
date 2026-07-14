@@ -26,7 +26,8 @@ const WHATSAPP_APIKEY = '6438368';
 function notifyWhatsApp(text) {
   const url = 'https://api.callmebot.com/whatsapp.php?phone=' + WHATSAPP_PHONE +
     '&text=' + encodeURIComponent(text) + '&apikey=' + WHATSAPP_APIKEY;
-  UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  return { code: resp.getResponseCode(), body: resp.getContentText() };
 }
 
 function getSpreadsheet() {
@@ -146,8 +147,11 @@ function doPost(e) {
       if (body.reqId) {
         try { PropertiesService.getScriptProperties().setProperty('drivelink_' + body.reqId, link); } catch(e) {}
       }
-      try { notifyWhatsApp('📄 Nuevo plan guardado: ' + (body.filename || 'Plan alimentario') + '\n' + link); } catch(e) {}
-      return output({ ok: true, link: link });
+      let whatsappResult = null, whatsappError = null;
+      try {
+        whatsappResult = notifyWhatsApp('📄 Nuevo plan guardado: ' + (body.filename || 'Plan alimentario') + '\n' + link);
+      } catch(e) { whatsappError = e.message; }
+      return output({ ok: true, link: link, whatsappResult: whatsappResult, whatsappError: whatsappError });
     }
 
     if (body.action === 'saveLocal') {
