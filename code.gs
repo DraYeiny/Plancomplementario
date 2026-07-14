@@ -114,7 +114,7 @@ function doPost(e) {
         file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         const link = 'https://drive.google.com/file/d/' + file.getId() + '/view?usp=sharing';
         PropertiesService.getScriptProperties().setProperty('drivelink_' + body.reqId, link);
-        return output({ ok: true });
+        return output({ ok: true, link });
       } catch(err) {
         return output({ ok: false, error: err.message });
       }

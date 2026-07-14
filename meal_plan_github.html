@@ -1447,7 +1447,14 @@ async function captureRegistroPage(){
 async function runPDF(){
   toast('⏳ Generando PDF del plan...');
   const childName=document.getElementById('childName').value.trim();
-  const name=childName?childName+' - Plan de alimentacion':'Plan de alimentacion';
+  const selPlan=document.getElementById('planesSelect');
+  const planName=selPlan.value?selPlan.options[selPlan.selectedIndex].text:'';
+  const fechaStr=startDate?fmt(startDate).replace(/\//g,'-'):'';
+  const nameParts=['Plan alimentario'];
+  if(childName) nameParts.push(childName);
+  if(fechaStr) nameParts.push(fechaStr);
+  if(planName) nameParts.push(planName);
+  const name=nameParts.join(' - ');
   const pdfUrl1='https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIA.pdf';
   const pdfUrl2='https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIAFINAL.pdf';
 
@@ -1652,16 +1659,27 @@ async function uploadToDrive(pdfBytes, filename){
   showDriveBar('⏳ Guardando en Drive...');
   try{
     const base64=bytesToBase64(new Uint8Array(pdfBytes));
-    await sheetPost({action:'saveToDrive', reqId, pdf:base64, filename});
-    for(let i=0;i<15;i++){
-      await new Promise(r=>setTimeout(r,2000));
-      try{
-        const r=await fetch(url+'?action=getDriveLink&reqId='+reqId+'&_='+Date.now());
-        const j=await r.json();
-        if(j.ok && j.link){ showDriveBar('✅ PDF guardado en Drive:', j.link); return; }
-      }catch(e){}
+    const body=JSON.stringify({action:'saveToDrive', reqId, pdf:base64, filename});
+    /* Intento con CORS normal para leer el link directo de la respuesta */
+    let link=null;
+    try{
+      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+      const j=await r.json();
+      if(j.ok && j.link) link=j.link;
+    }catch(corsErr){
+      /* CORS bloqueado — fallback a no-cors + polling */
+      await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+      for(let i=0;i<20;i++){
+        await new Promise(r=>setTimeout(r,2000));
+        try{
+          const r=await fetch(url+'?action=getDriveLink&reqId='+reqId+'&_='+Date.now());
+          const j=await r.json();
+          if(j.ok && j.link){ link=j.link; break; }
+        }catch(e){}
+      }
     }
-    showDriveBar('⚠️ No se confirmó el guardado — revisa el Drive');
+    if(link) showDriveBar('✅ PDF guardado en Drive:', link);
+    else showDriveBar('⚠️ PDF subido — revisa la carpeta de Drive');
   }catch(e){ showDriveBar('⚠️ Error al subir al Drive'); }
 }
 
