@@ -18,8 +18,19 @@ const SHEET_NAME = 'PLAN ALIMENTARIO';
 const LOCAL_SHEET_NAME = 'LOCAL';
 const DRIVE_FOLDER_ID = '1caarX5gJ1rGWItU7lH0w9MsdeVp5wXEF';
 
+function getSpreadsheet() {
+  const props = PropertiesService.getScriptProperties();
+  let ssId = props.getProperty('ss_id');
+  if (ssId) {
+    try { return SpreadsheetApp.openById(ssId); } catch(e) {}
+  }
+  const ss = SpreadsheetApp.create('GASTROPEDIA - Planes de Alimentación');
+  props.setProperty('ss_id', ss.getId());
+  return ss;
+}
+
 function getSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
@@ -36,7 +47,7 @@ function getSheet() {
 }
 
 function getLocalSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   let sheet = ss.getSheetByName(LOCAL_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(LOCAL_SHEET_NAME);
