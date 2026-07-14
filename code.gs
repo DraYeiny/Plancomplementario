@@ -20,6 +20,15 @@ const DRIVE_FOLDER_ID = '1caarX5gJ1rGWItU7lH0w9MsdeVp5wXEF';
 
 const SPREADSHEET_ID = '1HTkdRONq8CRdA5_Zh_0xpqswucSHrc9j4GPlhGpM3AU';
 
+const WHATSAPP_PHONE = '573122132279';
+const WHATSAPP_APIKEY = '6438368';
+
+function notifyWhatsApp(text) {
+  const url = 'https://api.callmebot.com/whatsapp.php?phone=' + WHATSAPP_PHONE +
+    '&text=' + encodeURIComponent(text) + '&apikey=' + WHATSAPP_APIKEY;
+  UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+}
+
 function getSpreadsheet() {
   return SpreadsheetApp.openById(SPREADSHEET_ID);
 }
@@ -137,6 +146,7 @@ function doPost(e) {
       if (body.reqId) {
         try { PropertiesService.getScriptProperties().setProperty('drivelink_' + body.reqId, link); } catch(e) {}
       }
+      try { notifyWhatsApp('📄 Nuevo plan guardado: ' + (body.filename || 'Plan alimentario') + '\n' + link); } catch(e) {}
       return output({ ok: true, link: link });
     }
 
