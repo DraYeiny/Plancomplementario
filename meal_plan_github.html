@@ -384,7 +384,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 </style>
 </head>
 <body>
-<div id="appVersion">v1.5</div>
+<div id="appVersion">v1.6</div>
 
 <!-- CALENDAR MODAL -->
 <div id="calOverlay">
@@ -1618,14 +1618,17 @@ async function runPDF(){
   /* 3 — PDF final */
   await appendExternalPDF(pdfUrl2, 'PDF final');
 
-  toast('✅ PDF combinado — guardando...');
+  toast('✅ PDF combinado — guardando en Drive...');
   const pdfBytes=await planDoc.save();
+  const filename=name.replace(/\s+/g,' ').trim()+'.pdf';
+
+  await uploadToDrive(pdfBytes, filename);
+
   const blob=new Blob([pdfBytes],{type:'application/pdf'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url;
-  a.download=name.replace(/\s+/g,' ').trim()+'.pdf'; a.click();
+  a.download=filename; a.click();
   URL.revokeObjectURL(url); toast('✅ PDF descargado');
-  uploadToDrive(pdfBytes, name.replace(/\s+/g,' ').trim() + '.pdf');
 }
 
 /* ── DRIVE UPLOAD ── */
