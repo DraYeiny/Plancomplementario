@@ -119,18 +119,25 @@ function doPost(e) {
     const sheet = getSheet();
 
     if (body.action === 'saveToDrive') {
+      let file;
       try {
         const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
         const bytes = Utilities.base64Decode(body.pdf);
         const blob = Utilities.newBlob(bytes, 'application/pdf', body.filename || 'Plan_Alimentario.pdf');
-        const file = folder.createFile(blob);
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-        const link = 'https://drive.google.com/file/d/' + file.getId() + '/view?usp=sharing';
-        PropertiesService.getScriptProperties().setProperty('drivelink_' + body.reqId, link);
-        return output({ ok: true, link });
+        file = folder.createFile(blob);
       } catch(err) {
-        return output({ ok: false, error: err.message });
+        return output({ ok: false, error: 'Crear archivo: ' + err.message });
       }
+      try {
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      } catch(err) {
+        /* El archivo ya se creo; seguimos aunque falle el permiso de compartir */
+      }
+      const link = 'https://drive.google.com/file/d/' + file.getId() + '/view?usp=sharing';
+      if (body.reqId) {
+        try { PropertiesService.getScriptProperties().setProperty('drivelink_' + body.reqId, link); } catch(e) {}
+      }
+      return output({ ok: true, link: link });
     }
 
     if (body.action === 'saveLocal') {
