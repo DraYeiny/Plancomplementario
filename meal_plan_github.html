@@ -384,7 +384,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 </style>
 </head>
 <body>
-<div id="appVersion">v1.2</div>
+<div id="appVersion">v1.3</div>
 
 <!-- CALENDAR MODAL -->
 <div id="calOverlay">
@@ -1655,25 +1655,23 @@ function showDriveBar(msg, link){
 async function uploadToDrive(pdfBytes, filename){
   const url=getSheetUrl();
   if(!url) return;
-  const reqId='dr_'+Date.now();
-  showDriveBar('⏳ Guardando en Drive...');
+  showDriveBar('⏳ Subiendo a Drive (puede tardar ~30s)...');
   try{
     const base64=bytesToBase64(new Uint8Array(pdfBytes));
-    /* POST confiable con no-cors (sin limite de tamaño de respuesta) */
-    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'saveToDrive',reqId,pdf:base64,filename})});
-    /* Polling: Apps Script guarda el link en PropertiesService o busca en Drive */
-    await new Promise(r=>setTimeout(r,4000));
-    for(let i=0;i<15;i++){
-      try{
-        const r=await fetch(url+'?action=getDriveLink&reqId='+reqId+'&_='+Date.now());
-        const j=await r.json();
-        if(j.ok && j.link){ showDriveBar('✅ PDF guardado en Drive:', j.link); return; }
-      }catch(e){}
-      await new Promise(r=>setTimeout(r,3000));
+    const r=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'saveToDrive',pdf:base64,filename})
+    });
+    const j=await r.json();
+    if(j.ok && j.link){
+      showDriveBar('✅ PDF guardado en Drive:', j.link);
+    } else {
+      showDriveBar('⚠️ Error: '+(j.error||'no se pudo guardar'));
     }
-    showDriveBar('⚠️ No se pudo obtener el link — revisa la carpeta de Drive');
-  }catch(e){ showDriveBar('⚠️ Error al subir al Drive'); }
+  }catch(e){
+    showDriveBar('⚠️ Error de conexión: '+e.message);
+  }
 }
 
 /* ── BOOT ── */
