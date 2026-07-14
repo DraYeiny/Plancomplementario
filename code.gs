@@ -16,6 +16,7 @@
 
 const SHEET_NAME = 'PLAN ALIMENTARIO';
 const LOCAL_SHEET_NAME = 'LOCAL';
+const DRIVE_FOLDER_ID = '1caarX5gJ1rGWItU7lH0w9MsdeVp5wXEF';
 
 function getSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -50,6 +51,17 @@ function getLocalSheet() {
 function doGet(e) {
   try {
     const action = e.parameter && e.parameter.action;
+
+    if (action === 'getDriveLink') {
+      const reqId = e.parameter.reqId || '';
+      const props = PropertiesService.getScriptProperties();
+      const link = props.getProperty('drivelink_' + reqId);
+      if (link) {
+        props.deleteProperty('drivelink_' + reqId);
+        return output({ ok: true, link });
+      }
+      return output({ ok: false });
+    }
 
     if (action === 'getLocal') {
       const ls = getLocalSheet();
@@ -86,6 +98,21 @@ function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
     const sheet = getSheet();
+
+    if (body.action === 'saveToDrive') {
+      try {
+        const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        const bytes = Utilities.base64Decode(body.pdf);
+        const blob = Utilities.newBlob(bytes, 'application/pdf', body.filename || 'Plan_Alimentario.pdf');
+        const file = folder.createFile(blob);
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        const link = 'https://drive.google.com/file/d/' + file.getId() + '/view?usp=sharing';
+        PropertiesService.getScriptProperties().setProperty('drivelink_' + body.reqId, link);
+        return output({ ok: true });
+      } catch(err) {
+        return output({ ok: false, error: err.message });
+      }
+    }
 
     if (body.action === 'saveLocal') {
       const ls = getLocalSheet();

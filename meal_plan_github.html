@@ -194,6 +194,19 @@ td.cell { padding: 2px; border-radius: 8px; vertical-align: middle; }
 .cell-edit.cell-selectable:hover { background: #fef3c7 !important; }
 .cell-edit.cell-selected   { border: 2.5px solid #f59e0b !important; background: #fde68a !important; }
 
+/* ── DRIVE LINK BAR ── */
+#driveLinkBar {
+  display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
+  background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 14px;
+  padding: 10px 18px; margin-bottom: 10px; font-family: 'Nunito', sans-serif;
+}
+#driveLinkBar.open { display: flex; }
+#driveLinkMsg { font-size: 0.84rem; font-weight: 700; color: #166534; }
+#driveLinkA {
+  font-size: 0.84rem; font-weight: 800; color: #15803d;
+  text-decoration: underline; cursor: pointer;
+}
+
 /* ── RESTORE BAR ── */
 #restoreBar {
   display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
@@ -423,6 +436,12 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
 
   <div class="tabs-bar" id="tabsBar"></div>
+  <div id="driveLinkBar">
+    <span id="driveLinkMsg"></span>
+    <a id="driveLinkA" href="#" target="_blank" rel="noopener" style="display:none"></a>
+    <button id="driveCopyBtn" class="btn-copy-yes" style="display:none">📋 Copiar link</button>
+    <button class="btn-copy-no" onclick="document.getElementById('driveLinkBar').classList.remove('open')">✕</button>
+  </div>
   <div id="restoreBar">
     <span id="restoreMsg"></span>
     <button class="btn-copy-yes" onclick="doRestore()">✓ Restaurar</button>
@@ -1593,6 +1612,51 @@ async function runPDF(){
   const a=document.createElement('a'); a.href=url;
   a.download=name.replace(/\s+/g,' ').trim()+'.pdf'; a.click();
   URL.revokeObjectURL(url); toast('✅ PDF descargado');
+  uploadToDrive(pdfBytes, name.replace(/\s+/g,' ').trim() + '.pdf');
+}
+
+/* ── DRIVE UPLOAD ── */
+function bytesToBase64(bytes){
+  let bin=''; const chunk=8192;
+  for(let i=0;i<bytes.length;i+=chunk)
+    bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  return btoa(bin);
+}
+
+function showDriveBar(msg, link){
+  const bar=document.getElementById('driveLinkBar');
+  const msgEl=document.getElementById('driveLinkMsg');
+  const linkEl=document.getElementById('driveLinkA');
+  const copyBtn=document.getElementById('driveCopyBtn');
+  msgEl.textContent=msg;
+  if(link){
+    linkEl.href=link; linkEl.textContent='📂 Abrir en Drive';
+    linkEl.style.display=''; copyBtn.style.display='';
+    copyBtn.onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('📋 Link copiado'));
+  } else {
+    linkEl.style.display='none'; copyBtn.style.display='none';
+  }
+  bar.classList.add('open');
+}
+
+async function uploadToDrive(pdfBytes, filename){
+  const url=getSheetUrl();
+  if(!url) return;
+  const reqId='dr_'+Date.now();
+  showDriveBar('⏳ Guardando en Drive...');
+  try{
+    const base64=bytesToBase64(new Uint8Array(pdfBytes));
+    await sheetPost({action:'saveToDrive', reqId, pdf:base64, filename});
+    for(let i=0;i<15;i++){
+      await new Promise(r=>setTimeout(r,2000));
+      try{
+        const r=await fetch(url+'?action=getDriveLink&reqId='+reqId+'&_='+Date.now());
+        const j=await r.json();
+        if(j.ok && j.link){ showDriveBar('✅ PDF guardado en Drive:', j.link); return; }
+      }catch(e){}
+    }
+    showDriveBar('⚠️ No se confirmó el guardado — revisa el Drive');
+  }catch(e){ showDriveBar('⚠️ Error al subir al Drive'); }
 }
 
 /* ── BOOT ── */
