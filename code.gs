@@ -147,11 +147,8 @@ function doPost(e) {
       if (body.reqId) {
         try { PropertiesService.getScriptProperties().setProperty('drivelink_' + body.reqId, link); } catch(e) {}
       }
-      let whatsappResult = null, whatsappError = null;
-      try {
-        whatsappResult = notifyWhatsApp('📄 Nuevo plan guardado: ' + (body.filename || 'Plan alimentario') + '\n' + link);
-      } catch(e) { whatsappError = e.message; }
-      return output({ ok: true, link: link, whatsappResult: whatsappResult, whatsappError: whatsappError });
+      try { notifyWhatsApp('📄 Nuevo plan guardado: ' + (body.filename || 'Plan alimentario') + '\n' + link); } catch(e) {}
+      return output({ ok: true, link: link });
     }
 
     if (body.action === 'saveLocal') {
