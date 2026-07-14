@@ -376,9 +376,15 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   box-shadow: 0 6px 24px rgba(124,58,237,0.3);
 }
 #toast.show { opacity: 1; }
+#appVersion {
+  position: fixed; top: 10px; right: 14px; z-index: 9999;
+  font-family: 'Nunito', sans-serif; font-size: 0.68rem; font-weight: 700;
+  color: #c4b5fd; opacity: 0.7; pointer-events: none; letter-spacing: 0.04em;
+}
 </style>
 </head>
 <body>
+<div id="appVersion">v1.0</div>
 
 <!-- CALENDAR MODAL -->
 <div id="calOverlay">
