@@ -66,6 +66,19 @@ function doGet(e) {
         props.deleteProperty('drivelink_' + reqId);
         return output({ ok: true, link });
       }
+      /* Fallback: buscar el PDF más reciente en la carpeta (últimos 3 min) */
+      try {
+        const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        const files = folder.getFilesByType('application/pdf');
+        let latest = null, latestDate = new Date(0);
+        while (files.hasNext()) {
+          const f = files.next();
+          if (f.getDateCreated() > latestDate) { latestDate = f.getDateCreated(); latest = f; }
+        }
+        if (latest && (Date.now() - latestDate.getTime()) < 180000) {
+          return output({ ok: true, link: 'https://drive.google.com/file/d/' + latest.getId() + '/view?usp=sharing' });
+        }
+      } catch(err) {}
       return output({ ok: false });
     }
 

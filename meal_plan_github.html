@@ -384,7 +384,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 </style>
 </head>
 <body>
-<div id="appVersion">v1.1</div>
+<div id="appVersion">v1.2</div>
 
 <!-- CALENDAR MODAL -->
 <div id="calOverlay">
@@ -1659,27 +1659,20 @@ async function uploadToDrive(pdfBytes, filename){
   showDriveBar('⏳ Guardando en Drive...');
   try{
     const base64=bytesToBase64(new Uint8Array(pdfBytes));
-    const body=JSON.stringify({action:'saveToDrive', reqId, pdf:base64, filename});
-    /* Intento con CORS normal para leer el link directo de la respuesta */
-    let link=null;
-    try{
-      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
-      const j=await r.json();
-      if(j.ok && j.link) link=j.link;
-    }catch(corsErr){
-      /* CORS bloqueado — fallback a no-cors + polling */
-      await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
-      for(let i=0;i<20;i++){
-        await new Promise(r=>setTimeout(r,2000));
-        try{
-          const r=await fetch(url+'?action=getDriveLink&reqId='+reqId+'&_='+Date.now());
-          const j=await r.json();
-          if(j.ok && j.link){ link=j.link; break; }
-        }catch(e){}
-      }
+    /* POST confiable con no-cors (sin limite de tamaño de respuesta) */
+    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'saveToDrive',reqId,pdf:base64,filename})});
+    /* Polling: Apps Script guarda el link en PropertiesService o busca en Drive */
+    await new Promise(r=>setTimeout(r,4000));
+    for(let i=0;i<15;i++){
+      try{
+        const r=await fetch(url+'?action=getDriveLink&reqId='+reqId+'&_='+Date.now());
+        const j=await r.json();
+        if(j.ok && j.link){ showDriveBar('✅ PDF guardado en Drive:', j.link); return; }
+      }catch(e){}
+      await new Promise(r=>setTimeout(r,3000));
     }
-    if(link) showDriveBar('✅ PDF guardado en Drive:', link);
-    else showDriveBar('⚠️ PDF subido — revisa la carpeta de Drive');
+    showDriveBar('⚠️ No se pudo obtener el link — revisa la carpeta de Drive');
   }catch(e){ showDriveBar('⚠️ Error al subir al Drive'); }
 }
 
