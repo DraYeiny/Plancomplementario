@@ -113,10 +113,21 @@ body {
 
 /* ── PAGE ── */
 .page {
+  position: relative;
   background: white; border-radius: 22px; padding: 36px 30px;
   box-shadow: 0 0 0 1px rgba(15,10,40,0.05), 0 20px 50px -12px rgba(15,10,40,0.12);
   max-width: 1180px; margin: 0 auto 32px;
 }
+#undoBtn {
+  display: none; position: absolute; top: 18px; left: 18px; z-index: 10;
+  background: #f5f3ff; border: none; border-radius: 50%;
+  width: 38px; height: 38px; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.2rem; color: #7c3aed;
+  box-shadow: 0 2px 8px rgba(15,10,40,0.08); transition: background 0.15s, transform 0.1s;
+}
+#undoBtn.show { display: flex; }
+#undoBtn:hover { background: #ede9fe; }
+#undoBtn:active { transform: scale(0.92); }
 
 /* ── HEADER ── */
 .header {
@@ -572,7 +583,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
   <button id="sideBtnDownload" class="side-menu-btn" onclick="closeSideMenu(); downloadAllPDF();">📄 Descargar PDF</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.12</span>
+    <span id="appVersion">v1.13</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -633,6 +644,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 </div>
 
 <div class="page">
+  <button id="undoBtn" onclick="undoLastAction()" aria-label="Deshacer última acción" title="Deshacer última acción">↺</button>
   <div class="header">
     <h1>Mi Plan de Alimentación Semanal</h1>
     <p>¡Comer bien es divertido y delicioso! ✨</p>
@@ -654,7 +666,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 
   <div class="controls-bar">
     <label>👦 Nombre:</label>
-    <input type="text" id="childName" placeholder="Escribe tu nombre aquí..." oninput="autoSave()">
+    <input type="text" id="childName" placeholder="Escribe tu nombre aquí..." oninput="autoSave()" onfocus="saveUndoSnapshot()">
     <label>Del:</label>
     <button class="date-btn" id="btnStart">📅 <span id="lblStart">Seleccionar</span></button>
     <label># Semanas:</label>
@@ -944,6 +956,7 @@ async function onWeeksChange(){
       const label = removedWeeks.length === 1 ? `la semana ${removedWeeks[0]}` : `las semanas ${removedWeeks.join(', ')}`;
       const ok = await showConfirm(`¿Reducir a ${requested} semana${requested>1?'s':''}? Se perderán los datos de ${label}.`, {okText:'Sí, reducir', danger:true});
       if(!ok){ input.value = numWeeks; return; }
+      saveUndoSnapshot();
     }
   }
   numWeeks = requested;
@@ -997,6 +1010,7 @@ function rebuildSheets(){
 async function deleteWeek(w){
   if(!weekHasData(w)){ toast('Esa semana ya está vacía'); return; }
   if(!await showConfirm(`¿Borrar todos los datos de la Semana ${w+1}? Esta acción no se puede deshacer.`, {okText:'Sí, borrar semana', danger:true})) return;
+  saveUndoSnapshot();
   document.querySelectorAll(`[data-id^="w${w}_"]`).forEach(el=>el.textContent='');
   refreshCellClearButtons();
   autoSave();
@@ -1029,6 +1043,7 @@ function hideCopyBar(){
 function doCopyWeek(){
   const from = +document.getElementById('copyWeekSelect').value;
   if(isNaN(from)||_copyTo<0) return;
+  saveUndoSnapshot();
   document.querySelectorAll(`[data-id^="w${_copyTo}_"]`).forEach(el=>{
     const srcId = el.dataset.id.replace(`w${_copyTo}_`,`w${from}_`);
     const src = document.querySelector(`[data-id="${srcId}"]`);
@@ -1114,7 +1129,7 @@ function buildTable(wi, dayHeaders){
           }
         });
         div.addEventListener('blur', () => setTimeout(acHide, 180));
-        div.addEventListener('focus', () => { if(div.textContent.trim()) acShow(div); });
+        div.addEventListener('focus', () => { saveUndoSnapshot(); if(div.textContent.trim()) acShow(div); });
         div.addEventListener('paste', e => {
           e.preventDefault();
           const t=(e.clipboardData||window.clipboardData).getData('text/plain').replace(/\n/g,' ');
@@ -1130,6 +1145,7 @@ function buildTable(wi, dayHeaders){
           e.stopPropagation();
           if(!div.textContent.trim()) return;
           if(!await showConfirm('¿Borrar el contenido de esta casilla?', {okText:'Sí, borrar', danger:true})) return;
+          saveUndoSnapshot();
           div.textContent='';
           toggleCellClearBtn(div);
           autoSave();
@@ -1230,6 +1246,7 @@ function addRegistroRow(hora='', alim=''){
   div.spellcheck = false;
   if(alim) div.textContent = alim;
   div.addEventListener('input', autoSave);
+  div.addEventListener('focus', () => saveUndoSnapshot());
   div.addEventListener('keydown', e => {
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); div.blur(); }
   });
@@ -1253,6 +1270,7 @@ function addRegistroRow(hora='', alim=''){
     const wrap = tr.querySelector('.time-select-wrap');
     const hasData = div.textContent.trim() || (wrap && getTimeValue(wrap));
     if(hasData && !await showConfirm('¿Eliminar esta fila del registro de alimentación? Esta acción no se puede deshacer.', {okText:'Sí, eliminar', danger:true})) return;
+    if(hasData) saveUndoSnapshot();
     tr.remove();
     autoSave();
   });
@@ -1326,6 +1344,7 @@ function applyRepeatInline(){
   if(!repeatSrcDiv){ exitRepeatMode(); return; }
   const text = repeatSrcDiv.textContent.trim();
   let count = 0;
+  saveUndoSnapshot();
   document.querySelectorAll('.cell-edit.cell-selected').forEach(cell => {
     cell.textContent = text; count++;
     toggleCellClearBtn(cell);
@@ -1433,6 +1452,7 @@ function addObservacion(text=''){
   div.spellcheck = false;
   if(text) div.textContent = text;
   div.addEventListener('input', () => autoSave());
+  div.addEventListener('focus', () => saveUndoSnapshot());
   div.addEventListener('keydown', e => {
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); div.blur(); }
   });
@@ -1450,7 +1470,9 @@ function addObservacion(text=''){
   btnDel.title = 'Eliminar observación';
   btnDel.setAttribute('aria-label', 'Eliminar observación');
   btnDel.addEventListener('click', async () => {
-    if(div.textContent.trim() && !await showConfirm('¿Eliminar esta observación? Esta acción no se puede deshacer.', {okText:'Sí, eliminar', danger:true})) return;
+    const hasText = div.textContent.trim();
+    if(hasText && !await showConfirm('¿Eliminar esta observación? Esta acción no se puede deshacer.', {okText:'Sí, eliminar', danger:true})) return;
+    if(hasText) saveUndoSnapshot();
     tr.remove(); renumberObs(); autoSave();
   });
   tdDel.appendChild(btnDel);
@@ -1602,9 +1624,12 @@ async function guardarPlan(){
   const id = existente ? existente.id : 'plan_' + Date.now();
   const plan = { id, name: nombre.trim(), created: existente?.created || new Date().toISOString(), data: collect() };
   setEstado('💾 Guardando...');
+  document.getElementById('btnGuardarComo').style.display = 'none';
+  showSyncProgress(20, '💾 Guardando plan...');
   try{
     await sheetPost({ action: 'save', plan });
     /* Verificar via GET que realmente se guardó */
+    showSyncProgress(60, '🔎 Verificando guardado...');
     await new Promise(r => setTimeout(r, 1200));
     planesCache = await sheetGet();
     const guardado = planesCache.find(p => p.id === id);
@@ -1613,13 +1638,26 @@ async function guardarPlan(){
       renderPlanPicker();
       planDirty = false; updateSaveBtnVisibility();
       setEstado('✅ Guardado');
+      showSyncProgress(100, '✅ ¡Guardado!');
+      await new Promise(r => setTimeout(r, 400));
       toast('✅ Plan guardado: ' + plan.name);
     } else {
       renderPlanPicker();
+      updateSaveBtnVisibility();
       setEstado('⚠️ No se confirmó el guardado');
+      showSyncProgress(100, '⚠️ No se pudo confirmar');
+      await new Promise(r => setTimeout(r, 900));
       toast('⚠️ Revisa la conexión con el Sheet');
     }
-  } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
+  } catch(e){
+    updateSaveBtnVisibility();
+    setEstado('⚠️ Sin conexión');
+    showSyncProgress(100, '⚠️ Sin conexión');
+    await new Promise(r => setTimeout(r, 900));
+    toast('❌ Sin conexión');
+  } finally {
+    hideSyncProgress();
+  }
 }
 
 async function cargarPlan(id){
@@ -1642,15 +1680,26 @@ async function eliminarPlan(id){
   if(!plan) return;
   if(!await showConfirm(`¿Eliminar el plan "${plan.name}"? Esta acción no se puede deshacer.`, {okText:'Sí, eliminar', danger:true})) return;
   setEstado('🗑️ Eliminando...');
+  showSyncProgress(20, '🗑️ Eliminando plan...');
   try{
     await sheetPost({ action: 'delete', id });
+    showSyncProgress(70, '🔎 Verificando...');
     await new Promise(r => setTimeout(r, 1200));
     planesCache = await sheetGet();
     if(currentPlanId === id){ currentPlanId = ''; currentPlanName = ''; }
     renderPlanPicker();
     setEstado('');
+    showSyncProgress(100, '✅ Plan eliminado');
+    await new Promise(r => setTimeout(r, 400));
     toast('🗑️ Plan eliminado');
-  } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
+  } catch(e){
+    setEstado('⚠️ Sin conexión');
+    showSyncProgress(100, '⚠️ Sin conexión');
+    await new Promise(r => setTimeout(r, 900));
+    toast('❌ Sin conexión');
+  } finally {
+    hideSyncProgress();
+  }
 }
 
 /* ── PERSISTENCIA ── */
@@ -1662,10 +1711,8 @@ function collectCells(){
   return out;
 }
 function restoreCells(cells){
-  if(!cells) return;
-  Object.entries(cells).forEach(([id,v])=>{
-    const el=document.querySelector(`[data-id="${id}"]`);
-    if(el&&v) el.textContent=v;
+  document.querySelectorAll('.cell-edit').forEach(el=>{
+    el.textContent = (cells && cells[el.dataset.id]) || '';
   });
   refreshCellClearButtons();
 }
@@ -1703,7 +1750,7 @@ function apply(d){
     document.getElementById('weeksInput').value = numWeeks;
   }
   onDatesChange();
-  if(d.cells) restoreCells(d.cells);
+  restoreCells(d.cells);
   restoreRegistro(d.registro || []);
   restoreObservaciones(d.observaciones || []);
 }
@@ -1724,6 +1771,27 @@ function planHasContent(){
 function updateSaveBtnVisibility(){
   const btn = document.getElementById('btnGuardarComo');
   if(btn) btn.style.display = planDirty ? '' : 'none';
+}
+
+/* ── DESHACER (un paso) ── */
+let undoSnapshot = null;
+function saveUndoSnapshot(){
+  undoSnapshot = collect();
+  updateUndoBtnVisibility();
+}
+function updateUndoBtnVisibility(){
+  const btn = document.getElementById('undoBtn');
+  if(btn) btn.classList.toggle('show', !!undoSnapshot);
+}
+function undoLastAction(){
+  if(!undoSnapshot) return;
+  const snapshot = undoSnapshot;
+  undoSnapshot = null;
+  apply(snapshot);
+  refreshCellClearButtons();
+  planDirty = planHasContent(); updateSaveBtnVisibility();
+  updateUndoBtnVisibility();
+  toast('↺ Última acción deshecha');
 }
 function toast(msg){
   const t=document.getElementById('toast');
