@@ -479,6 +479,19 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .side-menu-btn:hover { background: rgba(124,58,237,0.1); }
 .side-menu-btn:active { background: rgba(124,58,237,0.16); }
 .side-menu-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.side-menu-label {
+  font-size: 0.72rem; font-weight: 600; color: #8b7fae; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 10px 4px 2px;
+}
+.side-menu-check {
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 9px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.86rem; font-weight: 500; color: #4c1d95; cursor: pointer; transition: background 0.12s;
+}
+.side-menu-check:hover { background: rgba(124,58,237,0.08); }
+.side-menu-check input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: #7c3aed; cursor: pointer; flex-shrink: 0;
+}
 .side-menu-foot {
   margin-top: auto; padding-top: 14px; padding-left: 4px; padding-right: 4px; border-top: 1px solid rgba(109,40,217,0.1);
   display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;
@@ -581,9 +594,13 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
     <h2>☰ Menú</h2>
     <button id="sideMenuClose" aria-label="Cerrar menú" onclick="closeSideMenu()">✕</button>
   </div>
-  <button id="sideBtnDownload" class="side-menu-btn" onclick="closeSideMenu(); downloadAllPDF();">📄 Descargar PDF</button>
+  <p class="side-menu-label">Descargar</p>
+  <label class="side-menu-check"><input type="checkbox" id="dlPlan" checked> Plan de alimentación</label>
+  <label class="side-menu-check"><input type="checkbox" id="dlAplv"> APLV</label>
+  <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
+  <button id="sideBtnDownload" class="side-menu-btn" onclick="descargarSeleccion()">📄 Descargar</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.14</span>
+    <span id="appVersion">v1.15</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -1890,6 +1907,45 @@ function showSyncProgress(pct, label){
 }
 function hideSyncProgress(){
   document.getElementById('syncProgressOverlay').classList.remove('open');
+}
+
+/* ══════════════════════════════════════════
+   DESCARGA DE REFERENCIA (APLV / Alergia al huevo)
+   ══════════════════════════════════════════ */
+const REF_FILES = {
+  aplv:  { id: '1egSY7sRolzoL9SGsN3xKTpNC-W49RR9V', name: 'APLV' },
+  huevo: { id: '1tHeZnvlqxs0JZ5J2ea4Eg3wyulg6pxcz', name: 'Alergia al huevo' },
+  ambos: { id: '1KlM9PEirYzXfb0jDXQel6Xd7Ltc7C51F', name: 'APLV + Alergia al huevo' }
+};
+function refDownloadUrl(fileId){ return 'https://drive.google.com/uc?export=download&id=' + fileId; }
+function refViewUrl(fileId){ return 'https://drive.google.com/file/d/' + fileId + '/view'; }
+
+async function descargarSeleccion(){
+  const wantPlan  = document.getElementById('dlPlan').checked;
+  const wantAplv  = document.getElementById('dlAplv').checked;
+  const wantHuevo = document.getElementById('dlHuevo').checked;
+
+  if(!wantPlan && !wantAplv && !wantHuevo){ toast('Selecciona al menos una opción para descargar'); return; }
+
+  closeSideMenu();
+
+  /* Abrir las descargas de Drive de forma síncrona (dentro del mismo clic)
+     para que el navegador no las bloquee como pop-ups */
+  const refLinks = [];
+  if(wantAplv && wantHuevo){
+    window.open(refDownloadUrl(REF_FILES.ambos.id), '_blank');
+    refLinks.push(REF_FILES.ambos.name + ': ' + refViewUrl(REF_FILES.ambos.id));
+  } else {
+    if(wantAplv){  window.open(refDownloadUrl(REF_FILES.aplv.id), '_blank');  refLinks.push(REF_FILES.aplv.name + ': ' + refViewUrl(REF_FILES.aplv.id)); }
+    if(wantHuevo){ window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank'); refLinks.push(REF_FILES.huevo.name + ': ' + refViewUrl(REF_FILES.huevo.id)); }
+  }
+
+  if(refLinks.length){
+    const texto = '📎 Descarga de referencia:\n' + refLinks.join('\n');
+    sheetPost({ action: 'notifyDownload', text: texto }).catch(()=>{});
+  }
+
+  if(wantPlan) await downloadAllPDF();
 }
 
 /* ══════════════════════════════════════════

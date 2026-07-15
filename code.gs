@@ -151,6 +151,11 @@ function doPost(e) {
       return output({ ok: true, link: link });
     }
 
+    if (body.action === 'notifyDownload') {
+      try { notifyWhatsApp(body.text || 'Descarga de plan'); } catch(e) {}
+      return output({ ok: true });
+    }
+
     if (body.action === 'saveLocal') {
       const ls = getLocalSheet();
       const ts = body.timestamp || new Date().toISOString();
