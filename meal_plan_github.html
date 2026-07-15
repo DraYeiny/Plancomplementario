@@ -613,7 +613,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
   <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">📄 Descargar</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.20</span>
+    <span id="appVersion">v1.21</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -1970,10 +1970,14 @@ async function descargarSeleccion(){
       const r = await fetch(url);
       const j = await r.json();
       if(j.ok && j.whatsapp){
-        if(j.whatsapp.code === 200){
+        const code = j.whatsapp.code;
+        if(code === 200){
           toast('✅ Aviso enviado por WhatsApp');
+        } else if(code === 210){
+          /* CallMeBot acepta el mensaje pero lo encola (límite: 16 mensajes / 240 min) */
+          toast('⏳ Aviso en camino por WhatsApp (puede tardar unos minutos)');
         } else {
-          toast('⚠️ WhatsApp no envió el aviso (código ' + j.whatsapp.code + ')');
+          toast('⚠️ WhatsApp no envió el aviso (código ' + code + ')');
         }
       }
     }catch(e){ /* si no se puede verificar, no interrumpimos más */ }
