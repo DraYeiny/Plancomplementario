@@ -613,7 +613,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
   <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">📄 Descargar</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.17</span>
+    <span id="appVersion">v1.18</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -1953,6 +1953,15 @@ async function descargarSeleccion(){
     if(wantHuevo){ window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank'); links.push(REF_FILES.huevo.name + ': ' + refViewUrl(REF_FILES.huevo.id)); }
   }
 
+  async function enviarAvisoWhatsApp(){
+    if(!links.length) return;
+    try{
+      await sheetPost({ action: 'notifyDownload', text: '📎 Archivos descargados:\n' + links.join('\n') });
+    }catch(e){
+      toast('⚠️ No se pudo enviar el aviso por WhatsApp');
+    }
+  }
+
   /* Si se generó el plan, esperamos a que termine de subirse a Drive para
      incluir su link en el MISMO mensaje de WhatsApp (evita que se pisen
      dos mensajes separados) — le pedimos al backend que no notifique solo. */
@@ -1963,10 +1972,7 @@ async function descargarSeleccion(){
     }catch(e){ /* downloadAllPDF ya muestra su propio aviso de error */ }
   }
 
-  if(links.length){
-    const texto = '📎 Archivos descargados:\n' + links.join('\n');
-    sheetPost({ action: 'notifyDownload', text: texto }).catch(()=>{});
-  }
+  await enviarAvisoWhatsApp();
 }
 
 /* ══════════════════════════════════════════
