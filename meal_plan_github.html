@@ -613,7 +613,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
   <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">📄 Descargar</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.21</span>
+    <span id="appVersion">v1.22</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -1926,9 +1926,9 @@ function hideSyncProgress(){
    DESCARGA DE REFERENCIA (APLV / Alergia al huevo)
    ══════════════════════════════════════════ */
 const REF_FILES = {
-  aplv:  { id: '1egSY7sRolzoL9SGsN3xKTpNC-W49RR9V', name: 'APLV' },
-  huevo: { id: '1tHeZnvlqxs0JZ5J2ea4Eg3wyulg6pxcz', name: 'Alergia al huevo' },
-  ambos: { id: '1KlM9PEirYzXfb0jDXQel6Xd7Ltc7C51F', name: 'APLV + Alergia al huevo' }
+  aplv:  { id: '1egSY7sRolzoL9SGsN3xKTpNC-W49RR9V', name: 'APLV', icon: '🥛' },
+  huevo: { id: '1tHeZnvlqxs0JZ5J2ea4Eg3wyulg6pxcz', name: 'Alergia al huevo', icon: '🥚' },
+  ambos: { id: '1KlM9PEirYzXfb0jDXQel6Xd7Ltc7C51F', name: 'APLV + Alergia al huevo', icon: '📋' }
 };
 function refDownloadUrl(fileId){ return 'https://drive.google.com/uc?export=download&id=' + fileId; }
 function refViewUrl(fileId){ return 'https://drive.google.com/file/d/' + fileId + '/view'; }
@@ -1944,20 +1944,30 @@ async function descargarSeleccion(){
 
   /* Abrir las descargas de Drive de forma síncrona (dentro del mismo clic)
      para que el navegador no las bloquee como pop-ups */
-  const links = [];
+  const items = [];
   if(wantAplv && wantHuevo){
     window.open(refDownloadUrl(REF_FILES.ambos.id), '_blank');
-    links.push(REF_FILES.ambos.name + ': ' + refViewUrl(REF_FILES.ambos.id));
+    items.push({ icon: REF_FILES.ambos.icon, label: REF_FILES.ambos.name, url: refViewUrl(REF_FILES.ambos.id) });
   } else {
-    if(wantAplv){  window.open(refDownloadUrl(REF_FILES.aplv.id), '_blank');  links.push(REF_FILES.aplv.name + ': ' + refViewUrl(REF_FILES.aplv.id)); }
-    if(wantHuevo){ window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank'); links.push(REF_FILES.huevo.name + ': ' + refViewUrl(REF_FILES.huevo.id)); }
+    if(wantAplv){  window.open(refDownloadUrl(REF_FILES.aplv.id), '_blank');  items.push({ icon: REF_FILES.aplv.icon, label: REF_FILES.aplv.name, url: refViewUrl(REF_FILES.aplv.id) }); }
+    if(wantHuevo){ window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank'); items.push({ icon: REF_FILES.huevo.icon, label: REF_FILES.huevo.name, url: refViewUrl(REF_FILES.huevo.id) }); }
   }
 
   async function enviarAvisoWhatsApp(){
-    if(!links.length) return;
+    if(!items.length) return;
     const reqId = 'wa' + Date.now() + Math.random().toString(36).slice(2,8);
+    const nombre = document.getElementById('childName').value.trim();
+    const plural = items.length > 1;
+    const saludo = nombre
+      ? `👩‍⚕️ ¡Hola! Aquí tienes ${plural ? 'los documentos' : 'el documento'} de *${nombre}*:`
+      : `👩‍⚕️ ¡Hola! Aquí tienes ${plural ? 'tus documentos' : 'tu documento'}:`;
+    const lista = items.map(it => `${it.icon} *${it.label}*\n${it.url}`).join('\n\n');
+    const nota = plural
+      ? `⚠️ Estos enlaces estarán disponibles solo por *15 días*. Te recomiendo descargarlos y guardarlos ahora para que le queden siempre disponibles a ${nombre || 'tu paciente'}.`
+      : `⚠️ Este enlace estará disponible solo por *15 días*. Te recomiendo descargarlo y guardarlo ahora para que le quede siempre disponible a ${nombre || 'tu paciente'}.`;
+    const texto = `${saludo}\n\n${lista}\n\n${nota}\n\n¡Cualquier duda, aquí estoy! 💜`;
     try{
-      await sheetPost({ action: 'notifyDownload', text: '📎 Archivos descargados:\n' + links.join('\n'), reqId });
+      await sheetPost({ action: 'notifyDownload', text: texto, reqId });
     }catch(e){
       toast('⚠️ No se pudo enviar el aviso por WhatsApp');
       return;
@@ -1989,7 +1999,7 @@ async function descargarSeleccion(){
   if(wantPlan){
     try{
       const planLink = await downloadAllPDF({ notify: false });
-      if(planLink) links.unshift('Plan de alimentación: ' + planLink);
+      if(planLink) items.unshift({ icon: '📄', label: 'Plan de alimentación', url: planLink });
     }catch(e){ /* downloadAllPDF ya muestra su propio aviso de error */ }
   }
 
