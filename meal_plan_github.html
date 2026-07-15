@@ -404,7 +404,7 @@ table.registro-table thead th {
   padding: 12px 14px; font-weight: 600; font-size: 13px; color: #6d28d9; text-align: center;
   border-bottom: 1px solid #ede9fe; white-space: nowrap;
 }
-table.registro-table thead th.col-hora { width: 130px; min-width: 110px; }
+table.registro-table thead th.col-hora { width: 168px; min-width: 148px; }
 table.registro-table tbody tr { border-bottom: 1px solid #f5f3ff; transition: background 0.12s; }
 table.registro-table tbody tr:hover { background: #fdf9ff; }
 table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
@@ -420,6 +420,11 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   text-align: center; -webkit-appearance: none; appearance: none; padding: 2px;
 }
 .time-colon { font-weight: 600; color: #a78bfa; }
+.time-period {
+  font-size: 11px !important; font-weight: 700 !important; color: #7c3aed !important;
+  background: #f5f3ff !important; border-radius: 6px !important; padding: 3px 4px !important;
+  margin-left: 2px;
+}
 .registro-alim-cell { width: 100%; }
 .registro-alim-edit {
   display: block; min-height: 38px; width: 100%; border: 1.5px dashed #e5e7eb; border-radius: 9px;
@@ -474,8 +479,8 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .side-menu-btn:active { background: rgba(124,58,237,0.16); }
 .side-menu-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .side-menu-foot {
-  margin-top: auto; padding-top: 14px; padding-left: 4px; border-top: 1px solid rgba(109,40,217,0.1);
-  display: flex; flex-direction: column; gap: 4px;
+  margin-top: auto; padding-top: 14px; padding-left: 4px; padding-right: 4px; border-top: 1px solid rgba(109,40,217,0.1);
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;
 }
 .side-menu-foot #localSaveLabel, .side-menu-foot #appVersion {
   font-size: 0.72rem; font-weight: 500; color: #9ca3af; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
@@ -581,8 +586,8 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
   <button id="sideBtnDownload" class="side-menu-btn" onclick="closeSideMenu(); downloadAllPDF();">📄 Descargar PDF</button>
   <div class="side-menu-foot">
-    <span id="localSaveLabel"></span>
     <span id="appVersion">v1.9</span>
+    <span id="localSaveLabel"></span>
   </div>
 </nav>
 
@@ -651,9 +656,8 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- PLANES GUARDADOS -->
   <div class="planes-bar">
     <label>📋 Plan:</label>
-    <select id="planesSelect"><option value="">— Seleccionar plan —</option></select>
-    <button class="btn-plan" onclick="cargarPlan()">⬆️ Cargar</button>
-    <button class="btn-plan" onclick="guardarPlan()">💾 Guardar como...</button>
+    <select id="planesSelect" onchange="cargarPlan()"><option value="">— Seleccionar plan —</option></select>
+    <button id="btnGuardarComo" class="btn-plan" style="display:none" onclick="guardarPlan()">💾 Guardar como...</button>
     <button class="btn-info" onclick="showSaveInfo()" aria-label="¿Cómo funciona el guardado?" title="¿Cómo funciona el guardado?">ⓘ</button>
     <button class="btn-plan btn-plan-del" onclick="eliminarPlan()">🗑️ Eliminar</button>
     <span id="planesStatus"></span>
@@ -896,6 +900,7 @@ const meals = [
 
 /* ── FECHAS ── */
 let startDate = null, endDate = null, numWeeks = 1;
+let planDirty = false;
 
 function fmt(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
 function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
@@ -1154,17 +1159,25 @@ function buildTable(wi, dayHeaders){
    ══════════════════════════════════════════ */
 let registroRowCount = 0;
 
-/* Selector de hora a medida (reemplaza <input type="time"> nativo para mantener la identidad visual) */
+/* Selector de hora a medida en formato 12h con AM/PM (más intuitivo que 24h) */
 function buildTimeSelect(hora=''){
-  const [h='', m=''] = hora ? hora.split(':') : [];
+  let h12 = '', m = '', period = 'AM';
+  if(hora){
+    const [hh, mm] = hora.split(':');
+    const hnum = parseInt(hh, 10);
+    period = hnum >= 12 ? 'PM' : 'AM';
+    let h12num = hnum % 12; if(h12num === 0) h12num = 12;
+    h12 = String(h12num).padStart(2,'0');
+    m = mm;
+  }
   const wrap = document.createElement('div');
   wrap.className = 'time-select-wrap';
 
   const selH = document.createElement('select');
   selH.className = 'time-select'; selH.setAttribute('aria-label','Hora');
   selH.appendChild(new Option('--',''));
-  for(let i=0;i<24;i++){ const v=String(i).padStart(2,'0'); selH.appendChild(new Option(v,v)); }
-  selH.value = h;
+  for(let i=1;i<=12;i++){ const v=String(i).padStart(2,'0'); selH.appendChild(new Option(v,v)); }
+  selH.value = h12;
 
   const colon = document.createElement('span');
   colon.className = 'time-colon'; colon.textContent = ':';
@@ -1175,15 +1188,33 @@ function buildTimeSelect(hora=''){
   for(let i=0;i<60;i+=5){ const v=String(i).padStart(2,'0'); selM.appendChild(new Option(v,v)); }
   selM.value = m;
 
+  const selP = document.createElement('select');
+  selP.className = 'time-select time-period'; selP.setAttribute('aria-label','AM o PM');
+  selP.appendChild(new Option('AM','AM'));
+  selP.appendChild(new Option('PM','PM'));
+  selP.value = period;
+
   selH.addEventListener('change', autoSave);
   selM.addEventListener('change', autoSave);
-  wrap.appendChild(selH); wrap.appendChild(colon); wrap.appendChild(selM);
+  selP.addEventListener('change', autoSave);
+  wrap.appendChild(selH); wrap.appendChild(colon); wrap.appendChild(selM); wrap.appendChild(selP);
   return wrap;
 }
 function getTimeValue(wrap){
-  const [selH, selM] = wrap.querySelectorAll('.time-select');
+  const [selH, selM] = wrap.querySelectorAll('.time-select:not(.time-period)');
+  const selP = wrap.querySelector('.time-period');
   if(!selH.value || !selM.value) return '';
-  return selH.value + ':' + selM.value;
+  let h = parseInt(selH.value, 10) % 12;
+  if(selP.value === 'PM') h += 12;
+  return String(h).padStart(2,'0') + ':' + selM.value;
+}
+function formatHora12(hora){
+  if(!hora) return '';
+  const [hh, mm] = hora.split(':');
+  const hnum = parseInt(hh, 10);
+  const period = hnum >= 12 ? 'PM' : 'AM';
+  let h12 = hnum % 12; if(h12 === 0) h12 = 12;
+  return `${h12}:${mm} ${period}`;
 }
 
 function addRegistroRow(hora='', alim=''){
@@ -1255,11 +1286,7 @@ function collectRegistro(){
 function restoreRegistro(rows){
   document.getElementById('registroBody').innerHTML = '';
   registroRowCount = 0;
-  if(!rows || !rows.length){
-    addRegistroRow(); /* siempre al menos 1 fila */
-    return;
-  }
-  rows.forEach(r => addRegistroRow(r.hora || '', r.alim || ''));
+  (rows || []).forEach(r => addRegistroRow(r.hora || '', r.alim || ''));
 }
 
 /* ══ INLINE REPEAT MODE ══ */
@@ -1375,7 +1402,11 @@ function closeRestoreBar(){
   _restoreData = null;
 }
 function doRestore(){
-  if(_restoreData){ apply(_restoreData); toast('✅ Sesión restaurada'); }
+  if(_restoreData){
+    apply(_restoreData);
+    planDirty = planHasContent(); updateSaveBtnVisibility();
+    toast('✅ Sesión restaurada');
+  }
   closeRestoreBar();
 }
 
@@ -1540,6 +1571,7 @@ async function guardarPlan(){
     const guardado = planesCache.find(p => p.id === id);
     if(guardado){
       document.getElementById('planesSelect').value = id;
+      planDirty = false; updateSaveBtnVisibility();
       setEstado('✅ Guardado');
       toast('✅ Plan guardado: ' + plan.name);
     } else {
@@ -1550,11 +1582,17 @@ async function guardarPlan(){
 }
 
 async function cargarPlan(){
-  const id = document.getElementById('planesSelect').value;
-  if(!id){ toast('Selecciona un plan primero'); return; }
+  const sel = document.getElementById('planesSelect');
+  const id = sel.value;
+  if(!id) return;
   const plan = planesCache.find(p => p.id === id);
-  if(!plan || !await showConfirm(`¿Cargar el plan "${plan.name}"? Esto reemplazará lo que tienes en pantalla.`, {icon:'⬆️'})) return;
-  apply(plan.data); autoSave(); toast('✅ Plan cargado: ' + plan.name);
+  if(!plan || !await showConfirm(`¿Cargar el plan "${plan.name}"? Esto reemplazará lo que tienes en pantalla.`, {icon:'⬆️'})){
+    sel.value = '';
+    return;
+  }
+  apply(plan.data); autoSave();
+  planDirty = false; updateSaveBtnVisibility();
+  toast('✅ Plan cargado: ' + plan.name);
 }
 
 async function eliminarPlan(){
@@ -1627,7 +1665,24 @@ function apply(d){
   restoreRegistro(d.registro || []);
   restoreObservaciones(d.observaciones || []);
 }
-function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){} scheduleLocalSave(); }
+function autoSave(){
+  try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){}
+  scheduleLocalSave();
+  planDirty = true; updateSaveBtnVisibility();
+}
+function planHasContent(){
+  const d = collect();
+  return !!(
+    (d.childName && d.childName.trim()) ||
+    Object.values(d.cells||{}).some(v => v && v.trim()) ||
+    (d.registro||[]).some(r => r.alim && r.alim.trim()) ||
+    (d.observaciones||[]).some(o => o && o.trim())
+  );
+}
+function updateSaveBtnVisibility(){
+  const btn = document.getElementById('btnGuardarComo');
+  if(btn) btn.style.display = planDirty ? '' : 'none';
+}
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -1784,7 +1839,7 @@ async function captureRegistroPage(){
     tr.style.cssText = `background:${i%2===0?'white':'#fdf9ff'};border-bottom:2px solid #f5f3ff;`;
     const td1 = document.createElement('td');
     td1.style.cssText = 'padding:20px 28px;text-align:center;font-size:28px;font-weight:700;color:#5b21b6;border-right:2px solid #f5f3ff;';
-    td1.textContent = row.hora || '—';
+    td1.textContent = formatHora12(row.hora) || '—';
     const td2 = document.createElement('td');
     td2.style.cssText = 'padding:20px 32px;text-align:left;font-size:28px;font-weight:600;color:#374151;';
     td2.textContent = row.alim || '';
@@ -2102,6 +2157,8 @@ try{
   const saved = JSON.parse(localStorage.getItem(KEY));
   if(saved){ apply(saved); } else { restoreRegistro([]); }
 }catch(e){ restoreRegistro([]); }
+planDirty = planHasContent();
+updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 function dismissOnboarding(){
