@@ -147,7 +147,9 @@ function doPost(e) {
       if (body.reqId) {
         try { PropertiesService.getScriptProperties().setProperty('drivelink_' + body.reqId, link); } catch(e) {}
       }
-      try { notifyWhatsApp('📄 Nuevo plan guardado: ' + (body.filename || 'Plan alimentario') + '\n' + link); } catch(e) {}
+      if (body.notify !== false) {
+        try { notifyWhatsApp('📄 Nuevo plan guardado: ' + (body.filename || 'Plan alimentario') + '\n' + link); } catch(e) {}
+      }
       return output({ ok: true, link: link });
     }
 

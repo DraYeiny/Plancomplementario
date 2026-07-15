@@ -492,6 +492,19 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .side-menu-check input[type="checkbox"] {
   width: 16px; height: 16px; accent-color: #7c3aed; cursor: pointer; flex-shrink: 0;
 }
+/* Botón "Descargar" con estilo mac (relleno, como el botón por defecto de un diálogo macOS) */
+.btn-mac {
+  display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+  background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+  color: white; border: none; border-radius: 7px; padding: 9px 14px; margin-top: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.86rem; font-weight: 600; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 3px rgba(15,10,40,0.25);
+  transition: filter 0.1s, transform 0.1s;
+}
+.btn-mac:hover:not(:disabled) { filter: brightness(1.06); }
+.btn-mac:active:not(:disabled) { filter: brightness(0.94); transform: scale(0.98); }
+.btn-mac:disabled { opacity: 0.5; cursor: not-allowed; }
 .side-menu-foot {
   margin-top: auto; padding-top: 14px; padding-left: 4px; padding-right: 4px; border-top: 1px solid rgba(109,40,217,0.1);
   display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;
@@ -598,9 +611,9 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <label class="side-menu-check"><input type="checkbox" id="dlPlan" checked> Plan de alimentación</label>
   <label class="side-menu-check"><input type="checkbox" id="dlAplv"> APLV</label>
   <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
-  <button id="sideBtnDownload" class="side-menu-btn" onclick="descargarSeleccion()">📄 Descargar</button>
+  <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">📄 Descargar</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.15</span>
+    <span id="appVersion">v1.16</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -1931,51 +1944,66 @@ async function descargarSeleccion(){
 
   /* Abrir las descargas de Drive de forma síncrona (dentro del mismo clic)
      para que el navegador no las bloquee como pop-ups */
-  const refLinks = [];
+  const links = [];
   if(wantAplv && wantHuevo){
     window.open(refDownloadUrl(REF_FILES.ambos.id), '_blank');
-    refLinks.push(REF_FILES.ambos.name + ': ' + refViewUrl(REF_FILES.ambos.id));
+    links.push(REF_FILES.ambos.name + ': ' + refViewUrl(REF_FILES.ambos.id));
   } else {
-    if(wantAplv){  window.open(refDownloadUrl(REF_FILES.aplv.id), '_blank');  refLinks.push(REF_FILES.aplv.name + ': ' + refViewUrl(REF_FILES.aplv.id)); }
-    if(wantHuevo){ window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank'); refLinks.push(REF_FILES.huevo.name + ': ' + refViewUrl(REF_FILES.huevo.id)); }
+    if(wantAplv){  window.open(refDownloadUrl(REF_FILES.aplv.id), '_blank');  links.push(REF_FILES.aplv.name + ': ' + refViewUrl(REF_FILES.aplv.id)); }
+    if(wantHuevo){ window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank'); links.push(REF_FILES.huevo.name + ': ' + refViewUrl(REF_FILES.huevo.id)); }
   }
 
-  if(refLinks.length){
-    const texto = '📎 Descarga de referencia:\n' + refLinks.join('\n');
+  /* Si se generó el plan, esperamos a que termine de subirse a Drive para
+     incluir su link en el MISMO mensaje de WhatsApp (evita que se pisen
+     dos mensajes separados) — le pedimos al backend que no notifique solo. */
+  if(wantPlan){
+    try{
+      const planLink = await downloadAllPDF({ notify: false });
+      if(planLink) links.unshift('Plan de alimentación: ' + planLink);
+    }catch(e){ /* downloadAllPDF ya muestra su propio aviso de error */ }
+  }
+
+  if(links.length){
+    const texto = '📎 Archivos descargados:\n' + links.join('\n');
     sheetPost({ action: 'notifyDownload', text: texto }).catch(()=>{});
   }
-
-  if(wantPlan) await downloadAllPDF();
 }
 
 /* ══════════════════════════════════════════
    PDF DOWNLOAD — con página extra de REGISTRO
    ══════════════════════════════════════════ */
-function downloadAllPDF(){
-  if(pdfInProgress){ toast('⏳ Ya se está generando el PDF, espera un momento...'); return; }
-  pdfInProgress = true;
-  const btn = document.getElementById('sideBtnDownload');
-  if(btn) btn.disabled = true;
-  showPdfProgress(2, '📚 Cargando librerías...');
-  const libs=[
-    {src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',        check:()=>window.jspdf},
-    {src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', check:()=>window.html2canvas},
-    {src:'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js',                        check:()=>window.PDFLib}
-  ];
-  function runPDFSafe(){
-    runPDF().catch(err=>{
-      console.error(err);
-      hidePdfProgress(); pdfInProgress=false; if(btn) btn.disabled=false;
-      toast('❌ Error generando el PDF: ' + err.message);
+function downloadAllPDF(opts={}){
+  return new Promise((resolve, reject) => {
+    if(pdfInProgress){ toast('⏳ Ya se está generando el PDF, espera un momento...'); resolve(null); return; }
+    pdfInProgress = true;
+    const btn = document.getElementById('sideBtnDownload');
+    if(btn) btn.disabled = true;
+    showPdfProgress(2, '📚 Cargando librerías...');
+    const libs=[
+      {src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',        check:()=>window.jspdf},
+      {src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', check:()=>window.html2canvas},
+      {src:'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js',                        check:()=>window.PDFLib}
+    ];
+    function runPDFSafe(){
+      runPDF(opts).then(resolve).catch(err=>{
+        console.error(err);
+        hidePdfProgress(); pdfInProgress=false; if(btn) btn.disabled=false;
+        toast('❌ Error generando el PDF: ' + err.message);
+        reject(err);
+      });
+    }
+    let loaded=0;
+    libs.forEach(lib=>{
+      if(lib.check()){ if(++loaded===libs.length) runPDFSafe(); return; }
+      const s=document.createElement('script'); s.src=lib.src;
+      s.onload=()=>{ if(++loaded===libs.length) runPDFSafe(); };
+      s.onerror=()=>{
+        hidePdfProgress(); pdfInProgress=false; if(btn) btn.disabled=false;
+        toast('❌ Sin conexión para cargar librerías');
+        reject(new Error('No se pudieron cargar las librerías del PDF'));
+      };
+      document.head.appendChild(s);
     });
-  }
-  let loaded=0;
-  libs.forEach(lib=>{
-    if(lib.check()){ if(++loaded===libs.length) runPDFSafe(); return; }
-    const s=document.createElement('script'); s.src=lib.src;
-    s.onload=()=>{ if(++loaded===libs.length) runPDFSafe(); };
-    s.onerror=()=>{ hidePdfProgress(); pdfInProgress=false; if(btn) btn.disabled=false; toast('❌ Sin conexión para cargar librerías'); };
-    document.head.appendChild(s);
   });
 }
 
@@ -2096,7 +2124,7 @@ async function captureRegistroPage(){
   return { dataUrl: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height };
 }
 
-async function runPDF(){
+async function runPDF(opts={}){
   showPdfProgress(5, '📄 Generando PDF del plan...');
   const childName=document.getElementById('childName').value.trim();
   const planName=currentPlanName || '';
@@ -2273,7 +2301,7 @@ async function runPDF(){
   const pdfBytes=await planDoc.save();
   const filename=name.replace(/\s+/g,' ').trim()+'.pdf';
 
-  await uploadToDrive(pdfBytes, filename);
+  const driveLink = await uploadToDrive(pdfBytes, filename, { notify: opts.notify !== false });
 
   showPdfProgress(98, '📥 Descargando en tu dispositivo...');
   const blob=new Blob([pdfBytes],{type:'application/pdf'});
@@ -2289,6 +2317,7 @@ async function runPDF(){
   const btn = document.getElementById('sideBtnDownload');
   if(btn) btn.disabled = false;
   toast('✅ PDF descargado');
+  return driveLink;
 }
 
 /* ── DRIVE UPLOAD ── */
@@ -2315,25 +2344,28 @@ function showDriveBar(msg, link){
   bar.classList.add('open');
 }
 
-async function uploadToDrive(pdfBytes, filename){
+async function uploadToDrive(pdfBytes, filename, opts={}){
   const url=getSheetUrl();
-  if(!url) return;
+  if(!url) return null;
   showDriveBar('⏳ Subiendo a Drive (puede tardar ~30s)...');
   try{
     const base64=bytesToBase64(new Uint8Array(pdfBytes));
     const r=await fetch(url,{
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'saveToDrive',pdf:base64,filename})
+      body:JSON.stringify({action:'saveToDrive',pdf:base64,filename,notify:opts.notify!==false})
     });
     const j=await r.json();
     if(j.ok && j.link){
       showDriveBar('✅ PDF guardado en Drive:', j.link);
+      return j.link;
     } else {
       showDriveBar('⚠️ Error: '+(j.error||'no se pudo guardar'));
+      return null;
     }
   }catch(e){
     showDriveBar('⚠️ Error de conexión: '+e.message);
+    return null;
   }
 }
 
