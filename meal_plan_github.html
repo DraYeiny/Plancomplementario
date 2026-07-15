@@ -7,10 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 body {
-  font-family: 'Nunito', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
   background: #f7f5ff;
   min-height: 100vh; padding: 28px 286px 28px 16px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ── CALENDAR MODAL ── */
@@ -21,36 +23,37 @@ body {
 }
 #calOverlay.open { display: flex; }
 #calBox {
-  background: white; border-radius: 24px; padding: 22px;
-  box-shadow: 0 20px 60px rgba(109,40,217,0.18); min-width: 280px; user-select: none;
-  border: 1px solid #ede9fe;
+  background: white; border-radius: 20px; padding: 22px;
+  box-shadow: 0 16px 44px rgba(15,10,40,0.14), 0 0 0 1px rgba(15,10,40,0.04); min-width: 280px; user-select: none;
 }
 .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .cal-nav button {
-  background: #f5f3ff; border: none; border-radius: 12px;
-  width: 34px; height: 34px; cursor: pointer; font-size: 1.1rem;
-  color: #7c3aed; font-weight: 900; display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s;
+  background: #f5f3ff; border: none; border-radius: 10px;
+  width: 32px; height: 32px; cursor: pointer; font-size: 1.05rem;
+  color: #7c3aed; font-weight: 600; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.1s;
 }
 .cal-nav button:hover { background: #ede9fe; }
-.cal-title { font-weight: 800; color: #5b21b6; font-size: 15px; }
+.cal-nav button:active { transform: scale(0.92); }
+.cal-title { font-weight: 600; color: #5b21b6; font-size: 15px; letter-spacing: -0.01em; }
 .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; text-align: center; }
-.cal-grid .dow { font-size: 15px; font-weight: 800; color: #c4b5fd; padding: 4px 0; }
+.cal-grid .dow { font-size: 12px; font-weight: 600; color: #c4b5fd; padding: 4px 0; text-transform: uppercase; letter-spacing: 0.02em; }
 .cal-grid .day {
-  font-size: 15px; font-weight: 700; padding: 8px 2px;
+  font-size: 14px; font-weight: 500; padding: 8px 2px;
   border-radius: 10px; cursor: pointer; color: #374151; transition: all 0.12s;
 }
 .cal-grid .day:hover { background: #f5f3ff; color: #7c3aed; }
-.cal-grid .day.today { border: 2px solid #c4b5fd; color: #7c3aed; }
-.cal-grid .day.selected { background: #7c3aed; color: white; }
+.cal-grid .day.today { border: 1.5px solid #a78bfa; color: #7c3aed; font-weight: 600; }
+.cal-grid .day.selected { background: #7c3aed; color: white; font-weight: 600; }
 .cal-grid .day.other-month { color: #e5e7eb; pointer-events: none; }
 .cal-close-row { text-align: center; margin-top: 14px; }
 .cal-close-row button {
   background: #f5f3ff; border: none; border-radius: 50px;
-  padding: 8px 24px; font-family: 'Nunito', sans-serif;
-  font-weight: 800; color: #7c3aed; cursor: pointer; font-size: 0.85rem; transition: background 0.15s;
+  padding: 8px 24px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600; color: #7c3aed; cursor: pointer; font-size: 0.85rem; transition: background 0.15s, transform 0.1s;
 }
 .cal-close-row button:hover { background: #ede9fe; }
+.cal-close-row button:active { transform: scale(0.96); }
 
 /* ── PDF PROGRESS MODAL ── */
 #pdfProgressOverlay {
@@ -60,23 +63,23 @@ body {
 }
 #pdfProgressOverlay.open { display: flex; }
 #pdfProgressBox {
-  background: white; border-radius: 22px; padding: 30px 28px; max-width: 340px; width: 100%;
-  box-shadow: 0 20px 60px rgba(109,40,217,0.25); text-align: center;
+  background: white; border-radius: 20px; padding: 30px 28px; max-width: 340px; width: 100%;
+  box-shadow: 0 16px 48px rgba(15,10,40,0.2), 0 0 0 1px rgba(15,10,40,0.04); text-align: center;
 }
 #pdfProgressSpinner {
-  width: 42px; height: 42px; margin: 0 auto 16px; border-radius: 50%;
-  border: 4px solid #ede9fe; border-top-color: #7c3aed;
+  width: 38px; height: 38px; margin: 0 auto 16px; border-radius: 50%;
+  border: 3px solid #ede9fe; border-top-color: #7c3aed;
   animation: pdf-spin 0.8s linear infinite;
 }
 @keyframes pdf-spin { to { transform: rotate(360deg); } }
-#pdfProgressLabel { font-size: 0.92rem; font-weight: 800; color: #5b21b6; margin-bottom: 14px; min-height: 40px; }
-.pdf-progress-track { background: #ede9fe; border-radius: 50px; height: 10px; overflow: hidden; margin-bottom: 8px; }
+#pdfProgressLabel { font-size: 0.92rem; font-weight: 600; color: #5b21b6; margin-bottom: 14px; min-height: 40px; }
+.pdf-progress-track { background: #ede9fe; border-radius: 50px; height: 8px; overflow: hidden; margin-bottom: 8px; }
 .pdf-progress-fill {
-  height: 100%; width: 0%; background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  height: 100%; width: 0%; background: #7c3aed;
   border-radius: 50px; transition: width 0.3s ease;
 }
-#pdfProgressPct { font-size: 0.8rem; font-weight: 800; color: #7c3aed; margin-bottom: 10px; }
-.pdf-progress-note { font-size: 0.72rem; color: #a78bfa; font-weight: 600; }
+#pdfProgressPct { font-size: 0.8rem; font-weight: 600; color: #7c3aed; margin-bottom: 10px; }
+.pdf-progress-note { font-size: 0.72rem; color: #a78bfa; font-weight: 500; }
 
 /* ── MODAL (reemplazo de prompt/confirm nativos) ── */
 #modalOverlay {
@@ -86,95 +89,96 @@ body {
 }
 #modalOverlay.open { display: flex; }
 #modalBox {
-  background: white; border-radius: 22px; padding: 26px 24px; max-width: 360px; width: 100%;
-  box-shadow: 0 20px 60px rgba(109,40,217,0.2); border: 1px solid #ede9fe; text-align: center;
+  background: white; border-radius: 18px; padding: 26px 24px; max-width: 360px; width: 100%;
+  box-shadow: 0 16px 48px rgba(15,10,40,0.18), 0 0 0 1px rgba(15,10,40,0.04); text-align: center;
 }
 #modalIcon { font-size: 2.2rem; margin-bottom: 8px; }
-#modalMsg { font-size: 0.95rem; font-weight: 700; color: #374151; margin-bottom: 16px; line-height: 1.5; white-space: pre-line; text-align: left; }
+#modalMsg { font-size: 0.95rem; font-weight: 500; color: #374151; margin-bottom: 16px; line-height: 1.5; white-space: pre-line; text-align: left; }
 #modalInput {
-  width: 100%; border: 1.5px solid #ddd6fe; border-radius: 12px; padding: 10px 14px;
-  font-family: 'Nunito', sans-serif; font-size: 0.92rem; font-weight: 700; color: #5b21b6;
+  width: 100%; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 10px 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.92rem; font-weight: 600; color: #5b21b6;
   outline: none; margin-bottom: 16px; text-align: center; transition: border-color 0.2s;
 }
 #modalInput:focus { border-color: #7c3aed; }
 .modal-btns { display: flex; gap: 10px; justify-content: center; }
 .modal-btns button {
-  flex: 1; border: none; border-radius: 50px; padding: 11px 18px;
-  font-family: 'Nunito', sans-serif; font-size: 0.86rem; font-weight: 800; cursor: pointer;
-  transition: transform 0.1s;
+  flex: 1; border: none; border-radius: 12px; padding: 11px 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.86rem; font-weight: 600; cursor: pointer;
+  transition: transform 0.1s, opacity 0.1s;
 }
-.modal-btns button:hover { transform: translateY(-1px); }
+.modal-btns button:active { transform: scale(0.97); opacity: 0.9; }
 #modalCancel { background: #f5f3ff; color: #7c3aed; }
-#modalOk { background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white; }
-#modalOk.danger { background: linear-gradient(135deg, #fca5a5, #ef4444); }
+#modalOk { background: #7c3aed; color: white; }
+#modalOk.danger { background: #ef4444; }
 
 /* ── PAGE ── */
 .page {
-  background: white; border-radius: 28px; padding: 36px 30px;
-  box-shadow: 0 0 0 1px rgba(139,92,246,0.07), 0 24px 64px -10px rgba(109,40,217,0.13);
+  background: white; border-radius: 22px; padding: 36px 30px;
+  box-shadow: 0 0 0 1px rgba(15,10,40,0.05), 0 20px 50px -12px rgba(15,10,40,0.12);
   max-width: 1180px; margin: 0 auto 32px;
 }
 
 /* ── HEADER ── */
 .header {
   text-align: center; margin-bottom: 32px;
-  padding-bottom: 24px; border-bottom: 2px solid #f5f3ff;
+  padding-bottom: 24px; border-bottom: 1px solid #f0edfb;
 }
 .header .emojis { font-size: 2rem; letter-spacing: 10px; margin-bottom: 12px; display: block; }
 .header h1 {
-  font-size: 1.9rem; font-weight: 900; letter-spacing: -0.5px;
+  font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em;
   background: linear-gradient(135deg, #5b21b6 0%, #a855f7 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.header p { font-size: 0.86rem; color: #a78bfa; margin-top: 7px; font-weight: 600; }
+.header p { font-size: 0.86rem; color: #a78bfa; margin-top: 7px; font-weight: 500; }
 
 /* ── ONBOARDING BANNER ── */
 #onboardBanner {
-  display: none; background: linear-gradient(135deg, #faf5ff, #f5f3ff); border: 1.5px solid #ddd6fe;
-  border-radius: 18px; padding: 18px 22px; margin-bottom: 18px;
+  display: none; background: #faf9ff; border: 1px solid #ede9fe;
+  border-radius: 16px; padding: 18px 22px; margin-bottom: 18px;
 }
 #onboardBanner.show { display: block; }
-#onboardBanner p { font-size: 0.9rem; color: #5b21b6; font-weight: 700; margin-bottom: 8px; }
+#onboardBanner p { font-size: 0.9rem; color: #5b21b6; font-weight: 600; margin-bottom: 8px; }
 #onboardBanner ol { margin: 0 0 14px 20px; padding: 0; }
-#onboardBanner li { font-size: 0.83rem; color: #6d28d9; font-weight: 600; margin-bottom: 4px; line-height: 1.4; }
+#onboardBanner li { font-size: 0.83rem; color: #6d28d9; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
 #onboardClose {
-  display: block; margin: 0 auto; background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  display: block; margin: 0 auto; background: #7c3aed;
   color: white; border: none; border-radius: 50px; padding: 9px 22px;
-  font-family: 'Nunito', sans-serif; font-size: 0.84rem; font-weight: 800; cursor: pointer;
-  transition: transform 0.1s;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.84rem; font-weight: 600; cursor: pointer;
+  transition: transform 0.1s, opacity 0.1s;
 }
-#onboardClose:hover { transform: translateY(-1px); }
+#onboardClose:active { transform: scale(0.96); opacity: 0.9; }
 
 /* ── PLANES BAR ── */
 .planes-bar {
   display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  background: #f0fdf4; border-radius: 16px; padding: 10px 18px; margin-bottom: 16px;
-  border: 1px solid #bbf7d0;
+  background: #f3fbf5; border-radius: 14px; padding: 10px 18px; margin-bottom: 16px;
+  border: 1px solid #d7f3dd;
 }
-.planes-bar label { font-size: 0.82rem; font-weight: 800; color: #15803d; white-space: nowrap; }
+.planes-bar label { font-size: 0.82rem; font-weight: 600; color: #15803d; white-space: nowrap; }
 #planesSelect {
-  border: 1.5px solid #86efac; border-radius: 10px; padding: 6px 10px;
-  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
+  border: 1px solid #bbf0c4; border-radius: 9px; padding: 6px 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; font-weight: 600;
   color: #15803d; background: white; outline: none; flex: 1; min-width: 160px; cursor: pointer;
 }
 .btn-plan {
-  background: #dcfce7; border: none; border-radius: 50px; padding: 7px 16px;
-  font-family: 'Nunito', sans-serif; font-size: 0.79rem; font-weight: 800;
+  background: #e6f9ea; border: none; border-radius: 9px; padding: 7px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.79rem; font-weight: 600;
   color: #15803d; cursor: pointer; white-space: nowrap; transition: background 0.15s, transform 0.1s;
 }
-.btn-plan:hover { background: #bbf7d0; transform: translateY(-1px); }
-.btn-plan-del { background: #fee2e2; color: #b91c1c; margin-left: 10px; border: 1.5px solid #fecaca; }
-.btn-plan-del:hover { background: #fecaca; transform: translateY(-1px); }
+.btn-plan:hover { background: #d7f3dd; }
+.btn-plan:active { transform: scale(0.97); }
+.btn-plan-del { background: #fdeeee; color: #b91c1c; margin-left: 10px; }
+.btn-plan-del:hover { background: #fbdcdc; }
 #planesStatus {
-  font-size: 0.78rem; font-weight: 800; color: #16a34a; white-space: nowrap;
-  background: #dcfce7; padding: 5px 12px; border-radius: 50px; display: inline-flex;
+  font-size: 0.78rem; font-weight: 600; color: #16a34a; white-space: nowrap;
+  background: #e6f9ea; padding: 5px 12px; border-radius: 50px; display: inline-flex;
   align-items: center; gap: 4px;
 }
-#planesStatus.status-error { color: #b91c1c; background: #fee2e2; }
+#planesStatus.status-error { color: #b91c1c; background: #fdeeee; }
 #planesStatus:empty { display: none; }
 .btn-info {
   background: #ede9fe; color: #7c3aed; border: none; border-radius: 50%;
-  width: 26px; height: 26px; font-size: 0.85rem; font-weight: 800; cursor: pointer;
+  width: 24px; height: 24px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   transition: background 0.15s;
 }
@@ -183,46 +187,43 @@ body {
 /* ── CONTROLS BAR ── */
 .controls-bar {
   display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
-  background: #faf5ff; border-radius: 16px; padding: 14px 20px; margin-bottom: 20px;
+  background: #faf9ff; border-radius: 14px; padding: 14px 20px; margin-bottom: 20px;
   border: 1px solid #ede9fe;
 }
-.controls-bar label { font-weight: 800; color: #5b21b6; font-size: 0.86rem; white-space: nowrap; }
+.controls-bar label { font-weight: 600; color: #5b21b6; font-size: 0.86rem; white-space: nowrap; }
 #childName {
-  border: none; border-bottom: 2px solid #ddd6fe; background: transparent;
-  font-family: 'Nunito', sans-serif; font-size: 0.92rem; color: #3730a3; font-weight: 700;
-  outline: none; padding: 2px 6px; flex: 1; min-width: 120px; transition: border-color 0.2s;
+  border: none; background: #f0edfb;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.92rem; color: #3730a3; font-weight: 500;
+  outline: none; padding: 7px 12px; border-radius: 9px; flex: 1; min-width: 120px; transition: box-shadow 0.2s;
 }
-#childName:focus { border-bottom-color: #7c3aed; }
-#childName::placeholder { color: #c4b5fd; font-weight: 400; }
+#childName:focus { box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
+#childName::placeholder { color: #b8adda; font-weight: 400; }
 .date-btn {
-  display: flex; align-items: center; gap: 6px; background: white; border: 1.5px solid #ddd6fe;
-  border-radius: 12px; padding: 7px 14px; cursor: pointer; font-family: 'Nunito', sans-serif;
-  font-size: 0.86rem; font-weight: 700; color: #5b21b6; transition: all 0.15s;
+  display: flex; align-items: center; gap: 6px; background: white; border: 1px solid #e2ddf7;
+  border-radius: 9px; padding: 7px 14px; cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.86rem; font-weight: 500; color: #5b21b6; transition: all 0.15s;
 }
 .date-btn:hover { background: #f5f3ff; border-color: #a78bfa; }
 .week-badge {
   background: #7c3aed; color: white; border-radius: 50px; padding: 5px 16px;
-  font-size: 0.8rem; font-weight: 800; margin-left: auto;
+  font-size: 0.8rem; font-weight: 600; margin-left: auto;
 }
 
-.tip-line {
-  text-align: center; font-size: 0.78rem; font-weight: 600; color: #a78bfa;
-  margin: -6px 0 16px; padding: 0 12px;
+/* ── TABS (control segmentado) ── */
+.tabs-bar {
+  display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 16px; justify-content: center;
+  background: #f0edfb; border-radius: 12px; padding: 3px;
 }
-.tip-line kbd {
-  background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 6px;
-  padding: 1px 7px; font-family: 'Nunito', sans-serif; font-weight: 800; color: #7c3aed;
-}
-
-/* ── TABS ── */
-.tabs-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; justify-content: center; }
 .tab-btn {
-  padding: 7px 18px; border: 1.5px solid #ede9fe; border-radius: 50px;
-  background: white; font-family: 'Nunito', sans-serif; font-size: 0.79rem;
-  font-weight: 700; color: #7c3aed; cursor: pointer; transition: all 0.15s;
+  padding: 7px 18px; border: none; border-radius: 9px;
+  background: transparent; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.79rem;
+  font-weight: 500; color: #6d28d9; cursor: pointer; transition: all 0.15s; flex: 1 1 auto;
 }
-.tab-btn:hover { background: #f5f3ff; border-color: #c4b5fd; }
-.tab-btn.active { background: #7c3aed; color: white; border-color: #7c3aed; box-shadow: 0 3px 10px rgba(124,58,237,0.22); }
+.tab-btn:hover { color: #5b21b6; }
+.tab-btn.active {
+  background: white; color: #5b21b6; font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15,10,40,0.12), 0 0 0 1px rgba(15,10,40,0.03);
+}
 
 /* ── WEEK SHEETS ── */
 .week-sheet { position: absolute; visibility: hidden; pointer-events: none; height: 0; overflow: hidden; }
@@ -232,35 +233,32 @@ body {
   to   { opacity: 1; transform: translateX(0); }
 }
 .week-sheet.visible.week-anim { animation: weekFadeIn 0.32s ease; }
-.sheet-title {
-  text-align: center; font-size: 0.9rem; font-weight: 800; color: #5b21b6;
-  margin-bottom: 12px; background: #f5f3ff; border-radius: 12px; padding: 8px 12px;
-}
-.week-del-row { text-align: left; margin-top: 12px; }
+.week-del-row { text-align: right; margin-top: 12px; }
 .btn-del-week {
-  background: none; border: 1.5px solid #fecaca; color: #b91c1c; border-radius: 50px;
-  padding: 6px 18px; font-family: 'Nunito', sans-serif; font-size: 0.76rem; font-weight: 800;
-  cursor: pointer; transition: background 0.15s, transform 0.1s;
+  background: none; border: none; color: #b91c1c; border-radius: 50px;
+  padding: 6px 10px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.76rem; font-weight: 500;
+  cursor: pointer; transition: background 0.15s, opacity 0.1s;
 }
-.btn-del-week:hover { background: #fef2f2; transform: translateY(-1px); }
+.btn-del-week:hover { background: #fdeeee; }
+.btn-del-week:active { opacity: 0.7; }
 
 /* ── TABLE ── */
 .table-wrap { overflow-x: auto; border-radius: 12px; position: relative; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: 0.8rem; }
 th.day-header {
-  background: #bfdbfe; color: #1e40af;
-  font-weight: 800; font-size: 0.8rem; text-align: center; padding: 10px 4px; border-radius: 10px;
+  background: #e5eefe; color: #1e40af;
+  font-weight: 600; font-size: 0.8rem; text-align: center; padding: 10px 4px; border-radius: 10px;
 }
 th.empty-corner { background: transparent; }
 td.meal-header {
-  font-weight: 800; font-size: 0.84rem; text-align: center; padding: 6px 8px;
+  font-weight: 600; font-size: 0.84rem; text-align: center; padding: 6px 8px;
   border-radius: 10px; vertical-align: middle; white-space: nowrap;
 }
 .meal-desayuno { background: #fff7ed; color: #c2410c; }
 .meal-almuerzo { background: #f0fdf4; color: #15803d; }
 .meal-cena     { background: #eff6ff; color: #1d4ed8; }
 td.sub-header {
-  font-weight: 700; font-size: 0.72rem; padding: 4px 8px;
+  font-weight: 500; font-size: 0.72rem; padding: 4px 8px;
   border-radius: 8px; text-align: right; white-space: nowrap; vertical-align: middle;
 }
 .sub-cereal   { background: #fffbeb; color: #92400e; }
@@ -276,7 +274,7 @@ td.cell { padding: 2px; border-radius: 8px; vertical-align: middle; position: re
   display: block; min-height: 44px; border: 1.5px dashed #d1d5db; border-radius: 8px;
   padding: 7px 8px; cursor: text; overflow: visible;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-  font-family: 'Nunito', sans-serif; font-weight: 700; color: #374151; font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-weight: 500; color: #374151; font-size: 13px;
   text-align: center; white-space: pre-wrap; word-break: break-word; outline: none;
 }
 .cell-clear-btn {
@@ -300,105 +298,110 @@ td.cell.has-content .cell-clear-btn { display: flex; }
 /* ── DRIVE LINK BAR ── */
 #driveLinkBar {
   display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
-  background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 14px;
-  padding: 10px 18px; margin-bottom: 10px; font-family: 'Nunito', sans-serif;
+  background: #f3fbf5; border: 1px solid #d7f3dd; border-radius: 14px;
+  padding: 10px 18px; margin-bottom: 10px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
 }
 #driveLinkBar.open { display: flex; }
-#driveLinkMsg { font-size: 0.84rem; font-weight: 700; color: #166534; }
+#driveLinkMsg { font-size: 0.84rem; font-weight: 600; color: #166534; }
 #driveLinkA {
-  font-size: 0.84rem; font-weight: 800; color: #15803d;
+  font-size: 0.84rem; font-weight: 600; color: #15803d;
   text-decoration: underline; cursor: pointer;
 }
 
 /* ── RESTORE BAR ── */
 #restoreBar {
   display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
-  background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 14px;
-  padding: 10px 18px; margin-bottom: 10px; font-family: 'Nunito', sans-serif;
+  background: #f3fbf5; border: 1px solid #d7f3dd; border-radius: 14px;
+  padding: 10px 18px; margin-bottom: 10px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
 }
 #restoreBar.open { display: flex; }
-#restoreMsg { font-size: 0.84rem; font-weight: 700; color: #166534; }
+#restoreMsg { font-size: 0.84rem; font-weight: 600; color: #166534; }
 
 /* ── COPY WEEK BAR ── */
 #copyWeekBar {
   display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
-  background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 14px;
-  padding: 10px 18px; margin-bottom: 14px; font-family: 'Nunito', sans-serif;
+  background: #eff6ff; border: 1px solid #d5e6fd; border-radius: 14px;
+  padding: 10px 18px; margin-bottom: 14px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
 }
 #copyWeekBar.open { display: flex; }
-#copyWeekMsg { font-size: 0.84rem; font-weight: 700; color: #1e40af; }
+#copyWeekMsg { font-size: 0.84rem; font-weight: 600; color: #1e40af; }
 .copy-week-select {
-  border: 1.5px solid #bfdbfe; border-radius: 50px; padding: 5px 12px;
-  font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800;
+  border: 1px solid #d5e6fd; border-radius: 50px; padding: 5px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; font-weight: 600;
   color: #1e40af; background: white; cursor: pointer; outline: none;
 }
-.copy-week-arrow { font-size: 0.84rem; font-weight: 700; color: #1e40af; }
+.copy-week-arrow { font-size: 0.84rem; font-weight: 600; color: #1e40af; }
 .btn-copy-yes {
-  background: linear-gradient(135deg, #60a5fa, #3b82f6); color: white; border: none;
-  border-radius: 50px; padding: 6px 16px; font-family: 'Nunito', sans-serif;
-  font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: transform 0.1s;
+  background: #3b82f6; color: white; border: none;
+  border-radius: 50px; padding: 6px 16px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: transform 0.1s;
 }
-.btn-copy-yes:hover { transform: translateY(-1px); }
+.btn-copy-yes:active { transform: scale(0.96); }
 .btn-copy-no {
-  background: #dbeafe; color: #1e40af; border: none; border-radius: 50px;
-  padding: 6px 14px; font-family: 'Nunito', sans-serif; font-size: 0.8rem;
-  font-weight: 800; cursor: pointer; transition: background 0.15s;
+  background: #e2edfe; color: #1e40af; border: none; border-radius: 50px;
+  padding: 6px 14px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem;
+  font-weight: 600; cursor: pointer; transition: background 0.15s;
 }
-.btn-copy-no:hover { background: #bfdbfe; }
+.btn-copy-no:hover { background: #d5e6fd; }
 
 /* ── REPEAT BAR ── */
 #repeatBar {
   display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  background: white; border-radius: 50px; padding: 10px 22px;
-  box-shadow: 0 8px 32px rgba(124,58,237,0.22); border: 1px solid #ede9fe;
+  background: rgba(255,255,255,0.85); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 50px; padding: 10px 22px;
+  box-shadow: 0 8px 28px rgba(15,10,40,0.16), 0 0 0 1px rgba(15,10,40,0.05);
   z-index: 9200; align-items: center; gap: 12px; white-space: nowrap;
 }
 #repeatBar.open { display: flex; }
-#repeatBarCount { font-size: 0.85rem; font-weight: 700; color: #5b21b6; }
+#repeatBarCount { font-size: 0.85rem; font-weight: 600; color: #5b21b6; }
 .btn-rbar-apply {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none;
-  border-radius: 50px; padding: 7px 18px; font-family: 'Nunito', sans-serif;
-  font-size: 0.82rem; font-weight: 800; cursor: pointer; transition: transform 0.1s;
+  background: #7c3aed; color: white; border: none;
+  border-radius: 50px; padding: 7px 18px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: transform 0.1s;
 }
-.btn-rbar-apply:hover { transform: translateY(-1px); }
+.btn-rbar-apply:active { transform: scale(0.96); }
 .btn-rbar-cancel {
   background: #f5f3ff; color: #7c3aed; border: none; border-radius: 50px;
-  padding: 7px 14px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
-  font-weight: 800; cursor: pointer; transition: background 0.15s;
+  padding: 7px 14px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem;
+  font-weight: 600; cursor: pointer; transition: background 0.15s;
 }
 .btn-rbar-cancel:hover { background: #ede9fe; }
 tr.spacer td { height: 8px; background: transparent; }
 
 /* ── AUTOCOMPLETE ── */
 #acDropdown {
-  position: fixed; z-index: 99998; background: white; border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(109,40,217,0.15); overflow-y: auto;
+  position: fixed; z-index: 99998; background: rgba(255,255,255,0.92); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(15,10,40,0.14), 0 0 0 1px rgba(15,10,40,0.05); overflow-y: auto;
   max-height: 200px; min-width: 160px; max-width: 240px;
-  border: 1px solid #ede9fe; display: none; overscroll-behavior: contain;
+  display: none; overscroll-behavior: contain;
 }
 #acDropdown.open { display: block; }
 .ac-item {
-  padding: 9px 14px; font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
+  padding: 9px 14px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; font-weight: 500;
   color: #374151; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  transition: background 0.1s; border-bottom: 1px solid #f9f5ff;
+  transition: background 0.1s;
 }
-.ac-item:last-child { border-bottom: none; }
 .ac-item:hover, .ac-item.active { background: #f5f3ff; color: #7c3aed; }
-.ac-item strong { color: #7c3aed; }
+.ac-item strong { color: #7c3aed; font-weight: 700; }
 
-/* ── REGISTRO + OBSERVACIONES (dos columnas) ── */
+/* ── REGISTRO + OBSERVACIONES (dos columnas, misma altura) ── */
 .two-col-row {
-  display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
-  margin-top: 36px; border-top: 1.5px solid #f5f3ff; padding-top: 28px;
+  display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap;
+  margin-top: 36px; border-top: 1px solid #f0edfb; padding-top: 28px;
 }
-.registro-section, .observaciones-section { flex: 1 1 320px; min-width: 0; }
-.registro-section h2 { text-align: center; font-size: 1.2rem; font-weight: 900; color: #5b21b6; margin-bottom: 6px; }
-.registro-section .registro-sub { text-align: center; font-size: 0.79rem; color: #a78bfa; margin-bottom: 18px; font-weight: 600; }
-.registro-table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid #ede9fe; background: #fdfcff; }
+.registro-section, .observaciones-section {
+  flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column;
+}
+.registro-section h2 { text-align: center; font-size: 1.2rem; font-weight: 700; color: #5b21b6; margin-bottom: 6px; letter-spacing: -0.01em; }
+.registro-table-wrap {
+  overflow-x: auto; overflow-y: auto; border-radius: 14px; border: 1px solid #ede9fe;
+  background: #fdfcff; flex: 1;
+}
 table.registro-table { width: 100%; border-collapse: collapse; font-size: 15px; }
-table.registro-table thead tr { background: #f5f3ff; }
+table.registro-table thead tr { background: #f7f5fc; }
 table.registro-table thead th {
-  padding: 12px 14px; font-weight: 800; font-size: 15px; color: #5b21b6; text-align: center;
+  padding: 12px 14px; font-weight: 600; font-size: 13px; color: #6d28d9; text-align: center;
   border-bottom: 1px solid #ede9fe; white-space: nowrap;
 }
 table.registro-table thead th.col-hora { width: 130px; min-width: 110px; }
@@ -407,20 +410,20 @@ table.registro-table tbody tr:hover { background: #fdf9ff; }
 table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .registro-hora-cell { text-align: center; }
 .time-select-wrap {
-  display: inline-flex; align-items: center; gap: 3px; border: 1.5px solid #ede9fe;
-  border-radius: 10px; padding: 4px 8px; background: white; transition: border-color 0.2s;
+  display: inline-flex; align-items: center; gap: 3px; border: 1px solid #ede9fe;
+  border-radius: 9px; padding: 4px 8px; background: white; transition: border-color 0.2s;
 }
 .time-select-wrap:focus-within { border-color: #7c3aed; background: #fdf9ff; }
 .time-select {
   border: none; background: transparent; outline: none; cursor: pointer;
-  font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700; color: #5b21b6;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 600; color: #5b21b6;
   text-align: center; -webkit-appearance: none; appearance: none; padding: 2px;
 }
-.time-colon { font-weight: 800; color: #a78bfa; }
+.time-colon { font-weight: 600; color: #a78bfa; }
 .registro-alim-cell { width: 100%; }
 .registro-alim-edit {
-  display: block; min-height: 38px; width: 100%; border: 1.5px dashed #e5e7eb; border-radius: 10px;
-  padding: 7px 12px; font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+  display: block; min-height: 38px; width: 100%; border: 1.5px dashed #e5e7eb; border-radius: 9px;
+  padding: 7px 12px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 500;
   color: #374151; text-align: center; outline: none; cursor: text;
   white-space: pre-wrap; word-break: break-word; transition: border-color 0.2s; box-sizing: border-box;
 }
@@ -434,66 +437,65 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .btn-del-row:hover { background: #fef2f2; color: #ef4444; }
 .registro-add-row td { padding: 8px; text-align: right; }
 .btn-add-row {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white; border: none;
-  border-radius: 50px; padding: 8px 20px; font-family: 'Nunito', sans-serif;
-  font-size: 0.82rem; font-weight: 800; cursor: pointer;
-  box-shadow: 0 4px 12px rgba(124,58,237,0.2); transition: transform 0.15s, box-shadow 0.15s;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #7c3aed; color: white; border: none;
+  border-radius: 50%; width: 34px; height: 34px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  cursor: pointer; transition: transform 0.1s, opacity 0.1s;
 }
-.btn-add-row:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(124,58,237,0.28); }
+.btn-add-row:active { transform: scale(0.94); opacity: 0.9; }
 .btn-add-row-icon { font-size: 1.1rem; line-height: 1; }
 
 /* ── OBSERVACIONES ── */
-.observaciones-section h2 { text-align: center; font-size: 1.2rem; font-weight: 900; color: #5b21b6; margin-bottom: 6px; }
-.obs-num-cell { text-align: center; font-size: 0.82rem; font-weight: 800; color: #a78bfa; width: 44px; }
+.observaciones-section h2 { text-align: center; font-size: 1.2rem; font-weight: 700; color: #5b21b6; margin-bottom: 6px; letter-spacing: -0.01em; }
+.obs-num-cell { text-align: center; font-size: 0.82rem; font-weight: 600; color: #a78bfa; width: 44px; }
 .obs-text:empty::before { content: 'Escribe una observación...'; }
-.btn-add-obs:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(124,58,237,0.28); }
 
-/* ── RIGHT SIDE MENU ── */
+/* ── RIGHT SIDE MENU (estilo barra lateral macOS, vidrio esmerilado) ── */
 /* Escritorio: panel siempre visible, fijo a la derecha (el body deja espacio con padding-right) */
 #sideMenuToggle { display: none; }
 #sideMenuOverlay { display: none; }
 #sideMenu {
   position: fixed; top: 0; right: 0; height: 100%; width: 270px; max-width: 82vw;
-  background: white; box-shadow: -6px 0 30px rgba(109,40,217,0.2); z-index: 9400;
+  background: rgba(250,249,255,0.82); backdrop-filter: saturate(180%) blur(24px); -webkit-backdrop-filter: saturate(180%) blur(24px);
+  box-shadow: -1px 0 0 rgba(15,10,40,0.06); z-index: 9400;
   transform: translateX(0); transition: transform 0.25s ease;
-  padding: 20px 18px; display: flex; flex-direction: column; gap: 10px;
+  padding: 20px 16px; display: flex; flex-direction: column; gap: 2px;
 }
-.side-menu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.side-menu-head h2 { font-size: 1rem; font-weight: 900; color: #5b21b6; }
+.side-menu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 4px; }
+.side-menu-head h2 { font-size: 0.78rem; font-weight: 600; color: #8b7fae; text-transform: uppercase; letter-spacing: 0.04em; }
 #sideMenuClose { display: none; }
 .side-menu-btn {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
-  background: #faf5ff; border: 1.5px solid #ede9fe; border-radius: 14px; padding: 13px 16px;
-  font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 800; color: #5b21b6;
-  cursor: pointer; transition: background 0.15s, transform 0.1s; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  background: transparent; border: none; border-radius: 9px; padding: 10px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.88rem; font-weight: 500; color: #4c1d95;
+  cursor: pointer; transition: background 0.12s;
 }
-.side-menu-btn:hover { background: #f5f3ff; transform: translateX(2px); }
-.side-menu-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+.side-menu-btn:hover { background: rgba(124,58,237,0.1); }
+.side-menu-btn:active { background: rgba(124,58,237,0.16); }
+.side-menu-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .side-menu-foot {
-  margin-top: auto; padding-top: 14px; border-top: 1px solid #ede9fe;
+  margin-top: auto; padding-top: 14px; padding-left: 4px; border-top: 1px solid rgba(109,40,217,0.1);
   display: flex; flex-direction: column; gap: 4px;
 }
 .side-menu-foot #localSaveLabel, .side-menu-foot #appVersion {
-  font-size: 0.72rem; font-weight: 700; color: #9ca3af; font-family: 'Nunito', sans-serif;
+  font-size: 0.72rem; font-weight: 500; color: #9ca3af; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* ── WEEKS INPUT ── */
 .weeks-input {
-  width: 64px; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 5px 8px;
-  font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700; color: #5b21b6;
-  text-align: center; background: white; outline: none; transition: border-color 0.2s;
+  width: 64px; border: 1px solid #ddd6fe; border-radius: 9px; padding: 5px 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.88rem; font-weight: 600; color: #5b21b6;
+  text-align: center; background: white; outline: none; transition: box-shadow 0.2s;
 }
-.weeks-input:focus { border-color: #7c3aed; }
-
-.footer { text-align: center; margin-top: 20px; font-size: 0.72rem; color: #c4b5fd; font-weight: 600; }
+.weeks-input:focus { box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
 
 #toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  background: #7c3aed; color: white; padding: 10px 26px; border-radius: 50px;
-  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.85rem;
+  background: rgba(40,30,60,0.92); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  color: white; padding: 10px 26px; border-radius: 50px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; font-size: 0.85rem;
   opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 99999;
-  box-shadow: 0 6px 24px rgba(124,58,237,0.3);
+  box-shadow: 0 8px 24px rgba(15,10,40,0.3);
 }
 #toast.show { opacity: 1; }
 
@@ -532,14 +534,16 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   /* Móvil: el panel vuelve a ser un cajón oculto, activado con el botón ☰ */
   #sideMenuToggle {
     display: flex; position: fixed; top: 14px; right: 14px; z-index: 9400;
-    background: white; border: 1.5px solid #ede9fe; border-radius: 12px;
+    background: rgba(255,255,255,0.85); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: none; border-radius: 12px;
     width: 42px; height: 42px; align-items: center; justify-content: center;
-    cursor: pointer; box-shadow: 0 4px 14px rgba(109,40,217,0.15); font-size: 1.2rem;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(15,10,40,0.14); font-size: 1.2rem;
     color: #7c3aed; transition: background 0.15s, transform 0.1s;
   }
   #sideMenuToggle:hover { background: #f5f3ff; }
+  #sideMenuToggle:active { transform: scale(0.94); }
   #sideMenuOverlay {
-    display: none; position: fixed; inset: 0; background: rgba(15,10,40,0.25); z-index: 9350;
+    display: none; position: fixed; inset: 0; background: rgba(15,10,40,0.22); backdrop-filter: blur(1px); z-index: 9350;
   }
   #sideMenuOverlay.open { display: block; }
   #sideMenu { width: 84vw; transform: translateX(100%); }
@@ -665,8 +669,6 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
     <span class="week-badge" id="weekBadge">1 semana</span>
   </div>
 
-  <p class="tip-line">💡 Tip: escribe en una casilla y presiona <kbd>Enter</kbd> para repetir ese mismo alimento en otros días u horarios con un clic.</p>
-
   <div class="tabs-bar" id="tabsBar" role="tablist"></div>
   <div id="driveLinkBar" role="status" aria-live="polite">
     <span id="driveLinkMsg"></span>
@@ -693,7 +695,6 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- ══ TABLA DE REGISTRO ══ -->
   <div class="registro-section" id="registroSection">
     <h2>📋 Registro de Alimentación</h2>
-    <p class="registro-sub">Agrega aquí los alimentos con su horario — se incluirá en una página adicional del PDF</p>
     <div class="registro-table-wrap">
       <table class="registro-table" id="registroTable">
         <thead>
@@ -709,8 +710,8 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
         <tfoot>
           <tr class="registro-add-row" id="addRowTr">
             <td colspan="3">
-              <button class="btn-add-row" onclick="addRegistroRow()">
-                <span class="btn-add-row-icon">＋</span> Agregar fila
+              <button class="btn-add-row" onclick="addRegistroRow()" aria-label="Agregar fila">
+                <span class="btn-add-row-icon">＋</span>
               </button>
             </td>
           </tr>
@@ -723,7 +724,6 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- ══ OBSERVACIONES ══ -->
   <div class="observaciones-section" id="observacionesSection">
     <h2>📝 Observaciones</h2>
-    <p class="registro-sub">Agrega aquí notas y recomendaciones sobre el plan de alimentación</p>
     <div class="registro-table-wrap">
       <table class="registro-table" id="obsTable">
         <thead>
@@ -737,8 +737,8 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
         <tfoot>
           <tr class="registro-add-row">
             <td colspan="3">
-              <button class="btn-add-row" onclick="addObservacion()">
-                <span class="btn-add-row-icon">＋</span> Agregar observación
+              <button class="btn-add-row" onclick="addObservacion()" aria-label="Agregar observación">
+                <span class="btn-add-row-icon">＋</span>
               </button>
             </td>
           </tr>
@@ -749,8 +749,6 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- ══ FIN OBSERVACIONES ══ -->
   </div>
 
-  <p class="tip-line">👉 Usa el menú <kbd>☰</kbd> (a la derecha) para descargar el PDF.</p>
-  <div class="footer">🥦 Plantilla de alimentación · Datos guardados automáticamente 💾</div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="acDropdown"></div>
@@ -968,7 +966,7 @@ function rebuildSheets(){
   document.getElementById('tabsBar').innerHTML='';
   document.getElementById('sheetsContainer').innerHTML='';
   for(let w=0;w<numWeeks;w++){
-    const ws=addDays(startDate,w*7), we=addDays(ws,6);
+    const ws=addDays(startDate,w*7);
     const btn=document.createElement('button');
     btn.className='tab-btn'+(w===0?' active':'');
     btn.textContent=`Sem ${w+1}: ${fmt(ws)}`;
@@ -979,10 +977,6 @@ function rebuildSheets(){
     const sheet=document.createElement('div');
     sheet.className='week-sheet'+(w===0?' visible':'');
     sheet.id='sheet-'+w;
-    const title=document.createElement('div');
-    title.className='sheet-title';
-    title.textContent=`📅 Semana ${w+1}: del ${fmt(ws)} al ${fmt(we)}`;
-    sheet.appendChild(title);
     const dayHeaders=Array.from({length:7},(_,i)=>{
       const dd=addDays(ws,i); const dowIdx=dd.getDay();
       return `${DAY_ICONS_ALL[dowIdx]}<br>${DAY_NAMES_ES[dowIdx]}<br><small style="font-size:0.65rem;font-weight:700;color:#888">${dd.getDate()}/${dd.getMonth()+1}</small>`;
