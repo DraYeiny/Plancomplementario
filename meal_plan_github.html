@@ -10,7 +10,7 @@
 body {
   font-family: 'Nunito', sans-serif;
   background: #f7f5ff;
-  min-height: 100vh; padding: 28px 16px;
+  min-height: 100vh; padding: 28px 16px 28px 286px;
 }
 
 /* ── CALENDAR MODAL ── */
@@ -461,33 +461,18 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .btn-add-obs:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(124,58,237,0.28); }
 
 /* ── LEFT SIDE MENU ── */
-#sideMenuToggle {
-  position: fixed; top: 14px; left: 14px; z-index: 9400;
-  background: white; border: 1.5px solid #ede9fe; border-radius: 12px;
-  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; box-shadow: 0 4px 14px rgba(109,40,217,0.15); font-size: 1.2rem;
-  color: #7c3aed; transition: background 0.15s, transform 0.1s;
-}
-#sideMenuToggle:hover { background: #f5f3ff; }
-#sideMenuOverlay {
-  display: none; position: fixed; inset: 0; background: rgba(15,10,40,0.25); z-index: 9350;
-}
-#sideMenuOverlay.open { display: block; }
+/* Escritorio: panel siempre visible, fijo a la izquierda (el body deja espacio con padding-left) */
+#sideMenuToggle { display: none; }
+#sideMenuOverlay { display: none; }
 #sideMenu {
   position: fixed; top: 0; left: 0; height: 100%; width: 270px; max-width: 82vw;
   background: white; box-shadow: 6px 0 30px rgba(109,40,217,0.2); z-index: 9400;
-  transform: translateX(-100%); transition: transform 0.25s ease;
+  transform: translateX(0); transition: transform 0.25s ease;
   padding: 20px 18px; display: flex; flex-direction: column; gap: 10px;
 }
-#sideMenu.open { transform: translateX(0); }
 .side-menu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .side-menu-head h2 { font-size: 1rem; font-weight: 900; color: #5b21b6; }
-#sideMenuClose {
-  background: #f5f3ff; border: none; border-radius: 50%;
-  width: 32px; height: 32px; font-size: 1rem; color: #7c3aed; cursor: pointer;
-  transition: background 0.15s;
-}
-#sideMenuClose:hover { background: #ede9fe; }
+#sideMenuClose { display: none; }
 .side-menu-btn {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
   background: #faf5ff; border: 1.5px solid #ede9fe; border-radius: 14px; padding: 13px 16px;
@@ -556,7 +541,28 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   .cell-edit { min-height: 48px; font-size: 14px; padding: 8px 6px; }
   td.cell { min-width: 84px; }
 
-  #sideMenu { width: 84vw; }
+  /* Móvil: el panel vuelve a ser un cajón oculto, activado con el botón ☰ */
+  #sideMenuToggle {
+    display: flex; position: fixed; top: 14px; left: 14px; z-index: 9400;
+    background: white; border: 1.5px solid #ede9fe; border-radius: 12px;
+    width: 42px; height: 42px; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(109,40,217,0.15); font-size: 1.2rem;
+    color: #7c3aed; transition: background 0.15s, transform 0.1s;
+  }
+  #sideMenuToggle:hover { background: #f5f3ff; }
+  #sideMenuOverlay {
+    display: none; position: fixed; inset: 0; background: rgba(15,10,40,0.25); z-index: 9350;
+  }
+  #sideMenuOverlay.open { display: block; }
+  #sideMenu { width: 84vw; transform: translateX(-100%); }
+  #sideMenu.open { transform: translateX(0); }
+  #sideMenuClose {
+    display: flex; align-items: center; justify-content: center;
+    background: #f5f3ff; border: none; border-radius: 50%;
+    width: 32px; height: 32px; font-size: 1rem; color: #7c3aed; cursor: pointer;
+    transition: background 0.15s;
+  }
+  #sideMenuClose:hover { background: #ede9fe; }
 
   #repeatBar { left: 8px; right: 8px; transform: none; width: auto; flex-wrap: wrap; justify-content: center; }
 
