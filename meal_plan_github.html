@@ -137,11 +137,41 @@ body {
   border: 1px solid #d7f3dd;
 }
 .planes-bar label { font-size: 0.82rem; font-weight: 600; color: #15803d; white-space: nowrap; }
-#planesSelect {
+.plan-picker { position: relative; flex: 1; min-width: 160px; }
+.plan-picker-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
   border: 1px solid #bbf0c4; border-radius: 9px; padding: 6px 10px;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; font-weight: 600;
-  color: #15803d; background: white; outline: none; flex: 1; min-width: 160px; cursor: pointer;
+  color: #15803d; background: white; outline: none; cursor: pointer; text-align: left;
+  transition: border-color 0.15s;
 }
+.plan-picker-btn:hover { border-color: #86efac; }
+#planPickerLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-picker-arrow { color: #86efac; font-size: 0.7rem; flex-shrink: 0; }
+.plan-picker-list {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
+  background: white; border-radius: 12px; border: 1px solid #ede9fe;
+  box-shadow: 0 8px 28px rgba(15,10,40,0.14), 0 0 0 1px rgba(15,10,40,0.03);
+  max-height: 240px; overflow-y: auto; padding: 4px;
+}
+.plan-picker-list.open { display: block; }
+.plan-picker-empty { padding: 10px 12px; font-size: 0.8rem; color: #9ca3af; font-weight: 500; }
+.plan-picker-item { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+.plan-picker-item:hover { background: #f5f3ff; }
+.plan-picker-item.selected { background: #f0fdf4; }
+.plan-picker-item-name {
+  flex: 1; min-width: 0; text-align: left; background: none; border: none; cursor: pointer;
+  padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.82rem; font-weight: 600; color: #374151; border-radius: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.plan-picker-item.selected .plan-picker-item-name { color: #15803d; }
+.plan-picker-item-del {
+  flex-shrink: 0; background: none; border: none; cursor: pointer; color: #fca5a5;
+  width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s; font-size: 0.8rem; margin-right: 2px;
+}
+.plan-picker-item-del:hover { background: #fdeeee; color: #ef4444; }
 .btn-plan {
   background: #e6f9ea; border: none; border-radius: 9px; padding: 7px 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.79rem; font-weight: 600;
@@ -149,8 +179,6 @@ body {
 }
 .btn-plan:hover { background: #d7f3dd; }
 .btn-plan:active { transform: scale(0.97); }
-.btn-plan-del { background: #fdeeee; color: #b91c1c; margin-left: 10px; }
-.btn-plan-del:hover { background: #fbdcdc; }
 #planesStatus {
   font-size: 0.78rem; font-weight: 600; color: #16a34a; white-space: nowrap;
   background: #e6f9ea; padding: 5px 12px; border-radius: 50px; display: inline-flex;
@@ -179,10 +207,6 @@ body {
   font-size: 0.86rem; font-weight: 500; color: #5b21b6; transition: all 0.15s;
 }
 .date-btn:hover { background: #f5f3ff; border-color: #a78bfa; }
-.week-badge {
-  background: #7c3aed; color: white; border-radius: 50px; padding: 5px 16px;
-  font-size: 0.8rem; font-weight: 600; margin-left: auto;
-}
 
 /* ── TABS (control segmentado) ── */
 .tabs-bar {
@@ -480,10 +504,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 
   .planes-bar, .controls-bar { flex-direction: column; align-items: stretch; gap: 8px; }
   .planes-bar label, .controls-bar label { margin-bottom: -4px; }
-  #planesSelect { width: 100%; }
   .btn-plan { width: 100%; justify-content: center; }
-  .btn-plan-del { margin-left: 0; margin-top: 4px; }
-  .week-badge { margin-left: 0; align-self: center; }
 
   .two-col-row { flex-direction: column; }
 
@@ -551,7 +572,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
   <button id="sideBtnDownload" class="side-menu-btn" onclick="closeSideMenu(); downloadAllPDF();">📄 Descargar PDF</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.11</span>
+    <span id="appVersion">v1.12</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -620,9 +641,14 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- PLANES GUARDADOS -->
   <div class="planes-bar">
     <label>📋 Plan:</label>
-    <select id="planesSelect" onchange="cargarPlan()"><option value="">— Seleccionar plan —</option></select>
+    <div class="plan-picker" id="planPicker">
+      <button type="button" class="plan-picker-btn" id="planPickerBtn" onclick="togglePlanPicker()" aria-haspopup="listbox" aria-expanded="false">
+        <span id="planPickerLabel">— Seleccionar plan —</span>
+        <span class="plan-picker-arrow">▾</span>
+      </button>
+      <div class="plan-picker-list" id="planPickerList" role="listbox"></div>
+    </div>
     <button id="btnGuardarComo" class="btn-plan" style="display:none" onclick="guardarPlan()">💾 Guardar como...</button>
-    <button class="btn-plan btn-plan-del" onclick="eliminarPlan()">🗑️ Eliminar</button>
     <span id="planesStatus"></span>
   </div>
 
@@ -632,8 +658,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
     <label>Del:</label>
     <button class="date-btn" id="btnStart">📅 <span id="lblStart">Seleccionar</span></button>
     <label># Semanas:</label>
-    <input type="number" id="weeksInput" class="weeks-input" min="1" max="52" value="1" oninput="onWeeksChange()">
-    <span class="week-badge" id="weekBadge">1 semana</span>
+    <input type="number" id="weeksInput" class="weeks-input" min="1" max="52" value="1" onchange="onWeeksChange()">
   </div>
 
   <div class="tabs-bar" id="tabsBar" role="tablist"></div>
@@ -909,10 +934,20 @@ document.getElementById('calOverlay').addEventListener('click',e=>{ if(e.target=
 document.getElementById('btnStart').onclick=()=>openCalModal('start');
 
 /* ── SHEETS ── */
-function onWeeksChange(){
-  numWeeks = Math.max(1, Math.min(52, parseInt(document.getElementById('weeksInput').value) || 1));
-  document.getElementById('weeksInput').value = numWeeks;
-  document.getElementById('weekBadge').textContent = numWeeks + (numWeeks === 1 ? ' semana' : ' semanas');
+async function onWeeksChange(){
+  const input = document.getElementById('weeksInput');
+  const requested = Math.max(1, Math.min(52, parseInt(input.value) || 1));
+  if(requested < numWeeks){
+    const removedWeeks = [];
+    for(let w = requested; w < numWeeks; w++){ if(weekHasData(w)) removedWeeks.push(w+1); }
+    if(removedWeeks.length){
+      const label = removedWeeks.length === 1 ? `la semana ${removedWeeks[0]}` : `las semanas ${removedWeeks.join(', ')}`;
+      const ok = await showConfirm(`¿Reducir a ${requested} semana${requested>1?'s':''}? Se perderán los datos de ${label}.`, {okText:'Sí, reducir', danger:true});
+      if(!ok){ input.value = numWeeks; return; }
+    }
+  }
+  numWeeks = requested;
+  input.value = numWeeks;
   if(startDate){ endDate = addDays(startDate, numWeeks * 7 - 1); rebuildSheets(); autoSave(); }
 }
 
@@ -920,7 +955,6 @@ function onDatesChange(){
   if(!startDate) return;
   numWeeks = Math.max(1, Math.min(52, parseInt(document.getElementById('weeksInput').value) || 1));
   endDate = addDays(startDate, numWeeks * 7 - 1);
-  document.getElementById('weekBadge').textContent = numWeeks + (numWeeks === 1 ? ' semana' : ' semanas');
   rebuildSheets(); autoSave();
 }
 
@@ -1452,6 +1486,8 @@ function restoreObservaciones(obs){
 /* ══ PLANES — GOOGLE SHEETS API ══ */
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyMozp1xnzNXvCZj-AxaE-zXMOYGeJ7Thab8dy6b8ZdvSiVwKw9SEkAXG6zLWGkWLxv/exec';
 let planesCache = [];
+let currentPlanId = '';
+let currentPlanName = '';
 
 function getSheetUrl(){ return SHEET_URL; }
 
@@ -1462,17 +1498,57 @@ function setEstado(msg){
   el.classList.toggle('status-error', msg.includes('⚠️') || msg.includes('❌'));
 }
 
-function renderPlanesSelect(){
-  const sel = document.getElementById('planesSelect');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">— Seleccionar plan —</option>';
-  planesCache.forEach(p => {
-    if(p.id === AUTOSAVE_ID) return;
-    const o = document.createElement('option');
-    o.value = p.id; o.textContent = p.name; sel.appendChild(o);
-  });
-  if(cur) sel.value = cur;
+function renderPlanPicker(){
+  const list = document.getElementById('planPickerList');
+  const visibles = planesCache.filter(p => p.id !== AUTOSAVE_ID);
+  if(!visibles.length){
+    list.innerHTML = '<div class="plan-picker-empty">Todavía no hay planes guardados</div>';
+  } else {
+    list.innerHTML = '';
+    visibles.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'plan-picker-item' + (p.id === currentPlanId ? ' selected' : '');
+      item.setAttribute('role','option');
+
+      const nameBtn = document.createElement('button');
+      nameBtn.type = 'button';
+      nameBtn.className = 'plan-picker-item-name';
+      nameBtn.textContent = p.name;
+      nameBtn.addEventListener('click', () => cargarPlan(p.id));
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'plan-picker-item-del';
+      delBtn.innerHTML = '🗑️';
+      delBtn.setAttribute('aria-label', 'Eliminar plan ' + p.name);
+      delBtn.addEventListener('click', e => { e.stopPropagation(); eliminarPlan(p.id); });
+
+      item.appendChild(nameBtn); item.appendChild(delBtn);
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('planPickerLabel').textContent = currentPlanName || '— Seleccionar plan —';
 }
+
+function togglePlanPicker(){
+  const list = document.getElementById('planPickerList');
+  if(list.classList.contains('open')) closePlanPicker(); else openPlanPicker();
+}
+function openPlanPicker(){
+  document.getElementById('planPickerList').classList.add('open');
+  document.getElementById('planPickerBtn').setAttribute('aria-expanded','true');
+}
+function closePlanPicker(){
+  document.getElementById('planPickerList').classList.remove('open');
+  document.getElementById('planPickerBtn').setAttribute('aria-expanded','false');
+}
+document.addEventListener('mousedown', e => {
+  const picker = document.getElementById('planPicker');
+  if(picker && !picker.contains(e.target)) closePlanPicker();
+});
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && document.getElementById('planPickerList').classList.contains('open')) closePlanPicker();
+});
 
 async function sheetGet(){
   const url = getSheetUrl();
@@ -1504,7 +1580,7 @@ async function refrescarPlanes(afterLoad){
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
     ]);
     showSyncProgress(80, '📋 Sincronizando planes guardados...');
-    renderPlanesSelect();
+    renderPlanPicker();
     setEstado('');
     showSyncProgress(100, '✅ ¡Listo!');
     await new Promise(r => setTimeout(r, 300));
@@ -1531,45 +1607,47 @@ async function guardarPlan(){
     /* Verificar via GET que realmente se guardó */
     await new Promise(r => setTimeout(r, 1200));
     planesCache = await sheetGet();
-    renderPlanesSelect();
     const guardado = planesCache.find(p => p.id === id);
     if(guardado){
-      document.getElementById('planesSelect').value = id;
+      currentPlanId = id; currentPlanName = plan.name;
+      renderPlanPicker();
       planDirty = false; updateSaveBtnVisibility();
       setEstado('✅ Guardado');
       toast('✅ Plan guardado: ' + plan.name);
     } else {
+      renderPlanPicker();
       setEstado('⚠️ No se confirmó el guardado');
       toast('⚠️ Revisa la conexión con el Sheet');
     }
   } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
 }
 
-async function cargarPlan(){
-  const sel = document.getElementById('planesSelect');
-  const id = sel.value;
-  if(!id) return;
+async function cargarPlan(id){
   const plan = planesCache.find(p => p.id === id);
-  if(!plan || !await showConfirm(`¿Cargar el plan "${plan.name}"? Esto reemplazará lo que tienes en pantalla.`, {icon:'⬆️'})){
-    sel.value = '';
+  if(!plan) return;
+  if(!await showConfirm(`¿Cargar el plan "${plan.name}"? Esto reemplazará lo que tienes en pantalla.`, {icon:'⬆️'})){
+    closePlanPicker();
     return;
   }
   apply(plan.data); autoSave();
   planDirty = false; updateSaveBtnVisibility();
+  currentPlanId = plan.id; currentPlanName = plan.name;
+  renderPlanPicker();
+  closePlanPicker();
   toast('✅ Plan cargado: ' + plan.name);
 }
 
-async function eliminarPlan(){
-  const id = document.getElementById('planesSelect').value;
-  if(!id){ toast('Selecciona un plan primero'); return; }
+async function eliminarPlan(id){
   const plan = planesCache.find(p => p.id === id);
-  if(!plan || !await showConfirm(`¿Eliminar el plan "${plan.name}"? Esta acción no se puede deshacer.`, {okText:'Sí, eliminar', danger:true})) return;
+  if(!plan) return;
+  if(!await showConfirm(`¿Eliminar el plan "${plan.name}"? Esta acción no se puede deshacer.`, {okText:'Sí, eliminar', danger:true})) return;
   setEstado('🗑️ Eliminando...');
   try{
     await sheetPost({ action: 'delete', id });
     await new Promise(r => setTimeout(r, 1200));
     planesCache = await sheetGet();
-    renderPlanesSelect();
+    if(currentPlanId === id){ currentPlanId = ''; currentPlanName = ''; }
+    renderPlanPicker();
     setEstado('');
     toast('🗑️ Plan eliminado');
   } catch(e){ setEstado('⚠️ Sin conexión'); toast('❌ Sin conexión'); }
@@ -1875,8 +1953,7 @@ async function captureRegistroPage(){
 async function runPDF(){
   showPdfProgress(5, '📄 Generando PDF del plan...');
   const childName=document.getElementById('childName').value.trim();
-  const selPlan=document.getElementById('planesSelect');
-  const planName=selPlan.value?selPlan.options[selPlan.selectedIndex].text:'';
+  const planName=currentPlanName || '';
   const fechaStr=startDate?fmt(startDate).replace(/\//g,'-'):'';
   const nameParts=['Plan alimentario'];
   if(childName) nameParts.push(childName);
