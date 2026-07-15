@@ -92,6 +92,17 @@ function doGet(e) {
       return output({ ok: false });
     }
 
+    if (action === 'getWhatsAppResult') {
+      const reqId = e.parameter.reqId || '';
+      const props = PropertiesService.getScriptProperties();
+      const raw = props.getProperty('wa_' + reqId);
+      if (raw) {
+        props.deleteProperty('wa_' + reqId);
+        try { return output({ ok: true, whatsapp: JSON.parse(raw) }); } catch(err) {}
+      }
+      return output({ ok: false });
+    }
+
     if (action === 'getLocal') {
       const ls = getLocalSheet();
       if (ls.getLastRow() >= 2) {
@@ -154,8 +165,13 @@ function doPost(e) {
     }
 
     if (body.action === 'notifyDownload') {
-      try { notifyWhatsApp(body.text || 'Descarga de plan'); } catch(e) {}
-      return output({ ok: true });
+      let waResult;
+      try { waResult = notifyWhatsApp(body.text || 'Descarga de plan'); }
+      catch(err) { waResult = { code: 0, body: 'Error: ' + err.message }; }
+      if (body.reqId) {
+        try { PropertiesService.getScriptProperties().setProperty('wa_' + body.reqId, JSON.stringify(waResult)); } catch(e) {}
+      }
+      return output({ ok: true, whatsapp: waResult });
     }
 
     if (body.action === 'saveLocal') {
