@@ -16,6 +16,7 @@
 
 const SHEET_NAME = 'PLAN ALIMENTARIO';
 const LOCAL_SHEET_NAME = 'LOCAL';
+const DOWNLOADS_SHEET_NAME = 'DESCARGAS';
 const DRIVE_FOLDER_ID = '1caarX5gJ1rGWItU7lH0w9MsdeVp5wXEF';
 
 const SPREADSHEET_ID = '1HTkdRONq8CRdA5_Zh_0xpqswucSHrc9j4GPlhGpM3AU';
@@ -60,6 +61,26 @@ function getLocalSheet() {
     sheet.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#fff9c4').setFontColor('#713f12');
     sheet.setColumnWidth(1, 200);
     sheet.setColumnWidth(2, 800);
+  }
+  return sheet;
+}
+
+function getDownloadsSheet() {
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName(DOWNLOADS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(DOWNLOADS_SHEET_NAME);
+    sheet.getRange(1, 1, 1, 7).setValues([[
+      'Fecha', 'Paciente', 'Plan desde', '# Semanas', 'Calendario lleno', 'Archivos descargados', 'Datos del calendario'
+    ]]);
+    sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#ede9fe').setFontColor('#5b21b6');
+    sheet.setColumnWidth(1, 150);
+    sheet.setColumnWidth(2, 220);
+    sheet.setColumnWidth(3, 110);
+    sheet.setColumnWidth(4, 80);
+    sheet.setColumnWidth(5, 120);
+    sheet.setColumnWidth(6, 260);
+    sheet.setColumnWidth(7, 600);
   }
   return sheet;
 }
@@ -172,6 +193,22 @@ function doPost(e) {
         try { PropertiesService.getScriptProperties().setProperty('wa_' + body.reqId, JSON.stringify(waResult)); } catch(e) {}
       }
       return output({ ok: true, whatsapp: waResult });
+    }
+
+    if (body.action === 'logDownload') {
+      try {
+        const ds = getDownloadsSheet();
+        ds.appendRow([
+          new Date().toISOString(),
+          body.paciente || '',
+          body.dateStart || '',
+          body.numWeeks || '',
+          body.lleno ? 'Sí' : 'No',
+          body.archivos || '',
+          JSON.stringify(body.data || {})
+        ]);
+      } catch(err) {}
+      return output({ ok: true });
     }
 
     if (body.action === 'saveLocal') {

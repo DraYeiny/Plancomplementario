@@ -613,7 +613,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
   <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">📄 Descargar</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.22</span>
+    <span id="appVersion">v1.23</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -1933,6 +1933,29 @@ const REF_FILES = {
 function refDownloadUrl(fileId){ return 'https://drive.google.com/uc?export=download&id=' + fileId; }
 function refViewUrl(fileId){ return 'https://drive.google.com/file/d/' + fileId + '/view'; }
 
+/* Registra en la hoja "DESCARGAS" el estado del calendario y qué se descargó,
+   para tener un historial de pacientes cada vez que se genera una descarga. */
+function registrarDescarga(wantPlan, wantAplv, wantHuevo){
+  const data = collect();
+  const archivos = [];
+  if(wantPlan) archivos.push('Plan de alimentación');
+  if(wantAplv && wantHuevo) archivos.push('APLV + Alergia al huevo (combinado)');
+  else {
+    if(wantAplv) archivos.push('APLV');
+    if(wantHuevo) archivos.push('Alergia al huevo');
+  }
+  const lleno = Object.values(data.cells || {}).some(v => v && v.trim());
+  sheetPost({
+    action: 'logDownload',
+    paciente: data.childName || '',
+    dateStart: data.dateStart || '',
+    numWeeks: data.numWeeks || 1,
+    lleno,
+    archivos: archivos.join(', '),
+    data
+  }).catch(()=>{});
+}
+
 async function descargarSeleccion(){
   const wantPlan  = document.getElementById('dlPlan').checked;
   const wantAplv  = document.getElementById('dlAplv').checked;
@@ -1941,6 +1964,7 @@ async function descargarSeleccion(){
   if(!wantPlan && !wantAplv && !wantHuevo){ toast('Selecciona al menos una opción para descargar'); return; }
 
   closeSideMenu();
+  registrarDescarga(wantPlan, wantAplv, wantHuevo);
 
   /* Abrir las descargas de Drive de forma síncrona (dentro del mismo clic)
      para que el navegador no las bloquee como pop-ups */
