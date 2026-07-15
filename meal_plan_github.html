@@ -55,31 +55,31 @@ body {
 .cal-close-row button:hover { background: #ede9fe; }
 .cal-close-row button:active { transform: scale(0.96); }
 
-/* ── PDF PROGRESS MODAL ── */
-#pdfProgressOverlay {
+/* ── PROGRESS MODAL (compartido entre PDF y sincronización) ── */
+#pdfProgressOverlay, #syncProgressOverlay {
   display: none; position: fixed; inset: 0;
   background: rgba(15,10,40,0.3); z-index: 9800;
   align-items: center; justify-content: center; backdrop-filter: blur(3px); padding: 16px;
 }
-#pdfProgressOverlay.open { display: flex; }
-#pdfProgressBox {
+#pdfProgressOverlay.open, #syncProgressOverlay.open { display: flex; }
+#pdfProgressBox, #syncProgressBox {
   background: white; border-radius: 20px; padding: 30px 28px; max-width: 340px; width: 100%;
   box-shadow: 0 16px 48px rgba(15,10,40,0.2), 0 0 0 1px rgba(15,10,40,0.04); text-align: center;
 }
-#pdfProgressSpinner {
+#pdfProgressSpinner, #syncProgressSpinner {
   width: 38px; height: 38px; margin: 0 auto 16px; border-radius: 50%;
   border: 3px solid #ede9fe; border-top-color: #7c3aed;
-  animation: pdf-spin 0.8s linear infinite;
+  animation: progress-spin 0.8s linear infinite;
 }
-@keyframes pdf-spin { to { transform: rotate(360deg); } }
-#pdfProgressLabel { font-size: 0.92rem; font-weight: 600; color: #5b21b6; margin-bottom: 14px; min-height: 40px; }
-.pdf-progress-track { background: #ede9fe; border-radius: 50px; height: 8px; overflow: hidden; margin-bottom: 8px; }
-.pdf-progress-fill {
+@keyframes progress-spin { to { transform: rotate(360deg); } }
+#pdfProgressLabel, #syncProgressLabel { font-size: 0.92rem; font-weight: 600; color: #5b21b6; margin-bottom: 14px; min-height: 40px; }
+.progress-track { background: #ede9fe; border-radius: 50px; height: 8px; overflow: hidden; margin-bottom: 8px; }
+.progress-fill {
   height: 100%; width: 0%; background: #7c3aed;
   border-radius: 50px; transition: width 0.3s ease;
 }
-#pdfProgressPct { font-size: 0.8rem; font-weight: 600; color: #7c3aed; margin-bottom: 10px; }
-.pdf-progress-note { font-size: 0.72rem; color: #a78bfa; font-weight: 500; }
+#pdfProgressPct, #syncProgressPct { font-size: 0.8rem; font-weight: 600; color: #7c3aed; margin-bottom: 10px; }
+.progress-note { font-size: 0.72rem; color: #a78bfa; font-weight: 500; }
 
 /* ── MODAL (reemplazo de prompt/confirm nativos) ── */
 #modalOverlay {
@@ -551,7 +551,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
   <button id="sideBtnDownload" class="side-menu-btn" onclick="closeSideMenu(); downloadAllPDF();">📄 Descargar PDF</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.10</span>
+    <span id="appVersion">v1.11</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -561,9 +561,20 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <div id="pdfProgressBox">
     <div id="pdfProgressSpinner"></div>
     <p id="pdfProgressLabel">Preparando...</p>
-    <div class="pdf-progress-track"><div id="pdfProgressFill" class="pdf-progress-fill"></div></div>
+    <div class="progress-track"><div id="pdfProgressFill" class="progress-fill"></div></div>
     <p id="pdfProgressPct">0%</p>
-    <p class="pdf-progress-note">Esto puede tardar hasta 30-40 segundos. No cierres esta ventana.</p>
+    <p class="progress-note">Esto puede tardar hasta 30-40 segundos. No cierres esta ventana.</p>
+  </div>
+</div>
+
+<!-- SYNC PROGRESS MODAL (carga inicial de datos) -->
+<div id="syncProgressOverlay" role="dialog" aria-modal="true" aria-labelledby="syncProgressLabel">
+  <div id="syncProgressBox">
+    <div id="syncProgressSpinner"></div>
+    <p id="syncProgressLabel">Cargando datos...</p>
+    <div class="progress-track"><div id="syncProgressFill" class="progress-fill"></div></div>
+    <p id="syncProgressPct">0%</p>
+    <p class="progress-note">Sincronizando con el servidor...</p>
   </div>
 </div>
 
@@ -1486,12 +1497,25 @@ async function sheetPost(body){
 async function refrescarPlanes(afterLoad){
   if(!getSheetUrl()) return;
   setEstado('🔄');
+  showSyncProgress(15, '🔄 Conectando con el servidor...');
   try{
-    planesCache = await sheetGet();
+    planesCache = await Promise.race([
+      sheetGet(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+    ]);
+    showSyncProgress(80, '📋 Sincronizando planes guardados...');
     renderPlanesSelect();
     setEstado('');
+    showSyncProgress(100, '✅ ¡Listo!');
+    await new Promise(r => setTimeout(r, 300));
+    hideSyncProgress();
     if(afterLoad) afterLoad();
-  } catch(e){ setEstado('⚠️ Sin conexión'); }
+  } catch(e){
+    setEstado('⚠️ Sin conexión');
+    showSyncProgress(100, '⚠️ Sin conexión con el servidor');
+    await new Promise(r => setTimeout(r, 1000));
+    hideSyncProgress();
+  }
 }
 
 async function guardarPlan(){
@@ -1688,6 +1712,16 @@ function showPdfProgress(pct, label){
 }
 function hidePdfProgress(){
   document.getElementById('pdfProgressOverlay').classList.remove('open');
+}
+
+function showSyncProgress(pct, label){
+  document.getElementById('syncProgressOverlay').classList.add('open');
+  document.getElementById('syncProgressLabel').textContent = label;
+  document.getElementById('syncProgressFill').style.width = Math.min(100,Math.round(pct)) + '%';
+  document.getElementById('syncProgressPct').textContent = Math.min(100,Math.round(pct)) + '%';
+}
+function hideSyncProgress(){
+  document.getElementById('syncProgressOverlay').classList.remove('open');
 }
 
 /* ══════════════════════════════════════════
