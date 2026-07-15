@@ -237,10 +237,22 @@ body {
 /* ── WEEK SHEETS ── */
 .week-sheet { position: absolute; visibility: hidden; pointer-events: none; height: 0; overflow: hidden; }
 .week-sheet.visible { position: static; visibility: visible; pointer-events: auto; height: auto; overflow: visible; }
+@keyframes weekFadeIn {
+  from { opacity: 0; transform: translateX(18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.week-sheet.visible.week-anim { animation: weekFadeIn 0.32s ease; }
 .sheet-title {
   text-align: center; font-size: 0.9rem; font-weight: 800; color: #5b21b6;
   margin-bottom: 12px; background: #f5f3ff; border-radius: 12px; padding: 8px 12px;
 }
+.week-del-row { text-align: center; margin-top: 12px; }
+.btn-del-week {
+  background: none; border: 1.5px solid #fecaca; color: #b91c1c; border-radius: 50px;
+  padding: 6px 18px; font-family: 'Nunito', sans-serif; font-size: 0.76rem; font-weight: 800;
+  cursor: pointer; transition: background 0.15s, transform 0.1s;
+}
+.btn-del-week:hover { background: #fef2f2; transform: translateY(-1px); }
 
 /* ── TABLE ── */
 .table-wrap { overflow-x: auto; border-radius: 12px; position: relative; -webkit-overflow-scrolling: touch; }
@@ -265,7 +277,7 @@ td.sub-header {
 .sub-fruta    { background: #fff1f2; color: #9f1239; }
 .sub-verdura  { background: #f0fdf4; color: #14532d; }
 .sub-proteina { background: #faf5ff; color: #6b21a8; }
-td.cell { padding: 2px; border-radius: 8px; vertical-align: middle; }
+td.cell { padding: 2px; border-radius: 8px; vertical-align: middle; position: relative; }
 .cell-cereal   { background: #fef9c3; }
 .cell-fruta    { background: #ffe4e6; }
 .cell-verdura  { background: #dcfce7; }
@@ -277,6 +289,14 @@ td.cell { padding: 2px; border-radius: 8px; vertical-align: middle; }
   font-family: 'Nunito', sans-serif; font-weight: 700; color: #374151; font-size: 13px;
   text-align: center; white-space: pre-wrap; word-break: break-word; outline: none;
 }
+.cell-clear-btn {
+  display: none; position: absolute; top: 2px; right: 2px; width: 18px; height: 18px;
+  border-radius: 50%; background: white; border: 1.5px solid #fca5a5; color: #ef4444;
+  font-size: 9px; line-height: 1; padding: 0; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 3; box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+td.cell.has-content .cell-clear-btn { display: flex; }
+.cell-clear-btn:hover { background: #fef2f2; }
 .cell-edit:focus {
   border-color: #a78bfa; border-style: solid; background: #fdf9ff;
   box-shadow: 0 0 0 3px rgba(167,139,250,0.13);
@@ -440,21 +460,44 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .obs-text:empty::before { content: 'Escribe una observación...'; }
 .btn-add-obs:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(124,58,237,0.28); }
 
-/* ── MAIN BUTTONS ── */
-.btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
-.btn {
-  display: flex; align-items: center; gap: 8px; padding: 12px 28px;
-  border: none; border-radius: 50px; font-family: 'Nunito', sans-serif;
-  font-size: 0.9rem; font-weight: 800; cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+/* ── LEFT SIDE MENU ── */
+#sideMenuToggle {
+  position: fixed; top: 14px; left: 14px; z-index: 9400;
+  background: white; border: 1.5px solid #ede9fe; border-radius: 12px;
+  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 4px 14px rgba(109,40,217,0.15); font-size: 1.2rem;
+  color: #7c3aed; transition: background 0.15s, transform 0.1s;
 }
-.btn:hover  { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
-.btn:active { transform: translateY(0); }
-.btn-save { background: linear-gradient(135deg, #a78bfa, #7c3aed); color: #fff; }
-.btn-pdf  { background: linear-gradient(135deg, #f472b6, #db2777); color: #fff; }
-.btn-clear{ background: linear-gradient(135deg, #fca5a5, #ef4444); color: #fff; }
-.btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+#sideMenuToggle:hover { background: #f5f3ff; }
+#sideMenuOverlay {
+  display: none; position: fixed; inset: 0; background: rgba(15,10,40,0.25); z-index: 9350;
+}
+#sideMenuOverlay.open { display: block; }
+#sideMenu {
+  position: fixed; top: 0; left: 0; height: 100%; width: 270px; max-width: 82vw;
+  background: white; box-shadow: 6px 0 30px rgba(109,40,217,0.2); z-index: 9400;
+  transform: translateX(-100%); transition: transform 0.25s ease;
+  padding: 20px 18px; display: flex; flex-direction: column; gap: 10px;
+}
+#sideMenu.open { transform: translateX(0); }
+.side-menu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.side-menu-head h2 { font-size: 1rem; font-weight: 900; color: #5b21b6; }
+#sideMenuClose {
+  background: #f5f3ff; border: none; border-radius: 50%;
+  width: 32px; height: 32px; font-size: 1rem; color: #7c3aed; cursor: pointer;
+  transition: background 0.15s;
+}
+#sideMenuClose:hover { background: #ede9fe; }
+.side-menu-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: #faf5ff; border: 1.5px solid #ede9fe; border-radius: 14px; padding: 13px 16px;
+  font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 800; color: #5b21b6;
+  cursor: pointer; transition: background 0.15s, transform 0.1s; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.side-menu-btn:hover { background: #f5f3ff; transform: translateX(2px); }
+.side-menu-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+.side-menu-btn.danger { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
+.side-menu-btn.danger:hover { background: #fee2e2; }
 
 /* ── WEEKS INPUT ── */
 .weeks-input {
@@ -513,8 +556,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   .cell-edit { min-height: 48px; font-size: 14px; padding: 8px 6px; }
   td.cell { min-width: 84px; }
 
-  .btn-row { flex-direction: column; }
-  .btn { width: 100%; justify-content: center; }
+  #sideMenu { width: 84vw; }
 
   #repeatBar { left: 8px; right: 8px; transform: none; width: auto; flex-wrap: wrap; justify-content: center; }
 
@@ -530,7 +572,19 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 </style>
 </head>
 <body>
-<div id="appVersion">v1.8</div>
+<div id="appVersion">v1.9</div>
+
+<!-- LEFT SIDE MENU -->
+<button id="sideMenuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="sideMenu" onclick="openSideMenu()">☰</button>
+<div id="sideMenuOverlay" onclick="closeSideMenu()"></div>
+<nav id="sideMenu" role="navigation" aria-label="Menú principal">
+  <div class="side-menu-head">
+    <h2>☰ Menú</h2>
+    <button id="sideMenuClose" aria-label="Cerrar menú" onclick="closeSideMenu()">✕</button>
+  </div>
+  <button id="sideBtnDownload" class="side-menu-btn" onclick="closeSideMenu(); downloadAllPDF();">📄 Descargar PDF</button>
+  <button class="side-menu-btn danger" onclick="closeSideMenu(); clearAll();">🗑️ Borrar todos los datos</button>
+</nav>
 
 <!-- PDF PROGRESS MODAL -->
 <div id="pdfProgressOverlay" role="dialog" aria-modal="true" aria-labelledby="pdfProgressLabel">
@@ -589,7 +643,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
       <li>📅 Elige la fecha de inicio y cuántas semanas quieres planear</li>
       <li>✏️ Haz clic en cada casilla y escribe el alimento</li>
       <li>💾 Tu progreso se guarda solo — o usa "Guardar como..." para darle nombre</li>
-      <li>📄 Cuando termines, descarga el PDF para imprimir o compartir</li>
+      <li>📄 Cuando termines, abre el menú ☰ (arriba a la izquierda) y descarga el PDF</li>
     </ol>
     <button id="onboardClose" onclick="dismissOnboarding()">✓ Entendido, empezar</button>
   </div>
@@ -704,10 +758,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
   <!-- ══ FIN OBSERVACIONES ══ -->
 
-  <div class="btn-row">
-    <button class="btn btn-pdf"  onclick="downloadAllPDF()">📄 Descargar PDF</button>
-    <button class="btn btn-clear" onclick="clearAll()">🗑️ Limpiar</button>
-  </div>
+  <p class="tip-line">👉 Usa el menú <kbd>☰</kbd> (arriba a la izquierda) para descargar el PDF o borrar todos los datos.</p>
   <div class="footer">🥦 Plantilla de alimentación · Datos guardados automáticamente 💾</div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -796,6 +847,7 @@ function acSelect(i){
   sel.removeAllRanges();
   sel.addRange(range);
   acHide();
+  toggleCellClearBtn(acCurrent);
   autoSave();
 }
 
@@ -946,9 +998,27 @@ function rebuildSheets(){
     });
     const wrap=document.createElement('div'); wrap.className='table-wrap';
     wrap.appendChild(buildTable(w,dayHeaders)); sheet.appendChild(wrap);
+    const delRow=document.createElement('div'); delRow.className='week-del-row';
+    const delBtn=document.createElement('button');
+    delBtn.className='btn-del-week';
+    delBtn.textContent=`🗑️ Borrar semana ${w+1}`;
+    delBtn.setAttribute('aria-label', `Borrar todos los datos de la semana ${w+1}`);
+    delBtn.addEventListener('click', () => deleteWeek(w));
+    delRow.appendChild(delBtn);
+    sheet.appendChild(delRow);
     document.getElementById('sheetsContainer').appendChild(sheet);
   }
   restoreCells(existing);
+  refreshCellClearButtons();
+}
+
+async function deleteWeek(w){
+  if(!weekHasData(w)){ toast('Esa semana ya está vacía'); return; }
+  if(!await showConfirm(`¿Borrar todos los datos de la Semana ${w+1}? Esta acción no se puede deshacer.`, {okText:'Sí, borrar semana', danger:true})) return;
+  document.querySelectorAll(`[data-id^="w${w}_"]`).forEach(el=>el.textContent='');
+  refreshCellClearButtons();
+  autoSave();
+  toast(`🗑️ Semana ${w+1} borrada`);
 }
 
 function weekHasData(w){
@@ -982,6 +1052,7 @@ function doCopyWeek(){
     const src = document.querySelector(`[data-id="${srcId}"]`);
     if(src) el.textContent = src.textContent;
   });
+  refreshCellClearButtons();
   autoSave(); hideCopyBar(); toast(`✅ Semana ${from+1} copiada a Semana ${_copyTo+1}`);
 }
 
@@ -992,7 +1063,15 @@ function switchTab(w){
     b.classList.toggle('active',active);
     b.setAttribute('aria-selected', active?'true':'false');
   });
-  document.querySelectorAll('.week-sheet').forEach(s=>s.classList.toggle('visible',s.id==='sheet-'+w));
+  document.querySelectorAll('.week-sheet').forEach(s=>{
+    const isTarget = s.id==='sheet-'+w;
+    s.classList.toggle('visible', isTarget);
+    if(isTarget){
+      s.classList.remove('week-anim');
+      void s.offsetWidth; /* fuerza reflow para reiniciar la animación */
+      s.classList.add('week-anim');
+    }
+  });
   if(!weekHasData(w)){
     const total = document.querySelectorAll('.tab-btn').length;
     const filledWeeks = Array.from({length:total},(_,i)=>i).filter(i=>i!==w && weekHasData(i));
@@ -1032,7 +1111,7 @@ function buildTable(wi, dayHeaders){
         div.spellcheck=false;
         div.setAttribute('role','textbox');
         div.setAttribute('aria-label', `${meal.label} — ${sub.label}, día ${d+1}`);
-        div.addEventListener('input', () => { autoSave(); acShow(div); });
+        div.addEventListener('input', () => { autoSave(); acShow(div); toggleCellClearBtn(div); });
         div.addEventListener('click', () => {
           if(repeatMode) {
             if(div.classList.contains('cell-selectable')){
@@ -1059,7 +1138,21 @@ function buildTable(wi, dayHeaders){
           const t=(e.clipboardData||window.clipboardData).getData('text/plain').replace(/\n/g,' ');
           document.execCommand('insertText', false, t);
         });
-        ctd.appendChild(div); tr.appendChild(ctd);
+        const clearBtn=document.createElement('button');
+        clearBtn.type='button';
+        clearBtn.className='cell-clear-btn';
+        clearBtn.innerHTML='✕';
+        clearBtn.tabIndex=-1;
+        clearBtn.setAttribute('aria-label', `Borrar contenido de ${meal.label} — ${sub.label}, día ${d+1}`);
+        clearBtn.addEventListener('click', async e => {
+          e.stopPropagation();
+          if(!div.textContent.trim()) return;
+          if(!await showConfirm('¿Borrar el contenido de esta casilla?', {okText:'Sí, borrar', danger:true})) return;
+          div.textContent='';
+          toggleCellClearBtn(div);
+          autoSave();
+        });
+        ctd.appendChild(div); ctd.appendChild(clearBtn); tr.appendChild(ctd);
       }
       tbody.appendChild(tr);
     });
@@ -1148,7 +1241,10 @@ function addRegistroRow(hora='', alim=''){
   btnDel.innerHTML = '✕';
   btnDel.title = 'Eliminar fila';
   btnDel.setAttribute('aria-label', 'Eliminar fila');
-  btnDel.addEventListener('click', () => {
+  btnDel.addEventListener('click', async () => {
+    const wrap = tr.querySelector('.time-select-wrap');
+    const hasData = div.textContent.trim() || (wrap && getTimeValue(wrap));
+    if(hasData && !await showConfirm('¿Eliminar esta fila del registro de alimentación? Esta acción no se puede deshacer.', {okText:'Sí, eliminar', danger:true})) return;
     tr.remove();
     autoSave();
   });
@@ -1228,6 +1324,7 @@ function applyRepeatInline(){
   let count = 0;
   document.querySelectorAll('.cell-edit.cell-selected').forEach(cell => {
     cell.textContent = text; count++;
+    toggleCellClearBtn(cell);
   });
   exitRepeatMode();
   autoSave();
@@ -1244,6 +1341,21 @@ function exitRepeatMode(){
 }
 
 document.addEventListener('keydown', e => { if(e.key==='Escape' && repeatMode) exitRepeatMode(); });
+
+/* ══ MENÚ LATERAL ══ */
+function openSideMenu(){
+  document.getElementById('sideMenu').classList.add('open');
+  document.getElementById('sideMenuOverlay').classList.add('open');
+  document.getElementById('sideMenuToggle').setAttribute('aria-expanded','true');
+}
+function closeSideMenu(){
+  document.getElementById('sideMenu').classList.remove('open');
+  document.getElementById('sideMenuOverlay').classList.remove('open');
+  document.getElementById('sideMenuToggle').setAttribute('aria-expanded','false');
+}
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && document.getElementById('sideMenu').classList.contains('open')) closeSideMenu();
+});
 
 /* ── AUTO-SAVE CROSS-DEVICE (plan oculto _local_autosave) ── */
 const AUTOSAVE_ID = '_local_autosave';
@@ -1336,7 +1448,10 @@ function addObservacion(text=''){
   btnDel.innerHTML = '✕';
   btnDel.title = 'Eliminar observación';
   btnDel.setAttribute('aria-label', 'Eliminar observación');
-  btnDel.addEventListener('click', () => { tr.remove(); renumberObs(); autoSave(); });
+  btnDel.addEventListener('click', async () => {
+    if(div.textContent.trim() && !await showConfirm('¿Eliminar esta observación? Esta acción no se puede deshacer.', {okText:'Sí, eliminar', danger:true})) return;
+    tr.remove(); renumberObs(); autoSave();
+  });
   tdDel.appendChild(btnDel);
 
   tr.appendChild(tdNum); tr.appendChild(tdText); tr.appendChild(tdDel);
@@ -1488,6 +1603,14 @@ function restoreCells(cells){
     const el=document.querySelector(`[data-id="${id}"]`);
     if(el&&v) el.textContent=v;
   });
+  refreshCellClearButtons();
+}
+function toggleCellClearBtn(div){
+  const td = div.closest('td.cell');
+  if(td) td.classList.toggle('has-content', !!div.textContent.trim());
+}
+function refreshCellClearButtons(){
+  document.querySelectorAll('.cell-edit').forEach(toggleCellClearBtn);
 }
 function collect(){
   return {
@@ -1524,6 +1647,7 @@ function autoSave(){ try{ localStorage.setItem(KEY,JSON.stringify(collect())); }
 async function clearAll(){
   if(!await showConfirm('¿Borrar todo el contenido del plan? Esta acción no se puede deshacer.', {okText:'Sí, borrar todo', danger:true})) return;
   document.querySelectorAll('.cell-edit').forEach(el=>el.textContent='');
+  refreshCellClearButtons();
   document.getElementById('childName').value='';
   restoreRegistro([]);
   restoreObservaciones([]);
@@ -1609,7 +1733,7 @@ function hidePdfProgress(){
 function downloadAllPDF(){
   if(pdfInProgress){ toast('⏳ Ya se está generando el PDF, espera un momento...'); return; }
   pdfInProgress = true;
-  const btn = document.querySelector('.btn-pdf');
+  const btn = document.getElementById('sideBtnDownload');
   if(btn) btn.disabled = true;
   showPdfProgress(2, '📚 Cargando librerías...');
   const libs=[
@@ -1942,7 +2066,7 @@ async function runPDF(){
   await new Promise(r=>setTimeout(r,600));
   hidePdfProgress();
   pdfInProgress = false;
-  const btn = document.querySelector('.btn-pdf');
+  const btn = document.getElementById('sideBtnDownload');
   if(btn) btn.disabled = false;
   toast('✅ PDF descargado');
 }
