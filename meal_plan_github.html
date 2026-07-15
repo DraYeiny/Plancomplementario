@@ -158,13 +158,6 @@ body {
 }
 #planesStatus.status-error { color: #b91c1c; background: #fdeeee; }
 #planesStatus:empty { display: none; }
-.btn-info {
-  background: #ede9fe; color: #7c3aed; border: none; border-radius: 50%;
-  width: 24px; height: 24px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  transition: background 0.15s;
-}
-.btn-info:hover { background: #ddd6fe; }
 
 /* ── CONTROLS BAR ── */
 .controls-bar {
@@ -558,7 +551,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
   <button id="sideBtnDownload" class="side-menu-btn" onclick="closeSideMenu(); downloadAllPDF();">📄 Descargar PDF</button>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.9</span>
+    <span id="appVersion">v1.10</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -618,7 +611,6 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
     <label>📋 Plan:</label>
     <select id="planesSelect" onchange="cargarPlan()"><option value="">— Seleccionar plan —</option></select>
     <button id="btnGuardarComo" class="btn-plan" style="display:none" onclick="guardarPlan()">💾 Guardar como...</button>
-    <button class="btn-info" onclick="showSaveInfo()" aria-label="¿Cómo funciona el guardado?" title="¿Cómo funciona el guardado?">ⓘ</button>
     <button class="btn-plan btn-plan-del" onclick="eliminarPlan()">🗑️ Eliminar</button>
     <span id="planesStatus"></span>
   </div>
@@ -1684,12 +1676,6 @@ function showConfirm(message, opts={}){
 }
 function showPrompt(message, defaultValue=''){
   return showModal({ message, isPrompt:true, defaultValue, okText:'Guardar', cancelText:'Cancelar', icon:'📋' });
-}
-function showAlert(message, opts={}){
-  return showModal({ message, isPrompt:false, hideCancel:true, okText:opts.okText||'Entendido', icon:opts.icon||'ℹ️' });
-}
-function showSaveInfo(){
-  showAlert('🔄 Autoguardado: mientras escribes, tu progreso se guarda solo cada pocos segundos, para que si cambias de dispositivo o cierras la página, puedas seguir donde ibas.\n\n💾 "Guardar como...": crea una copia con nombre de este plan que queda disponible en la lista para cargar cuando quieras — útil para guardar varias versiones distintas.', {icon:'💾'});
 }
 
 /* ── BARRA DE PROGRESO DEL PDF ── */
