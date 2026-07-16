@@ -305,19 +305,6 @@ td.cell.has-content .cell-clear-btn { display: flex; }
 .cell-edit.cell-selectable:hover { background: #fef3c7 !important; }
 .cell-edit.cell-selected   { border: 2.5px solid #f59e0b !important; background: #fde68a !important; }
 
-/* ── DRIVE LINK BAR ── */
-#driveLinkBar {
-  display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
-  background: #f3fbf5; border: 1px solid #d7f3dd; border-radius: 14px;
-  padding: 10px 18px; margin-bottom: 10px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
-}
-#driveLinkBar.open { display: flex; }
-#driveLinkMsg { font-size: 0.84rem; font-weight: 600; color: #166534; }
-#driveLinkA {
-  font-size: 0.84rem; font-weight: 600; color: #15803d;
-  text-decoration: underline; cursor: pointer;
-}
-
 /* ── COPY WEEK BAR ── */
 #copyWeekBar {
   display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
@@ -513,6 +500,44 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   font-size: 0.72rem; font-weight: 500; color: #9ca3af; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* ── WHATSAPP MESSAGE PREVIEW (estilo bloque de código, tipo Claude) ── */
+#waPreviewWrap { margin-top: 2px; }
+.wa-preview-box {
+  position: relative;
+  background: #f5f5f7;
+  border: 1px solid #e2e2e7;
+  border-radius: 12px;
+  padding: 36px 12px 12px;
+  margin-bottom: 8px;
+}
+.wa-preview-copy {
+  position: absolute; top: 8px; left: 8px; z-index: 1;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  background: #ffffff; border: 1px solid #dcdce1; border-radius: 7px;
+  color: #6e6e76; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15,10,40,0.08);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.wa-preview-copy:hover { background: #f0f0f3; color: #3a3a3f; }
+.wa-preview-copy:active { transform: scale(0.94); }
+.wa-preview-copy svg { width: 14px; height: 14px; }
+.wa-preview-copy .wa-check-icon { display: none; }
+.wa-preview-copy.copied { color: #16a34a; border-color: #bbf0cc; background: #f0fdf4; }
+.wa-preview-copy.copied .wa-copy-icon { display: none; }
+.wa-preview-copy.copied .wa-check-icon { display: block; }
+.wa-preview-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.82rem; line-height: 1.55; color: #1c1c1e;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 220px; overflow-y: auto; outline: none;
+}
+.wa-link-locked {
+  color: #5b21b6; background: rgba(124,58,237,0.1);
+  border-radius: 4px; padding: 1px 4px; cursor: default;
+}
+.wa-send-btn { width: 100%; }
+
 /* ── WEEKS INPUT ── */
 .weeks-input {
   width: 64px; border: 1px solid #ddd6fe; border-radius: 9px; padding: 5px 8px;
@@ -612,8 +637,19 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <label class="side-menu-check"><input type="checkbox" id="dlAplv"> APLV</label>
   <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
   <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">📄 Descargar</button>
+  <div id="waPreviewWrap" style="display:none;">
+    <p class="side-menu-label">Mensaje de WhatsApp</p>
+    <div class="wa-preview-box">
+      <button id="waPreviewCopyBtn" class="wa-preview-copy" type="button" aria-label="Copiar mensaje" onclick="copyWaPreview()">
+        <svg class="wa-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <svg class="wa-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </button>
+      <div id="waPreviewText" class="wa-preview-text" contenteditable="true" spellcheck="false"></div>
+    </div>
+    <button id="waPreviewSendBtn" class="btn-mac wa-send-btn" type="button" onclick="enviarWaPreview()">📲 Enviar a mi WhatsApp</button>
+  </div>
   <div class="side-menu-foot">
-    <span id="appVersion">v1.27</span>
+    <span id="appVersion">v1.28</span>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -704,12 +740,6 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   </div>
 
   <div class="tabs-bar" id="tabsBar" role="tablist"></div>
-  <div id="driveLinkBar" role="status" aria-live="polite">
-    <span id="driveLinkMsg"></span>
-    <a id="driveLinkA" href="#" target="_blank" rel="noopener" style="display:none"></a>
-    <button id="driveCopyBtn" class="btn-copy-yes" style="display:none">📋 Copiar link</button>
-    <button class="btn-copy-no" aria-label="Cerrar aviso" onclick="document.getElementById('driveLinkBar').classList.remove('open')">✕</button>
-  </div>
   <div id="copyWeekBar" role="status" aria-live="polite">
     <span id="copyWeekMsg">📋 Copiar semana:</span>
     <select id="copyWeekSelect" class="copy-week-select"></select>
@@ -1953,9 +1983,8 @@ async function descargarSeleccion(){
     if(wantHuevo){ window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank'); items.push({ icon: REF_FILES.huevo.icon, label: REF_FILES.huevo.name, url: refViewUrl(REF_FILES.huevo.id) }); }
   }
 
-  async function enviarAvisoWhatsApp(){
+  function componerMensajeWhatsApp(){
     if(!items.length) return;
-    const reqId = 'wa' + Date.now() + Math.random().toString(36).slice(2,8);
     const nombre = document.getElementById('childName').value.trim();
     const plural = items.length > 1;
     const saludo = nombre
@@ -1966,36 +1995,12 @@ async function descargarSeleccion(){
       ? `⚠️ Estos enlaces estarán disponibles solo por *15 días*. Te recomiendo descargarlos y guardarlos ahora para que le queden siempre disponibles a ${nombre || 'tu paciente'}.`
       : `⚠️ Este enlace estará disponible solo por *15 días*. Te recomiendo descargarlo y guardarlo ahora para que le quede siempre disponible a ${nombre || 'tu paciente'}.`;
     const texto = `${saludo}\n\n${lista}\n\n${nota}\n\n¡Cualquier duda, aquí estoy! 💜`;
-    try{
-      await sheetPost({ action: 'notifyDownload', text: texto, reqId });
-    }catch(e){
-      toast('⚠️ No se pudo enviar el aviso por WhatsApp');
-      return;
-    }
-    /* Consultamos el resultado real de CallMeBot (el POST anterior es no-cors,
-       así que no podemos leer su respuesta directamente) */
-    try{
-      await new Promise(r => setTimeout(r, 1500));
-      const url = getSheetUrl() + '?action=getWhatsAppResult&reqId=' + encodeURIComponent(reqId) + '&_=' + Date.now();
-      const r = await fetch(url);
-      const j = await r.json();
-      if(j.ok && j.whatsapp){
-        const code = j.whatsapp.code;
-        if(code === 200){
-          toast('✅ Aviso enviado por WhatsApp');
-        } else if(code === 210){
-          /* CallMeBot acepta el mensaje pero lo encola (límite: 16 mensajes / 240 min) */
-          toast('⏳ Aviso en camino por WhatsApp (puede tardar unos minutos)');
-        } else {
-          toast('⚠️ WhatsApp no envió el aviso (código ' + code + ')');
-        }
-      }
-    }catch(e){ /* si no se puede verificar, no interrumpimos más */ }
+    showWaPreview(texto);
   }
 
   /* Si se generó el plan, esperamos a que termine de subirse a Drive para
-     incluir su link en el MISMO mensaje de WhatsApp (evita que se pisen
-     dos mensajes separados) — le pedimos al backend que no notifique solo. */
+     incluir su link en el mismo mensaje de WhatsApp (evita que se pisen
+     dos mensajes separados). */
   if(wantPlan){
     try{
       const planLink = await downloadAllPDF({ notify: false });
@@ -2003,7 +2008,70 @@ async function descargarSeleccion(){
     }catch(e){ /* downloadAllPDF ya muestra su propio aviso de error */ }
   }
 
-  await enviarAvisoWhatsApp();
+  componerMensajeWhatsApp();
+}
+
+function escapeHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showWaPreview(texto){
+  const wrap = document.getElementById('waPreviewWrap');
+  const textEl = document.getElementById('waPreviewText');
+  if(!wrap || !textEl) return;
+  const urlRe = /(https?:\/\/[^\s]+)/g;
+  textEl.innerHTML = escapeHtml(texto).replace(urlRe, url => `<span class="wa-link-locked" contenteditable="false">${url}</span>`);
+  wrap.style.display = '';
+}
+
+async function enviarWaPreview(){
+  const textEl = document.getElementById('waPreviewText');
+  const btn = document.getElementById('waPreviewSendBtn');
+  const texto = textEl && textEl.innerText.trim();
+  if(!texto) return;
+  const reqId = 'wa' + Date.now() + Math.random().toString(36).slice(2,8);
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Enviando...'; }
+  try{
+    await sheetPost({ action: 'notifyDownload', text: texto, reqId });
+  }catch(e){
+    toast('⚠️ No se pudo enviar el aviso por WhatsApp');
+    if(btn){ btn.disabled = false; btn.textContent = '📲 Enviar a mi WhatsApp'; }
+    return;
+  }
+  /* Consultamos el resultado real de CallMeBot (el POST anterior es no-cors,
+     así que no podemos leer su respuesta directamente) */
+  try{
+    await new Promise(r => setTimeout(r, 1500));
+    const url = getSheetUrl() + '?action=getWhatsAppResult&reqId=' + encodeURIComponent(reqId) + '&_=' + Date.now();
+    const r = await fetch(url);
+    const j = await r.json();
+    if(j.ok && j.whatsapp){
+      const code = j.whatsapp.code;
+      if(code === 200){
+        toast('✅ Aviso enviado por WhatsApp');
+      } else if(code === 210){
+        /* CallMeBot acepta el mensaje pero lo encola (límite: 16 mensajes / 240 min) */
+        toast('⏳ Aviso en camino por WhatsApp (puede tardar unos minutos)');
+      } else {
+        toast('⚠️ WhatsApp no envió el aviso (código ' + code + ')');
+      }
+    }
+  }catch(e){ /* si no se puede verificar, no interrumpimos más */ }
+  if(btn){ btn.disabled = false; btn.textContent = '📲 Enviar a mi WhatsApp'; }
+}
+
+function copyWaPreview(){
+  const textEl = document.getElementById('waPreviewText');
+  const btn = document.getElementById('waPreviewCopyBtn');
+  const texto = textEl && textEl.innerText.trim();
+  if(!texto) return;
+  navigator.clipboard.writeText(texto).then(()=>{
+    if(btn){
+      btn.classList.add('copied');
+      setTimeout(()=>btn.classList.remove('copied'), 1600);
+    }
+    toast('📋 Mensaje copiado');
+  });
 }
 
 /* ══════════════════════════════════════════
@@ -2365,26 +2433,9 @@ function bytesToBase64(bytes){
   return btoa(bin);
 }
 
-function showDriveBar(msg, link){
-  const bar=document.getElementById('driveLinkBar');
-  const msgEl=document.getElementById('driveLinkMsg');
-  const linkEl=document.getElementById('driveLinkA');
-  const copyBtn=document.getElementById('driveCopyBtn');
-  msgEl.textContent=msg;
-  if(link){
-    linkEl.href=link; linkEl.textContent='📂 Abrir en Drive';
-    linkEl.style.display=''; copyBtn.style.display='';
-    copyBtn.onclick=()=>navigator.clipboard.writeText(link).then(()=>toast('📋 Link copiado'));
-  } else {
-    linkEl.style.display='none'; copyBtn.style.display='none';
-  }
-  bar.classList.add('open');
-}
-
 async function uploadToDrive(pdfBytes, filename, opts={}){
   const url=getSheetUrl();
   if(!url) return null;
-  showDriveBar('⏳ Subiendo a Drive (puede tardar ~30s)...');
   try{
     const base64=bytesToBase64(new Uint8Array(pdfBytes));
     const r=await fetch(url,{
@@ -2394,14 +2445,13 @@ async function uploadToDrive(pdfBytes, filename, opts={}){
     });
     const j=await r.json();
     if(j.ok && j.link){
-      showDriveBar('✅ PDF guardado en Drive:', j.link);
       return j.link;
     } else {
-      showDriveBar('⚠️ Error: '+(j.error||'no se pudo guardar'));
+      toast('⚠️ Error al guardar en Drive: '+(j.error||'no se pudo guardar'));
       return null;
     }
   }catch(e){
-    showDriveBar('⚠️ Error de conexión: '+e.message);
+    toast('⚠️ Error de conexión al guardar en Drive');
     return null;
   }
 }
