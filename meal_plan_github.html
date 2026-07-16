@@ -2144,7 +2144,7 @@ async function enviarWaPreview(){
   const needsBuild = document.getElementById('dlPlan').checked && !builtPlanLink;
 
   if(needsBuild && btn){ btn.disabled = true; btn.textContent = 'Generando plan...'; }
-  const built = await ensurePlanBuilt();
+  const built = await ensurePlanBuilt({ download: false });
   if(!built){
     if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }
     return;
@@ -2610,11 +2610,10 @@ startDate=new Date(today);
 document.getElementById('lblStart').textContent=fmt(startDate);
 document.getElementById('weeksInput').value=1;
 numWeeks=1;
-onDatesChange();
 try{
   const saved = JSON.parse(localStorage.getItem(KEY));
-  if(saved){ apply(saved); } else { restoreRegistro([]); }
-}catch(e){ restoreRegistro([]); }
+  if(saved){ apply(saved); } else { onDatesChange(); restoreRegistro([]); }
+}catch(e){ onDatesChange(); restoreRegistro([]); }
 planDirty = planHasContent();
 updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
