@@ -2090,11 +2090,9 @@ function buildWaMessage(items){
   if(!items.length) return '';
   const nombre = document.getElementById('childName').value.trim();
   const plural = items.length > 1;
-  const planNombre = (typeof currentPlanName !== 'undefined' && currentPlanName && currentPlanName.trim()) ? currentPlanName.trim() : '';
-  const planClause = planNombre ? ` con plan alimentario *${planNombre}*` : '';
   const saludo = nombre
-    ? `👩‍⚕️ ¡Hola! Aquí tienes el material de alimentación de *${nombre}*${planClause}:`
-    : `👩‍⚕️ ¡Hola! Aquí tienes tu material de alimentación${planClause}:`;
+    ? `👩‍⚕️ ¡Hola! Aquí tienes el material de alimentación de *${nombre}*:`
+    : `👩‍⚕️ ¡Hola! Aquí tienes tu material de alimentación:`;
   const lista = items.map(it => `${it.icon} *${it.label}*\n${it.desc}\n${it.url}`).join('\n\n');
   const nota = plural
     ? `⚠️ Estos enlaces estarán disponibles solo por *15 días*. Te recomiendo descargarlos y guardarlos ahora para que le queden siempre disponibles a ${nombre || 'tu paciente'}.`
@@ -2104,7 +2102,52 @@ function buildWaMessage(items){
   const obsBlock = obsBullets.length
     ? `\n\n📝 *Observaciones importantes:*\n${obsBullets.map(o => `• ${o}`).join('\n')}`
     : '';
-  return `${saludo}\n\n${lista}${obsBlock}\n\n${nota}\n\n¡Cualquier duda, aquí estoy! 💜`;
+  return `${saludo}\n\n${lista}${obsBlock}\n\n${nota}`;
+}
+
+/* CallMeBot (la API gratuita de WhatsApp que usa el backend) trunca en
+   silencio los mensajes largos sin avisar — el plan, las 2 guías de
+   alergias y las observaciones fácilmente superan ese límite. Por eso el
+   envío real (a diferencia de la vista previa/copiar) parte el texto en
+   varios mensajes de WhatsApp seguidos.
+   El primer mensaje SIEMPRE es el saludo + los enlaces con su descripción,
+   completos y sin partir — se ubica dónde termina el último enlace
+   seleccionado (el texto puede haber sido editado a mano en el recuadro,
+   así que se busca sobre el texto real que se va a enviar, no sobre el
+   que generó buildWaMessage). El resto (observaciones, aviso de vigencia)
+   se corta en bloques de tamaño seguro si hace falta. */
+function chunkWaText(text, limit){
+  if(text.length <= limit) return [text];
+  const lines = text.split('\n');
+  const blocks = [];
+  let current = '';
+  lines.forEach(line => {
+    const candidate = current ? current + '\n' + line : line;
+    if(candidate.length > limit && current){
+      blocks.push(current);
+      current = line;
+    } else {
+      current = candidate;
+    }
+  });
+  if(current) blocks.push(current);
+  return blocks.map(b => b.trim()).filter(Boolean);
+}
+
+function splitWaTextForSending(texto, items){
+  const WA_BLOCK_LIMIT = 650;
+  if(texto.length <= WA_BLOCK_LIMIT) return [texto];
+  let splitAt = 0;
+  if(items && items.length){
+    const lastUrl = items[items.length - 1].url;
+    const idx = lastUrl ? texto.lastIndexOf(lastUrl) : -1;
+    if(idx >= 0) splitAt = idx + lastUrl.length;
+  }
+  const primero = texto.slice(0, splitAt).trim();
+  if(!primero) return chunkWaText(texto, WA_BLOCK_LIMIT);
+  const resto = texto.slice(splitAt).trim();
+  const restoBloques = resto ? chunkWaText(resto, WA_BLOCK_LIMIT) : [];
+  return [primero, ...restoBloques];
 }
 
 /* Reconstruye el mensaje de WhatsApp a partir de la selección actual —
@@ -2154,32 +2197,38 @@ async function enviarWaPreview(){
   const texto = textEl && textEl.innerText.trim();
   if(!texto){ if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; } return; }
 
-  const reqId = 'wa' + Date.now() + Math.random().toString(36).slice(2,8);
+  const bloques = splitWaTextForSending(texto, getSelectedDocItems());
+  const baseReqId = 'wa' + Date.now() + Math.random().toString(36).slice(2,8);
+  const reqIds = bloques.map((_, i) => `${baseReqId}_${i}`);
   if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
   try{
-    await sheetPost({ action: 'notifyDownload', text: texto, reqId });
+    for(let i = 0; i < bloques.length; i++){
+      await sheetPost({ action: 'notifyDownload', text: bloques[i], reqId: reqIds[i] });
+      if(i < bloques.length - 1) await new Promise(r => setTimeout(r, 1200));
+    }
   }catch(e){
     toast('⚠️ No se pudo enviar el aviso por WhatsApp');
     if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }
     return;
   }
-  /* Consultamos el resultado real de CallMeBot (el POST anterior es no-cors,
-     así que no podemos leer su respuesta directamente) */
+  /* Consultamos el resultado real de CallMeBot de cada mensaje (los POST
+     anteriores son no-cors, así que no podemos leer sus respuestas directamente) */
   try{
     await new Promise(r => setTimeout(r, 1500));
-    const url = getSheetUrl() + '?action=getWhatsAppResult&reqId=' + encodeURIComponent(reqId) + '&_=' + Date.now();
-    const r = await fetch(url);
-    const j = await r.json();
-    if(j.ok && j.whatsapp){
-      const code = j.whatsapp.code;
-      if(code === 200){
-        toast('✅ Aviso enviado por WhatsApp');
-      } else if(code === 210){
-        /* CallMeBot acepta el mensaje pero lo encola (límite: 16 mensajes / 240 min) */
-        toast('⏳ Aviso en camino por WhatsApp (puede tardar unos minutos)');
-      } else {
-        toast('⚠️ WhatsApp no envió el aviso (código ' + code + ')');
-      }
+    const codes = [];
+    for(const reqId of reqIds){
+      const url = getSheetUrl() + '?action=getWhatsAppResult&reqId=' + encodeURIComponent(reqId) + '&_=' + Date.now();
+      const r = await fetch(url);
+      const j = await r.json();
+      codes.push(j.ok && j.whatsapp ? j.whatsapp.code : null);
+    }
+    if(codes.every(c => c === 200)){
+      toast(bloques.length > 1 ? `✅ Aviso enviado por WhatsApp (${bloques.length} mensajes)` : '✅ Aviso enviado por WhatsApp');
+    } else if(codes.every(c => c === 200 || c === 210)){
+      /* CallMeBot acepta el/los mensaje(s) pero los encola (límite: 16 mensajes / 240 min) */
+      toast('⏳ Aviso en camino por WhatsApp (puede tardar unos minutos)');
+    } else if(codes.some(c => c !== null)){
+      toast('⚠️ WhatsApp no envió todo el aviso');
     }
   }catch(e){ /* si no se puede verificar, no interrumpimos más */ }
   if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }

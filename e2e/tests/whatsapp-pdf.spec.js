@@ -87,4 +87,56 @@ test.describe('PDF generation and delivery', () => {
     await expect(page.locator('#toast')).toContainText('No se pudo adjuntar', { timeout: 30000 });
     await expect(page.locator('#waCopiedLabel')).toBeVisible({ timeout: 60000 });
   });
+
+  test('a short message (no observations) is sent as a single WhatsApp message', async ({ page }) => {
+    test.setTimeout(90000);
+    const gas = await installGasMock(page);
+    await page.reload();
+    await expect(page.locator('#sheetsContainer table').first()).toBeVisible();
+
+    await page.locator('#waPreviewSendBtn').click();
+    await expect(page.locator('#toast')).toContainText('Aviso enviado por WhatsApp', { timeout: 60000 });
+
+    const notifyRequests = gas.requests.filter(r => r.action === 'notifyDownload');
+    expect(notifyRequests).toHaveLength(1);
+  });
+
+  test('a long message (many observations) is split into several WhatsApp messages, the first always carrying every selected link', async ({ page }) => {
+    test.setTimeout(90000);
+    const gas = await installGasMock(page);
+    await page.reload();
+    await expect(page.locator('#sheetsContainer table').first()).toBeVisible();
+
+    await page.locator('#dlAplv').check();
+    await page.locator('#dlHuevo').check();
+    for (let i = 0; i < 6; i++) {
+      await page.locator('#observacionesSection .btn-add-row').click();
+      const row = page.locator('#obsList .obs-text').last();
+      await row.click();
+      await row.type(`Observación clínica de prueba número ${i + 1} con suficiente texto para sumar largo.`);
+      await row.blur();
+    }
+
+    await page.locator('#waPreviewSendBtn').click();
+    await expect(page.locator('#toast')).toContainText('mensajes', { timeout: 60000 });
+
+    const notifyRequests = gas.requests.filter(r => r.action === 'notifyDownload');
+    expect(notifyRequests.length).toBeGreaterThan(1);
+
+    const planUrl = 'https://drive.google.com/file/d/mock-file-id/view?usp=sharing';
+    const aplvHuevoUrl = 'https://drive.google.com/file/d/1KlM9PEirYzXfb0jDXQel6Xd7Ltc7C51F/view';
+    expect(notifyRequests[0].text).toContain(planUrl);
+    expect(notifyRequests[0].text).toContain(aplvHuevoUrl);
+    for (const r of notifyRequests.slice(1)) {
+      expect(r.text).not.toContain(planUrl);
+      expect(r.text).not.toContain(aplvHuevoUrl);
+    }
+    expect(notifyRequests.some(r => r.text.includes('Observaciones importantes'))).toBe(true);
+  });
+
+  test('the WhatsApp message no longer includes the plan name or the closing pleasantry', async ({ page }) => {
+    await page.locator('#childName').fill('Mateo');
+    await expect(page.locator('#waPreviewText')).not.toContainText('con plan alimentario');
+    await expect(page.locator('#waPreviewText')).not.toContainText('Cualquier duda');
+  });
 });
