@@ -496,9 +496,19 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   margin-top: auto; padding-top: 14px; padding-left: 4px; padding-right: 4px; border-top: 1px solid rgba(109,40,217,0.1);
   display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;
 }
-.side-menu-foot #localSaveLabel, .side-menu-foot #appVersion {
+.side-menu-foot #localSaveLabel, .side-menu-foot #appVersion, .side-menu-foot #appBuildDate {
   font-size: 0.72rem; font-weight: 500; color: #9ca3af; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
 }
+#appVersionInfo { display: flex; flex-direction: column; gap: 1px; line-height: 1.3; }
+.app-update-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border: none; border-radius: 6px; padding: 0;
+  background: rgba(124,58,237,0.12); color: #7c3aed; cursor: pointer;
+  animation: appUpdateSpin 2.2s linear infinite;
+}
+.app-update-btn:hover { background: rgba(124,58,237,0.22); }
+.app-update-btn svg { width: 13px; height: 13px; }
+@keyframes appUpdateSpin { to { transform: rotate(360deg); } }
 
 /* ── WHATSAPP MESSAGE PREVIEW (estilo bloque de código, tipo Claude) ── */
 #waPreviewWrap { margin-top: 2px; }
@@ -632,13 +642,19 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
     <h2>☰ Menú</h2>
     <button id="sideMenuClose" aria-label="Cerrar menú" onclick="closeSideMenu()">✕</button>
   </div>
-  <p class="side-menu-label">Descargar</p>
-  <label class="side-menu-check"><input type="checkbox" id="dlPlan" checked> Plan de alimentación</label>
-  <label class="side-menu-check"><input type="checkbox" id="dlAplv"> APLV</label>
-  <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
-  <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">📄 Descargar</button>
-  <div id="waPreviewWrap" style="display:none;">
-    <p class="side-menu-label">Mensaje de WhatsApp</p>
+  <!-- SECCIÓN 1 — Documentos disponibles -->
+  <p class="side-menu-label">Documentos disponibles</p>
+  <label class="side-menu-check"><input type="checkbox" id="dlPlan" checked onchange="refreshWaPreview()"> Plan de alimentación</label>
+  <label class="side-menu-check"><input type="checkbox" id="dlAplv" onchange="refreshWaPreview()"> APLV</label>
+  <label class="side-menu-check"><input type="checkbox" id="dlHuevo" onchange="refreshWaPreview()"> Alergia al huevo</label>
+
+  <!-- SECCIÓN 2 — Descarga de documentos -->
+  <p class="side-menu-label">Descarga de documentos</p>
+  <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">Descargar</button>
+
+  <!-- SECCIÓN 3 — Mensaje de WhatsApp -->
+  <p class="side-menu-label">Mensaje de WhatsApp</p>
+  <div id="waPreviewWrap">
     <div class="wa-preview-box">
       <button id="waPreviewCopyBtn" class="wa-preview-copy" type="button" aria-label="Copiar mensaje" onclick="copyWaPreview()">
         <svg class="wa-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -646,10 +662,18 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
       </button>
       <div id="waPreviewText" class="wa-preview-text" contenteditable="true" spellcheck="false"></div>
     </div>
-    <button id="waPreviewSendBtn" class="btn-mac wa-send-btn" type="button" onclick="enviarWaPreview()">📲 Enviar a mi WhatsApp</button>
+    <button id="waPreviewSendBtn" class="btn-mac wa-send-btn" type="button" onclick="enviarWaPreview()">Enviar por WhatsApp</button>
   </div>
+
+  <!-- SECCIÓN 4 — Versión / fecha -->
   <div class="side-menu-foot">
-    <span id="appVersion">v1.28</span>
+    <span id="appVersionInfo">
+      <span id="appVersion">v1.29</span>
+      <span id="appBuildDate">16 jul 2026</span>
+    </span>
+    <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+    </button>
     <span id="localSaveLabel"></span>
   </div>
 </nav>
@@ -732,7 +756,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 
   <div class="controls-bar">
     <label>👦 Nombre:</label>
-    <input type="text" id="childName" placeholder="Escribe tu nombre aquí..." oninput="autoSave()" onfocus="armUndoSnapshot(this)" onblur="commitUndoSnapshotIfChanged(this)">
+    <input type="text" id="childName" placeholder="Escribe tu nombre aquí..." oninput="autoSave(); refreshWaPreview();" onfocus="armUndoSnapshot(this)" onblur="commitUndoSnapshotIfChanged(this)">
     <label>Del:</label>
     <button class="date-btn" id="btnStart">📅 <span id="lblStart">Seleccionar</span></button>
     <label># Semanas:</label>
@@ -1821,6 +1845,8 @@ function autoSave(){
   try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){}
   scheduleLocalSave();
   planDirty = true; updateSaveBtnVisibility();
+  /* El plan cambió: el PDF ya construido (si lo hay) queda desactualizado */
+  if(builtPlanLink){ builtPlanLink = null; refreshWaPreview(); }
 }
 function planHasContent(){
   const d = collect();
@@ -1932,6 +1958,9 @@ function showPrompt(message, defaultValue=''){
 
 /* ── BARRA DE PROGRESO DEL PDF ── */
 let pdfInProgress = false;
+/* Link de Drive del PDF del plan ya construido en esta sesión — se reutiliza
+   entre el botón "Descargar" y el envío por WhatsApp mientras el plan no cambie. */
+let builtPlanLink = null;
 function showPdfProgress(pct, label){
   document.getElementById('pdfProgressOverlay').classList.add('open');
   document.getElementById('pdfProgressLabel').textContent = label;
@@ -1974,41 +2003,22 @@ async function descargarSeleccion(){
 
   /* Abrir las descargas de Drive de forma síncrona (dentro del mismo clic)
      para que el navegador no las bloquee como pop-ups */
-  const items = [];
   if(wantAplv && wantHuevo){
     window.open(refDownloadUrl(REF_FILES.ambos.id), '_blank');
-    items.push({ icon: REF_FILES.ambos.icon, label: REF_FILES.ambos.name, url: refViewUrl(REF_FILES.ambos.id) });
   } else {
-    if(wantAplv){  window.open(refDownloadUrl(REF_FILES.aplv.id), '_blank');  items.push({ icon: REF_FILES.aplv.icon, label: REF_FILES.aplv.name, url: refViewUrl(REF_FILES.aplv.id) }); }
-    if(wantHuevo){ window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank'); items.push({ icon: REF_FILES.huevo.icon, label: REF_FILES.huevo.name, url: refViewUrl(REF_FILES.huevo.id) }); }
+    if(wantAplv)  window.open(refDownloadUrl(REF_FILES.aplv.id), '_blank');
+    if(wantHuevo) window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank');
   }
 
-  function componerMensajeWhatsApp(){
-    if(!items.length) return;
-    const nombre = document.getElementById('childName').value.trim();
-    const plural = items.length > 1;
-    const saludo = nombre
-      ? `👩‍⚕️ ¡Hola! Aquí tienes ${plural ? 'los documentos' : 'el documento'} de *${nombre}*:`
-      : `👩‍⚕️ ¡Hola! Aquí tienes ${plural ? 'tus documentos' : 'tu documento'}:`;
-    const lista = items.map(it => `${it.icon} *${it.label}*\n${it.url}`).join('\n\n');
-    const nota = plural
-      ? `⚠️ Estos enlaces estarán disponibles solo por *15 días*. Te recomiendo descargarlos y guardarlos ahora para que le queden siempre disponibles a ${nombre || 'tu paciente'}.`
-      : `⚠️ Este enlace estará disponible solo por *15 días*. Te recomiendo descargarlo y guardarlo ahora para que le quede siempre disponible a ${nombre || 'tu paciente'}.`;
-    const texto = `${saludo}\n\n${lista}\n\n${nota}\n\n¡Cualquier duda, aquí estoy! 💜`;
-    showWaPreview(texto);
-  }
-
-  /* Si se generó el plan, esperamos a que termine de subirse a Drive para
-     incluir su link en el mismo mensaje de WhatsApp (evita que se pisen
-     dos mensajes separados). */
+  /* Solo se construye el PDF del plan si el usuario lo seleccionó */
   if(wantPlan){
     try{
       const planLink = await downloadAllPDF({ notify: false });
-      if(planLink) items.unshift({ icon: '📄', label: 'Plan de alimentación', url: planLink });
+      if(planLink) builtPlanLink = planLink;
     }catch(e){ /* downloadAllPDF ya muestra su propio aviso de error */ }
   }
 
-  componerMensajeWhatsApp();
+  refreshWaPreview();
 }
 
 function escapeHtml(str){
@@ -2021,21 +2031,85 @@ function showWaPreview(texto){
   if(!wrap || !textEl) return;
   const urlRe = /(https?:\/\/[^\s]+)/g;
   textEl.innerHTML = escapeHtml(texto).replace(urlRe, url => `<span class="wa-link-locked" contenteditable="false">${url}</span>`);
-  wrap.style.display = '';
+}
+
+/* Arma la lista de documentos seleccionados con sus enlaces.
+   El Plan de alimentación usa un link provisorio hasta que se construya. */
+function getSelectedDocItems(){
+  const wantPlan  = document.getElementById('dlPlan').checked;
+  const wantAplv  = document.getElementById('dlAplv').checked;
+  const wantHuevo = document.getElementById('dlHuevo').checked;
+  const items = [];
+  if(wantPlan){
+    items.push({ icon: '📄', label: 'Plan de alimentación', url: builtPlanLink || '⏳ (se generará al enviar)' });
+  }
+  if(wantAplv && wantHuevo){
+    items.push({ icon: REF_FILES.ambos.icon, label: REF_FILES.ambos.name, url: refViewUrl(REF_FILES.ambos.id) });
+  } else {
+    if(wantAplv)  items.push({ icon: REF_FILES.aplv.icon,  label: REF_FILES.aplv.name,  url: refViewUrl(REF_FILES.aplv.id) });
+    if(wantHuevo) items.push({ icon: REF_FILES.huevo.icon, label: REF_FILES.huevo.name, url: refViewUrl(REF_FILES.huevo.id) });
+  }
+  return items;
+}
+
+function buildWaMessage(items){
+  if(!items.length) return '';
+  const nombre = document.getElementById('childName').value.trim();
+  const plural = items.length > 1;
+  const saludo = nombre
+    ? `👩‍⚕️ ¡Hola! Aquí tienes ${plural ? 'los documentos' : 'el documento'} de *${nombre}*:`
+    : `👩‍⚕️ ¡Hola! Aquí tienes ${plural ? 'tus documentos' : 'tu documento'}:`;
+  const lista = items.map(it => `${it.icon} *${it.label}*\n${it.url}`).join('\n\n');
+  const nota = plural
+    ? `⚠️ Estos enlaces estarán disponibles solo por *15 días*. Te recomiendo descargarlos y guardarlos ahora para que le queden siempre disponibles a ${nombre || 'tu paciente'}.`
+    : `⚠️ Este enlace estará disponible solo por *15 días*. Te recomiendo descargarlo y guardarlo ahora para que le quede siempre disponible a ${nombre || 'tu paciente'}.`;
+  return `${saludo}\n\n${lista}\n\n${nota}\n\n¡Cualquier duda, aquí estoy! 💜`;
+}
+
+/* Reconstruye el mensaje de WhatsApp a partir de la selección actual —
+   se llama cada vez que cambia algo que afecta al mensaje (checks, nombre,
+   o cuando el link del plan pasa de provisorio a real). */
+function refreshWaPreview(){
+  const items = getSelectedDocItems();
+  const btn = document.getElementById('waPreviewSendBtn');
+  if(!items.length){
+    showWaPreview('Selecciona al menos un documento para armar el mensaje.');
+    if(btn) btn.disabled = true;
+    return;
+  }
+  showWaPreview(buildWaMessage(items));
+  if(btn) btn.disabled = false;
 }
 
 async function enviarWaPreview(){
-  const textEl = document.getElementById('waPreviewText');
   const btn = document.getElementById('waPreviewSendBtn');
+  const wantPlan = document.getElementById('dlPlan').checked;
+
+  /* Si el plan aún no se ha construido (ni por este botón ni por "Descargar"),
+     lo construimos ahora y reemplazamos el link provisorio por el real. */
+  if(wantPlan && !builtPlanLink){
+    if(btn){ btn.disabled = true; btn.textContent = 'Generando plan...'; }
+    try{
+      const planLink = await downloadAllPDF({ notify: false });
+      if(planLink) builtPlanLink = planLink;
+    }catch(e){
+      if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }
+      return; /* downloadAllPDF ya muestra su propio aviso de error */
+    }
+    refreshWaPreview();
+  }
+
+  const textEl = document.getElementById('waPreviewText');
   const texto = textEl && textEl.innerText.trim();
-  if(!texto) return;
+  if(!texto){ if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; } return; }
+
   const reqId = 'wa' + Date.now() + Math.random().toString(36).slice(2,8);
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ Enviando...'; }
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
   try{
     await sheetPost({ action: 'notifyDownload', text: texto, reqId });
   }catch(e){
     toast('⚠️ No se pudo enviar el aviso por WhatsApp');
-    if(btn){ btn.disabled = false; btn.textContent = '📲 Enviar a mi WhatsApp'; }
+    if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }
     return;
   }
   /* Consultamos el resultado real de CallMeBot (el POST anterior es no-cors,
@@ -2057,7 +2131,7 @@ async function enviarWaPreview(){
       }
     }
   }catch(e){ /* si no se puede verificar, no interrumpimos más */ }
-  if(btn){ btn.disabled = false; btn.textContent = '📲 Enviar a mi WhatsApp'; }
+  if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }
 }
 
 function copyWaPreview(){
@@ -2470,6 +2544,28 @@ try{
 planDirty = planHasContent();
 updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
+refreshWaPreview();
+
+/* ── CHEQUEO DE ACTUALIZACIÓN ── */
+const APP_VERSION = '1.29';
+function checkForUpdate(){
+  const url = location.href.split('?')[0] + '?_=' + Date.now();
+  fetch(url, { cache: 'no-store' })
+    .then(r => r.text())
+    .then(html => {
+      const m = html.match(/id="appVersion">v?([\d.]+)</);
+      if(m && m[1] && m[1] !== APP_VERSION){
+        const verEl = document.getElementById('appVersion');
+        const btnEl = document.getElementById('appUpdateBtn');
+        if(verEl) verEl.style.display = 'none';
+        if(btnEl) btnEl.style.display = '';
+      }
+    })
+    .catch(()=>{ /* sin conexión: no interrumpimos */ });
+}
+checkForUpdate();
+setInterval(checkForUpdate, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) checkForUpdate(); });
 </script>
 </body>
 </html>
