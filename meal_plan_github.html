@@ -454,8 +454,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   transform: translateX(0); transition: transform 0.25s ease;
   padding: 20px 16px; display: flex; flex-direction: column; gap: 2px;
 }
-.side-menu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 4px; }
-.side-menu-head h2 { font-size: 0.78rem; font-weight: 600; color: #8b7fae; text-transform: uppercase; letter-spacing: 0.04em; }
+.side-menu-head { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px; padding: 0 4px; }
 #sideMenuClose { display: none; }
 .side-menu-btn {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
@@ -639,17 +638,16 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 <div id="sideMenuOverlay" onclick="closeSideMenu()"></div>
 <nav id="sideMenu" role="navigation" aria-label="Menú principal">
   <div class="side-menu-head">
-    <h2>☰ Menú</h2>
     <button id="sideMenuClose" aria-label="Cerrar menú" onclick="closeSideMenu()">✕</button>
   </div>
   <!-- SECCIÓN 1 — Documentos disponibles -->
-  <p class="side-menu-label">Documentos disponibles</p>
+  <p class="side-menu-label">Material de alimentación disponible</p>
   <label class="side-menu-check"><input type="checkbox" id="dlPlan" checked onchange="refreshWaPreview()"> Plan de alimentación</label>
   <label class="side-menu-check"><input type="checkbox" id="dlAplv" onchange="refreshWaPreview()"> APLV</label>
   <label class="side-menu-check"><input type="checkbox" id="dlHuevo" onchange="refreshWaPreview()"> Alergia al huevo</label>
 
-  <!-- SECCIÓN 2 — Descarga de documentos -->
-  <p class="side-menu-label">Descarga de documentos</p>
+  <!-- SECCIÓN 2 — Descarga de material -->
+  <p class="side-menu-label">Descargar material</p>
   <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">Descargar</button>
 
   <!-- SECCIÓN 3 — Mensaje de WhatsApp -->
@@ -668,7 +666,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 4 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.29</span>
+      <span id="appVersion">v1.30</span>
       <span id="appBuildDate">16 jul 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1985,9 +1983,12 @@ function hideSyncProgress(){
    DESCARGA DE REFERENCIA (APLV / Alergia al huevo)
    ══════════════════════════════════════════ */
 const REF_FILES = {
-  aplv:  { id: '1ZKHFg2z4HGejEDHMjV7cDSAGwyOtamXv', name: 'APLV', icon: '🥛' },
-  huevo: { id: '1JoinJpy16Ilq93c7vlS6-0CmbU1PSF0i', name: 'Alergia al huevo', icon: '🥚' },
-  ambos: { id: '1KlM9PEirYzXfb0jDXQel6Xd7Ltc7C51F', name: 'APLV + Alergia al huevo', icon: '📋' }
+  aplv:  { id: '1ZKHFg2z4HGejEDHMjV7cDSAGwyOtamXv', name: 'APLV', icon: '🥛',
+    desc: 'Guía con los alimentos permitidos y los que se deben evitar para el manejo de la alergia a la proteína de leche de vaca.' },
+  huevo: { id: '1JoinJpy16Ilq93c7vlS6-0CmbU1PSF0i', name: 'Alergia al huevo', icon: '🥚',
+    desc: 'Guía con los alimentos permitidos y los que se deben evitar para el manejo de la alergia al huevo.' },
+  ambos: { id: '1KlM9PEirYzXfb0jDXQel6Xd7Ltc7C51F', name: 'APLV + Alergia al huevo', icon: '📋',
+    desc: 'Guía combinada con los alimentos permitidos y los que se deben evitar para ambas alergias.' }
 };
 function refDownloadUrl(fileId){ return 'https://drive.google.com/uc?export=download&id=' + fileId; }
 function refViewUrl(fileId){ return 'https://drive.google.com/file/d/' + fileId + '/view'; }
@@ -2033,7 +2034,7 @@ function showWaPreview(texto){
   textEl.innerHTML = escapeHtml(texto).replace(urlRe, url => `<span class="wa-link-locked" contenteditable="false">${url}</span>`);
 }
 
-/* Arma la lista de documentos seleccionados con sus enlaces.
+/* Arma la lista de material de alimentación seleccionado con sus enlaces.
    El Plan de alimentación usa un link provisorio hasta que se construya. */
 function getSelectedDocItems(){
   const wantPlan  = document.getElementById('dlPlan').checked;
@@ -2041,13 +2042,17 @@ function getSelectedDocItems(){
   const wantHuevo = document.getElementById('dlHuevo').checked;
   const items = [];
   if(wantPlan){
-    items.push({ icon: '📄', label: 'Plan de alimentación', url: builtPlanLink || '⏳ (se generará al enviar)' });
+    items.push({
+      icon: '📄', label: 'Plan de alimentación',
+      desc: 'Tu plan de alimentación personalizado, con el detalle de cada comida y horario.',
+      url: builtPlanLink || '⏳ (se generará al enviar)'
+    });
   }
   if(wantAplv && wantHuevo){
-    items.push({ icon: REF_FILES.ambos.icon, label: REF_FILES.ambos.name, url: refViewUrl(REF_FILES.ambos.id) });
+    items.push({ icon: REF_FILES.ambos.icon, label: REF_FILES.ambos.name, desc: REF_FILES.ambos.desc, url: refViewUrl(REF_FILES.ambos.id) });
   } else {
-    if(wantAplv)  items.push({ icon: REF_FILES.aplv.icon,  label: REF_FILES.aplv.name,  url: refViewUrl(REF_FILES.aplv.id) });
-    if(wantHuevo) items.push({ icon: REF_FILES.huevo.icon, label: REF_FILES.huevo.name, url: refViewUrl(REF_FILES.huevo.id) });
+    if(wantAplv)  items.push({ icon: REF_FILES.aplv.icon,  label: REF_FILES.aplv.name,  desc: REF_FILES.aplv.desc,  url: refViewUrl(REF_FILES.aplv.id) });
+    if(wantHuevo) items.push({ icon: REF_FILES.huevo.icon, label: REF_FILES.huevo.name, desc: REF_FILES.huevo.desc, url: refViewUrl(REF_FILES.huevo.id) });
   }
   return items;
 }
@@ -2057,23 +2062,27 @@ function buildWaMessage(items){
   const nombre = document.getElementById('childName').value.trim();
   const plural = items.length > 1;
   const saludo = nombre
-    ? `👩‍⚕️ ¡Hola! Aquí tienes ${plural ? 'los documentos' : 'el documento'} de *${nombre}*:`
-    : `👩‍⚕️ ¡Hola! Aquí tienes ${plural ? 'tus documentos' : 'tu documento'}:`;
-  const lista = items.map(it => `${it.icon} *${it.label}*\n${it.url}`).join('\n\n');
+    ? `👩‍⚕️ ¡Hola! Aquí tienes el material de alimentación de *${nombre}*:`
+    : `👩‍⚕️ ¡Hola! Aquí tienes tu material de alimentación:`;
+  const lista = items.map(it => `${it.icon} *${it.label}*\n${it.desc}\n${it.url}`).join('\n\n');
   const nota = plural
     ? `⚠️ Estos enlaces estarán disponibles solo por *15 días*. Te recomiendo descargarlos y guardarlos ahora para que le queden siempre disponibles a ${nombre || 'tu paciente'}.`
     : `⚠️ Este enlace estará disponible solo por *15 días*. Te recomiendo descargarlo y guardarlo ahora para que le quede siempre disponible a ${nombre || 'tu paciente'}.`;
-  return `${saludo}\n\n${lista}\n\n${nota}\n\n¡Cualquier duda, aquí estoy! 💜`;
+  const obs = (collectObservaciones() || []).map(o => o.trim()).filter(Boolean);
+  const obsBlock = obs.length
+    ? `\n\n📝 *Observaciones:*\n${obs.map(o => `• ${o}`).join('\n')}`
+    : '';
+  return `${saludo}\n\n${lista}\n\n${nota}${obsBlock}\n\n¡Cualquier duda, aquí estoy! 💜`;
 }
 
 /* Reconstruye el mensaje de WhatsApp a partir de la selección actual —
    se llama cada vez que cambia algo que afecta al mensaje (checks, nombre,
-   o cuando el link del plan pasa de provisorio a real). */
+   observaciones, o cuando el link del plan pasa de provisorio a real). */
 function refreshWaPreview(){
   const items = getSelectedDocItems();
   const btn = document.getElementById('waPreviewSendBtn');
   if(!items.length){
-    showWaPreview('Selecciona al menos un documento para armar el mensaje.');
+    showWaPreview('Selecciona al menos un material para armar el mensaje.');
     if(btn) btn.disabled = true;
     return;
   }
@@ -2081,22 +2090,32 @@ function refreshWaPreview(){
   if(btn) btn.disabled = false;
 }
 
+/* Construye el PDF del plan si hace falta (aún no se había generado por
+   "Descargar" ni por un envío/copia anterior) y actualiza el link real
+   en el recuadro. Devuelve false si la construcción falló. */
+async function ensurePlanBuilt(){
+  const wantPlan = document.getElementById('dlPlan').checked;
+  if(!wantPlan || builtPlanLink) return true;
+  try{
+    const planLink = await downloadAllPDF({ notify: false });
+    if(!planLink) return false;
+    builtPlanLink = planLink;
+    refreshWaPreview();
+    return true;
+  }catch(e){
+    return false; /* downloadAllPDF ya muestra su propio aviso de error */
+  }
+}
+
 async function enviarWaPreview(){
   const btn = document.getElementById('waPreviewSendBtn');
-  const wantPlan = document.getElementById('dlPlan').checked;
+  const needsBuild = document.getElementById('dlPlan').checked && !builtPlanLink;
 
-  /* Si el plan aún no se ha construido (ni por este botón ni por "Descargar"),
-     lo construimos ahora y reemplazamos el link provisorio por el real. */
-  if(wantPlan && !builtPlanLink){
-    if(btn){ btn.disabled = true; btn.textContent = 'Generando plan...'; }
-    try{
-      const planLink = await downloadAllPDF({ notify: false });
-      if(planLink) builtPlanLink = planLink;
-    }catch(e){
-      if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }
-      return; /* downloadAllPDF ya muestra su propio aviso de error */
-    }
-    refreshWaPreview();
+  if(needsBuild && btn){ btn.disabled = true; btn.textContent = 'Generando plan...'; }
+  const built = await ensurePlanBuilt();
+  if(!built){
+    if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }
+    return;
   }
 
   const textEl = document.getElementById('waPreviewText');
@@ -2134,13 +2153,23 @@ async function enviarWaPreview(){
   if(btn){ btn.disabled = false; btn.textContent = 'Enviar por WhatsApp'; }
 }
 
-function copyWaPreview(){
-  const textEl = document.getElementById('waPreviewText');
+async function copyWaPreview(){
   const btn = document.getElementById('waPreviewCopyBtn');
+  const needsBuild = document.getElementById('dlPlan').checked && !builtPlanLink;
+
+  if(needsBuild && btn) btn.disabled = true;
+  const built = await ensurePlanBuilt();
+  if(!built){
+    if(btn) btn.disabled = false;
+    return;
+  }
+
+  const textEl = document.getElementById('waPreviewText');
   const texto = textEl && textEl.innerText.trim();
-  if(!texto) return;
+  if(!texto){ if(btn) btn.disabled = false; return; }
   navigator.clipboard.writeText(texto).then(()=>{
     if(btn){
+      btn.disabled = false;
       btn.classList.add('copied');
       setTimeout(()=>btn.classList.remove('copied'), 1600);
     }
@@ -2547,7 +2576,7 @@ refrescarPlanes(checkLocalRestore);
 refreshWaPreview();
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.29';
+const APP_VERSION = '1.30';
 function checkForUpdate(){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
