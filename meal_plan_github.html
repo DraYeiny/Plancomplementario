@@ -676,7 +676,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 4 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.31</span>
+      <span id="appVersion">v1.32</span>
       <span id="appBuildDate">16 jul 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -2104,7 +2104,7 @@ function buildWaMessage(items){
   const obsBlock = obsBullets.length
     ? `\n\n📝 *Observaciones importantes:*\n${obsBullets.map(o => `• ${o}`).join('\n')}`
     : '';
-  return `${saludo}\n\n${lista}\n\n${nota}${obsBlock}\n\n¡Cualquier duda, aquí estoy! 💜`;
+  return `${saludo}\n\n${lista}${obsBlock}\n\n${nota}\n\n¡Cualquier duda, aquí estoy! 💜`;
 }
 
 /* Reconstruye el mensaje de WhatsApp a partir de la selección actual —
@@ -2621,7 +2621,7 @@ refrescarPlanes(checkLocalRestore);
 refreshWaPreview();
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.31';
+const APP_VERSION = '1.32';
 function checkForUpdate(){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
