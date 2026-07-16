@@ -174,7 +174,7 @@ body {
   flex: 1; min-width: 0; text-align: left; background: none; border: none; cursor: pointer;
   padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
   font-size: 0.82rem; font-weight: 600; color: #374151; border-radius: 6px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase;
 }
 .plan-picker-item.selected .plan-picker-item-name { color: #15803d; }
 .plan-picker-item-del {
@@ -491,6 +491,9 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .btn-mac:hover:not(:disabled) { filter: brightness(1.06); }
 .btn-mac:active:not(:disabled) { filter: brightness(0.94); transform: scale(0.98); }
 .btn-mac:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Botón "Plan en blanco" — mismo estilo que btn-mac pero en otro color,
+   para distinguirlo claramente del botón de Descargar */
+.btn-blank { background: linear-gradient(180deg, #fb923c, #f97316); margin-top: 0; margin-bottom: 4px; }
 .side-menu-foot {
   margin-top: auto; padding-top: 14px; padding-left: 4px; padding-right: 4px; border-top: 1px solid rgba(109,40,217,0.1);
   display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;
@@ -649,6 +652,8 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <div class="side-menu-head">
     <button id="sideMenuClose" aria-label="Cerrar menú" onclick="closeSideMenu()">✕</button>
   </div>
+  <!-- SECCIÓN 0 — Empezar plan nuevo -->
+  <button id="btnPlanEnBlanco" class="btn-mac btn-blank" onclick="nuevoPlanEnBlanco()">PLAN EN BLANCO</button>
   <!-- SECCIÓN 1 — Documentos disponibles -->
   <p class="side-menu-label">Material de alimentación disponible</p>
   <label class="side-menu-check"><input type="checkbox" id="dlPlan" checked onchange="refreshWaPreview()"> Plan de alimentación</label>
@@ -676,7 +681,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 4 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.34</span>
+      <span id="appVersion">v1.35</span>
       <span id="appBuildDate">16 jul 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1617,7 +1622,9 @@ function setEstado(msg){
 
 function renderPlanPicker(){
   const list = document.getElementById('planPickerList');
-  const visibles = planesCache.filter(p => p.id !== AUTOSAVE_ID);
+  const visibles = planesCache
+    .filter(p => p.id !== AUTOSAVE_ID)
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
   if(!visibles.length){
     list.innerHTML = '<div class="plan-picker-empty">Todavía no hay planes guardados</div>';
   } else {
@@ -1717,7 +1724,12 @@ async function guardarPlan(){
   const existente = planesCache.find(p => p.name.toLowerCase() === nombre.trim().toLowerCase());
   if(existente && !await showConfirm(`Ya existe un plan llamado "${existente.name}". ¿Quieres sobreescribirlo?`, {okText:'Sí, sobreescribir', danger:true})) return;
   const id = existente ? existente.id : 'plan_' + Date.now();
-  const plan = { id, name: nombre.trim(), created: existente?.created || new Date().toISOString(), data: collect() };
+  /* Los planes guardados son plantillas reutilizables entre pacientes —
+     el nombre del paciente actual no debe quedar grabado en la plantilla,
+     aunque sí se mantiene escrito en pantalla. */
+  const data = collect();
+  data.childName = '';
+  const plan = { id, name: nombre.trim(), created: existente?.created || new Date().toISOString(), data };
   setEstado('💾 Guardando...');
   document.getElementById('btnGuardarComo').style.display = 'none';
   showSyncProgress(20, '💾 Guardando plan...');
@@ -1798,6 +1810,21 @@ async function eliminarPlan(id){
   } finally {
     hideSyncProgress();
   }
+}
+
+/* Deja la pantalla en blanco para empezar un plan nuevo desde cero —
+   no toca los planes guardados, solo lo que hay en pantalla ahora mismo. */
+async function nuevoPlanEnBlanco(){
+  if(!await showConfirm('¿Dejar la pantalla en blanco para empezar un plan nuevo? Se perderá lo que tienes sin guardar.', {okText:'Sí, dejar en blanco', danger:true, icon:'🆕'})) return;
+  pushUndoSnapshot(collect());
+  apply({ childName:'', dateStart: fmt(new Date()), numWeeks: 1, cells:{}, registro:[], observaciones:[] });
+  currentPlanId = ''; currentPlanName = '';
+  autoSave();
+  planDirty = planHasContent(); updateSaveBtnVisibility();
+  renderPlanPicker();
+  refreshWaPreview();
+  closeSideMenu();
+  toast('🆕 Pantalla en blanco lista para llenar');
 }
 
 /* ── PERSISTENCIA ── */
@@ -2669,7 +2696,7 @@ refrescarPlanes(checkLocalRestore);
 refreshWaPreview();
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.34';
+const APP_VERSION = '1.35';
 function checkForUpdate(){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })

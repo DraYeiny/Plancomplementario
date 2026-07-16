@@ -23,9 +23,33 @@ test('saving a new plan sends it to the backend and shows it in the picker', asy
   const saveRequest = gas.requests.find(r => r.action === 'save' && r.plan?.name === 'Plan de Mateo');
   expect(saveRequest).toBeTruthy();
   expect(saveRequest.plan.data.cells['w0_desayuno_fruta_0']).toBe('Banano');
+  // Saved plans are reusable templates across patients — the child's name
+  // must not be persisted in the template, even though it stays on screen.
+  expect(saveRequest.plan.data.childName).toBe('');
+  await expect(page.locator('#childName')).toHaveValue('Mateo');
 
   await page.locator('#planPickerBtn').click();
   await expect(page.locator('#planPickerList')).toContainText('Plan de Mateo');
+});
+
+test('the saved plan list appears uppercase and sorted alphabetically', async ({ page }) => {
+  await installGasMock(page, {
+    initialPlans: [
+      { id: 'p1', name: 'zapote', created: new Date().toISOString(), data: { cells: {} } },
+      { id: 'p2', name: 'Ábaco', created: new Date().toISOString(), data: { cells: {} } },
+      { id: 'p3', name: 'mango', created: new Date().toISOString(), data: { cells: {} } },
+    ],
+  });
+  await page.goto('/meal_plan_github.html');
+  await expect(page.locator('#sheetsContainer table').first()).toBeVisible();
+
+  await page.locator('#planPickerBtn').click();
+  const names = page.locator('.plan-picker-item-name');
+  await expect(names).toHaveCount(3);
+  await expect(names.nth(0)).toHaveText('Ábaco');
+  await expect(names.nth(1)).toHaveText('mango');
+  await expect(names.nth(2)).toHaveText('zapote');
+  await expect(names.first()).toHaveCSS('text-transform', 'uppercase');
 });
 
 test('loading an existing plan replaces the on-screen data after confirmation', async ({ page }) => {
