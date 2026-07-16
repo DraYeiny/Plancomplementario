@@ -535,6 +535,15 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .wa-preview-copy.copied { color: #16a34a; border-color: #bbf0cc; background: #f0fdf4; }
 .wa-preview-copy.copied .wa-copy-icon { display: none; }
 .wa-preview-copy.copied .wa-check-icon { display: block; }
+.wa-copied-label {
+  position: absolute; top: 8px; left: 40px; z-index: 2;
+  background: #1c1c1e; color: #fff; font-size: 0.72rem; font-weight: 600;
+  padding: 5px 10px; border-radius: 7px; white-space: nowrap;
+  opacity: 0; transform: translateY(-3px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.wa-copied-label.show { opacity: 1; transform: translateY(0) scale(1); }
 .wa-preview-text {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
   font-size: 0.82rem; line-height: 1.55; color: #1c1c1e;
@@ -658,6 +667,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
         <svg class="wa-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
         <svg class="wa-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
       </button>
+      <span id="waCopiedLabel" class="wa-copied-label" role="status" aria-live="polite">✅ Mensaje copiado con éxito</span>
       <div id="waPreviewText" class="wa-preview-text" contenteditable="true" spellcheck="false"></div>
     </div>
     <button id="waPreviewSendBtn" class="btn-mac wa-send-btn" type="button" onclick="enviarWaPreview()">Enviar por WhatsApp</button>
@@ -666,7 +676,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 4 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.30</span>
+      <span id="appVersion">v1.31</span>
       <span id="appBuildDate">16 jul 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1534,7 +1544,7 @@ function addObservacion(text=''){
   div.contentEditable = 'true';
   div.spellcheck = false;
   if(text) div.textContent = text;
-  div.addEventListener('input', () => autoSave());
+  div.addEventListener('input', () => { autoSave(); refreshWaPreview(); });
   div.addEventListener('focus', () => armUndoSnapshot(div));
   div.addEventListener('blur', () => commitUndoSnapshotIfChanged(div));
   div.addEventListener('keydown', e => {
@@ -1557,13 +1567,14 @@ function addObservacion(text=''){
     const hasText = div.textContent.trim();
     if(hasText && !await showConfirm('¿Eliminar esta observación?', {okText:'Sí, eliminar', danger:true})) return;
     if(hasText) pushUndoSnapshot(collect());
-    tr.remove(); renumberObs(); autoSave();
+    tr.remove(); renumberObs(); autoSave(); refreshWaPreview();
   });
   tdDel.appendChild(btnDel);
 
   tr.appendChild(tdNum); tr.appendChild(tdText); tr.appendChild(tdDel);
   tbody.appendChild(tr);
   autoSave();
+  refreshWaPreview();
   return tr;
 }
 
@@ -1720,6 +1731,7 @@ async function guardarPlan(){
     if(guardado){
       currentPlanId = id; currentPlanName = plan.name;
       renderPlanPicker();
+      refreshWaPreview();
       planDirty = false; updateSaveBtnVisibility();
       setEstado('✅ Guardado');
       showSyncProgress(100, '✅ ¡Guardado!');
@@ -1756,6 +1768,7 @@ async function cargarPlan(id){
   planDirty = false; updateSaveBtnVisibility();
   currentPlanId = plan.id; currentPlanName = plan.name;
   renderPlanPicker();
+  refreshWaPreview();
   closePlanPicker();
   toast('✅ Plan cargado: ' + plan.name);
 }
@@ -1771,7 +1784,7 @@ async function eliminarPlan(id){
     showSyncProgress(70, '🔎 Verificando...');
     await new Promise(r => setTimeout(r, 1200));
     planesCache = await sheetGet();
-    if(currentPlanId === id){ currentPlanId = ''; currentPlanName = ''; }
+    if(currentPlanId === id){ currentPlanId = ''; currentPlanName = ''; refreshWaPreview(); }
     renderPlanPicker();
     setEstado('');
     showSyncProgress(100, '✅ Plan eliminado');
@@ -2057,20 +2070,39 @@ function getSelectedDocItems(){
   return items;
 }
 
+/* Aviso automático sobre exclusión de leche/huevo según las guías seleccionadas —
+   se agrega siempre que corresponda, además de las observaciones escritas a mano. */
+function buildAlergiaBullets(){
+  const wantAplv  = document.getElementById('dlAplv').checked;
+  const wantHuevo = document.getElementById('dlHuevo').checked;
+  const bullets = [];
+  if(wantAplv && wantHuevo){
+    bullets.push('El plan de alimentación no debe incluir leche de vaca ni huevo, ni sus derivados.');
+  } else if(wantAplv){
+    bullets.push('El plan de alimentación no debe incluir leche de vaca ni sus derivados.');
+  } else if(wantHuevo){
+    bullets.push('El plan de alimentación no debe incluir huevo ni sus derivados.');
+  }
+  return bullets;
+}
+
 function buildWaMessage(items){
   if(!items.length) return '';
   const nombre = document.getElementById('childName').value.trim();
   const plural = items.length > 1;
+  const planNombre = (typeof currentPlanName !== 'undefined' && currentPlanName && currentPlanName.trim()) ? currentPlanName.trim() : '';
+  const planClause = planNombre ? ` con plan alimentario *${planNombre}*` : '';
   const saludo = nombre
-    ? `👩‍⚕️ ¡Hola! Aquí tienes el material de alimentación de *${nombre}*:`
-    : `👩‍⚕️ ¡Hola! Aquí tienes tu material de alimentación:`;
+    ? `👩‍⚕️ ¡Hola! Aquí tienes el material de alimentación de *${nombre}*${planClause}:`
+    : `👩‍⚕️ ¡Hola! Aquí tienes tu material de alimentación${planClause}:`;
   const lista = items.map(it => `${it.icon} *${it.label}*\n${it.desc}\n${it.url}`).join('\n\n');
   const nota = plural
     ? `⚠️ Estos enlaces estarán disponibles solo por *15 días*. Te recomiendo descargarlos y guardarlos ahora para que le queden siempre disponibles a ${nombre || 'tu paciente'}.`
     : `⚠️ Este enlace estará disponible solo por *15 días*. Te recomiendo descargarlo y guardarlo ahora para que le quede siempre disponible a ${nombre || 'tu paciente'}.`;
-  const obs = (collectObservaciones() || []).map(o => o.trim()).filter(Boolean);
-  const obsBlock = obs.length
-    ? `\n\n📝 *Observaciones:*\n${obs.map(o => `• ${o}`).join('\n')}`
+  const obsManuales = (collectObservaciones() || []).map(o => o.trim()).filter(Boolean);
+  const obsBullets = [...buildAlergiaBullets(), ...obsManuales];
+  const obsBlock = obsBullets.length
+    ? `\n\n📝 *Observaciones importantes:*\n${obsBullets.map(o => `• ${o}`).join('\n')}`
     : '';
   return `${saludo}\n\n${lista}\n\n${nota}${obsBlock}\n\n¡Cualquier duda, aquí estoy! 💜`;
 }
@@ -2093,11 +2125,11 @@ function refreshWaPreview(){
 /* Construye el PDF del plan si hace falta (aún no se había generado por
    "Descargar" ni por un envío/copia anterior) y actualiza el link real
    en el recuadro. Devuelve false si la construcción falló. */
-async function ensurePlanBuilt(){
+async function ensurePlanBuilt(opts={}){
   const wantPlan = document.getElementById('dlPlan').checked;
   if(!wantPlan || builtPlanLink) return true;
   try{
-    const planLink = await downloadAllPDF({ notify: false });
+    const planLink = await downloadAllPDF({ notify: false, download: opts.download !== false });
     if(!planLink) return false;
     builtPlanLink = planLink;
     refreshWaPreview();
@@ -2158,7 +2190,7 @@ async function copyWaPreview(){
   const needsBuild = document.getElementById('dlPlan').checked && !builtPlanLink;
 
   if(needsBuild && btn) btn.disabled = true;
-  const built = await ensurePlanBuilt();
+  const built = await ensurePlanBuilt({ download: false });
   if(!built){
     if(btn) btn.disabled = false;
     return;
@@ -2173,8 +2205,19 @@ async function copyWaPreview(){
       btn.classList.add('copied');
       setTimeout(()=>btn.classList.remove('copied'), 1600);
     }
-    toast('📋 Mensaje copiado');
+    showCopiedLabel();
   });
+}
+
+/* Etiqueta flotante estilo "Copied!" de Claude: aparece con una transición
+   suave junto al botón de copiar y se desvanece sola. */
+function showCopiedLabel(){
+  const label = document.getElementById('waCopiedLabel');
+  if(!label) return;
+  label.textContent = '✅ Mensaje copiado con éxito';
+  clearTimeout(label._hideTimer);
+  label.classList.add('show');
+  label._hideTimer = setTimeout(() => label.classList.remove('show'), 1800);
 }
 
 /* ══════════════════════════════════════════
@@ -2511,12 +2554,14 @@ async function runPDF(opts={}){
 
   const driveLink = await uploadToDrive(pdfBytes, filename, { notify: opts.notify !== false });
 
-  showPdfProgress(98, '📥 Descargando en tu dispositivo...');
-  const blob=new Blob([pdfBytes],{type:'application/pdf'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url;
-  a.download=filename; a.click();
-  URL.revokeObjectURL(url);
+  if(opts.download !== false){
+    showPdfProgress(98, '📥 Descargando en tu dispositivo...');
+    const blob=new Blob([pdfBytes],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download=filename; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   showPdfProgress(100, '✅ ¡Listo!');
   await new Promise(r=>setTimeout(r,600));
@@ -2524,7 +2569,7 @@ async function runPDF(opts={}){
   pdfInProgress = false;
   const btn = document.getElementById('sideBtnDownload');
   if(btn) btn.disabled = false;
-  toast('✅ PDF descargado');
+  if(opts.download !== false) toast('✅ PDF descargado');
   return driveLink;
 }
 
@@ -2576,7 +2621,7 @@ refrescarPlanes(checkLocalRestore);
 refreshWaPreview();
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.30';
+const APP_VERSION = '1.31';
 function checkForUpdate(){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
