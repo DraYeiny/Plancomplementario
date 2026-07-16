@@ -124,7 +124,7 @@ test.describe('PDF generation and delivery', () => {
     expect(notifyRequests.length).toBeGreaterThan(1);
 
     const planUrl = 'https://drive.google.com/file/d/mock-file-id/view?usp=sharing';
-    const aplvHuevoUrl = 'https://drive.google.com/file/d/1KlM9PEirYzXfb0jDXQel6Xd7Ltc7C51F/view';
+    const aplvHuevoUrl = 'https://drive.google.com/file/d/1OpBCRJW2u9tVh4WDSb5S8pJWXK87jCXF/view';
     expect(notifyRequests[0].text).toContain(planUrl);
     expect(notifyRequests[0].text).toContain(aplvHuevoUrl);
     for (const r of notifyRequests.slice(1)) {
