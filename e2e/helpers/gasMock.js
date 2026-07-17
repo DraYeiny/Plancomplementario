@@ -1,7 +1,11 @@
 // Mocks the Google Apps Script backend (SHEET_URL) so tests never hit the
 // real Google Sheet, Drive folder, or send real WhatsApp/CallMeBot messages.
 // Mirrors the request/response contract implemented in code.gs.
-const SHEET_URL_PREFIX = 'https://script.google.com/macros/s/AKfycbzL18xzYUTObaBxbDI6Fznicb6AI-O_K11i5rIwGx0kSDQEWPY-DknXUN4m7K05b_cv/exec';
+// Matches any Apps Script deployment, not one fixed ID — the exec URL
+// changes whenever the app gets redeployed (e.g. "Nueva implementación"),
+// and hardcoding one deployment's ID here would silently stop mocking the
+// backend the next time it's redeployed.
+const SHEET_URL_PREFIX = 'https://script.google.com/macros/s/*/exec';
 
 async function installGasMock(page, { initialPlans = [], waResultCode = 200 } = {}) {
   const state = {
