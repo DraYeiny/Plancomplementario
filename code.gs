@@ -16,6 +16,7 @@
 
 const SHEET_NAME = 'PLAN ALIMENTARIO';
 const LOCAL_SHEET_NAME = 'LOCAL';
+const SUGGESTIONS_SHEET_NAME = 'SUGERENCIAS';
 const DRIVE_FOLDER_ID = '1caarX5gJ1rGWItU7lH0w9MsdeVp5wXEF';
 
 const SPREADSHEET_ID = '1HTkdRONq8CRdA5_Zh_0xpqswucSHrc9j4GPlhGpM3AU';
@@ -60,6 +61,19 @@ function getLocalSheet() {
     sheet.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#fff9c4').setFontColor('#713f12');
     sheet.setColumnWidth(1, 200);
     sheet.setColumnWidth(2, 800);
+  }
+  return sheet;
+}
+
+function getSuggestionsSheet() {
+  const ss = getSpreadsheet();
+  let sheet = ss.getSheetByName(SUGGESTIONS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SUGGESTIONS_SHEET_NAME);
+    sheet.getRange(1, 1, 1, 2).setValues([['Fecha', 'Sugerencia']]);
+    sheet.getRange(1, 1, 1, 2).setFontWeight('bold').setBackground('#dbeafe').setFontColor('#1e3a8a');
+    sheet.setColumnWidth(1, 180);
+    sheet.setColumnWidth(2, 700);
   }
   return sheet;
 }
@@ -172,6 +186,12 @@ function doPost(e) {
         try { PropertiesService.getScriptProperties().setProperty('wa_' + body.reqId, JSON.stringify(waResult)); } catch(e) {}
       }
       return output({ ok: true, whatsapp: waResult });
+    }
+
+    if (body.action === 'saveSuggestion') {
+      const ss = getSuggestionsSheet();
+      ss.appendRow([body.timestamp || new Date().toISOString(), body.text || '']);
+      return output({ ok: true });
     }
 
     if (body.action === 'saveLocal') {

@@ -10,8 +10,12 @@ test.beforeEach(async ({ page }) => {
 test.describe('Core plan builder', () => {
   test('loads with today as start date and one week of 3 meals x 7 days', async ({ page }) => {
     await expect(page.locator('.tab-btn')).toHaveCount(1);
-    // desayuno(3 subs) + almuerzo(4) + cena(4) = 11 rows x 7 days
-    await expect(page.locator('#sheet-0 .cell-edit')).toHaveCount(11 * 7);
+    // desayuno(4 subs, incl. Proteína) + almuerzo(4) + cena(4) = 12 rows x 7 days
+    await expect(page.locator('#sheet-0 .cell-edit')).toHaveCount(12 * 7);
+  });
+
+  test('breakfast includes a Proteína row like lunch and dinner', async ({ page }) => {
+    await expect(page.locator('[data-id="w0_desayuno_proteina_0"]')).toHaveCount(1);
   });
 
   test('typing the child name persists across reload via localStorage', async ({ page }) => {

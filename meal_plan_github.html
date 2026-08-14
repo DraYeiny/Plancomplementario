@@ -453,6 +453,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   box-shadow: -1px 0 0 rgba(15,10,40,0.06); z-index: 9400;
   transform: translateX(0); transition: transform 0.25s ease;
   padding: 20px 16px; display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto;
 }
 .side-menu-head { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px; padding: 0 4px; }
 #sideMenuClose { display: none; }
@@ -491,6 +492,13 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .btn-mac:hover:not(:disabled) { filter: brightness(1.06); }
 .btn-mac:active:not(:disabled) { filter: brightness(0.94); transform: scale(0.98); }
 .btn-mac:disabled { opacity: 0.5; cursor: not-allowed; }
+.sugerencia-textarea {
+  width: 100%; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 9px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.83rem; font-weight: 500; color: #374151; resize: vertical; outline: none;
+  transition: border-color 0.2s;
+}
+.sugerencia-textarea:focus { border-color: #7c3aed; }
 /* Botón "Plan en blanco" — mismo estilo que btn-mac pero en otro color,
    para distinguirlo claramente del botón de Descargar */
 .btn-blank { background: linear-gradient(180deg, #fb923c, #f97316); margin-top: 0; margin-bottom: 4px; }
@@ -678,10 +686,15 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
     <button id="waPreviewSendBtn" class="btn-mac wa-send-btn" type="button" onclick="enviarWaPreview()">Enviar por WhatsApp</button>
   </div>
 
-  <!-- SECCIÓN 4 — Versión / fecha -->
+  <!-- SECCIÓN 4 — Sugerencias para el desarrollador -->
+  <p class="side-menu-label">Enviar al desarrollador sugerencias de mejoras</p>
+  <textarea id="sugerenciaInput" class="sugerencia-textarea" placeholder="Escribe aquí tu sugerencia..." rows="3"></textarea>
+  <button id="btnEnviarSugerencia" class="btn-mac" type="button" onclick="enviarSugerencia()">Enviar sugerencia</button>
+
+  <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.36</span>
+      <span id="appVersion">v1.37</span>
       <span id="appBuildDate">16 jul 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -972,7 +985,8 @@ const meals = [
     subs:[
       {id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',   cClass:'cell-cereal'},
       {id:'fruta',    icon:'🍎', label:'Fruta',     sClass:'sub-fruta',    cClass:'cell-fruta'},
-      {id:'verdura',  icon:'🥦', label:'Verdura',   sClass:'sub-verdura',  cClass:'cell-verdura'}
+      {id:'verdura',  icon:'🥦', label:'Verdura',   sClass:'sub-verdura',  cClass:'cell-verdura'},
+      {id:'proteina', icon:'🍗', label:'Proteína',  sClass:'sub-proteina', cClass:'cell-proteina'}
     ]},
   { id:'almuerzo', label:'🌤️ Almuerzo', hClass:'meal-almuerzo',
     subs:[
@@ -2296,6 +2310,26 @@ function showCopiedLabel(){
   label._hideTimer = setTimeout(() => label.classList.remove('show'), 1800);
 }
 
+/* ══ SUGERENCIAS PARA EL DESARROLLADOR ══
+   Se guardan en la hoja "SUGERENCIAS" del Sheet (ver code.gs), separado
+   de los planes — no requieren PDF ni afectan el plan en pantalla. */
+async function enviarSugerencia(){
+  const input = document.getElementById('sugerenciaInput');
+  const texto = input && input.value.trim();
+  if(!texto){ toast('Escribe algo antes de enviar'); return; }
+  const btn = document.getElementById('btnEnviarSugerencia');
+  if(btn){ btn.disabled = true; btn.textContent = 'Enviando...'; }
+  try{
+    await sheetPost({ action: 'saveSuggestion', text: texto, timestamp: new Date().toISOString() });
+    input.value = '';
+    toast('✅ ¡Gracias! Sugerencia enviada');
+  }catch(e){
+    toast('❌ No se pudo enviar la sugerencia');
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = 'Enviar sugerencia'; }
+  }
+}
+
 /* ══════════════════════════════════════════
    PDF DOWNLOAD — con página extra de REGISTRO
    ══════════════════════════════════════════ */
@@ -2696,7 +2730,7 @@ refrescarPlanes(checkLocalRestore);
 refreshWaPreview();
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.36';
+const APP_VERSION = '1.37';
 function checkForUpdate(){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
