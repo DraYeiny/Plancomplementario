@@ -129,6 +129,36 @@ body {
 #undoBtn:hover { background: #ede9fe; }
 #undoBtn:active { transform: scale(0.92); }
 
+/* ── CAMPANITA DE SUGERENCIAS (solo lectura, no se pueden borrar) ── */
+#suggestionsBellBtn {
+  position: fixed; top: 14px; left: 14px; z-index: 9400;
+  background: rgba(255,255,255,0.85); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: none; border-radius: 12px;
+  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 4px 14px rgba(15,10,40,0.14); font-size: 1.15rem;
+  color: #7c3aed; transition: background 0.15s, transform 0.1s;
+}
+#suggestionsBellBtn:hover { background: #f5f3ff; }
+#suggestionsBellBtn:active { transform: scale(0.94); }
+#suggestionsPanel {
+  display: none; position: fixed; top: 62px; left: 14px; z-index: 9400;
+  width: 300px; max-width: 84vw; max-height: 60vh; overflow-y: auto;
+  background: white; border-radius: 16px; padding: 6px;
+  box-shadow: 0 16px 44px rgba(15,10,40,0.18), 0 0 0 1px rgba(15,10,40,0.04);
+}
+#suggestionsPanel.open { display: block; }
+.suggestions-panel-title {
+  font-size: 0.78rem; font-weight: 700; color: #5b21b6; text-transform: uppercase;
+  letter-spacing: 0.03em; padding: 10px 10px 6px;
+}
+.suggestion-item {
+  padding: 9px 10px; border-radius: 10px; border-bottom: 1px solid #f5f3ff;
+}
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item-date { font-size: 0.7rem; font-weight: 600; color: #a78bfa; margin-bottom: 2px; }
+.suggestion-item-text { font-size: 0.84rem; font-weight: 500; color: #374151; white-space: pre-wrap; word-break: break-word; }
+.suggestions-empty { padding: 14px 10px; font-size: 0.8rem; color: #9ca3af; font-weight: 500; }
+
 /* ── HEADER ── */
 .header {
   text-align: center; margin-bottom: 32px;
@@ -493,7 +523,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .btn-mac:active:not(:disabled) { filter: brightness(0.94); transform: scale(0.98); }
 .btn-mac:disabled { opacity: 0.5; cursor: not-allowed; }
 .sugerencia-textarea {
-  width: 100%; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 9px 12px;
+  width: 100%; height: 110px; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 9px 12px;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
   font-size: 0.83rem; font-weight: 500; color: #374151; resize: vertical; outline: none;
   transition: border-color 0.2s;
@@ -653,6 +683,13 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 </head>
 <body>
 
+<!-- CAMPANITA DE SUGERENCIAS -->
+<button id="suggestionsBellBtn" aria-label="Ver sugerencias enviadas" aria-haspopup="true" aria-expanded="false" aria-controls="suggestionsPanel" onclick="toggleSuggestionsPanel()">🔔</button>
+<div id="suggestionsPanel" role="region" aria-label="Sugerencias enviadas al desarrollador">
+  <p class="suggestions-panel-title">Sugerencias enviadas</p>
+  <div id="suggestionsList"></div>
+</div>
+
 <!-- RIGHT SIDE MENU -->
 <button id="sideMenuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="sideMenu" onclick="openSideMenu()">☰</button>
 <div id="sideMenuOverlay" onclick="closeSideMenu()"></div>
@@ -694,7 +731,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.37</span>
+      <span id="appVersion">v1.38</span>
       <span id="appBuildDate">16 jul 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -2323,11 +2360,81 @@ async function enviarSugerencia(){
     await sheetPost({ action: 'saveSuggestion', text: texto, timestamp: new Date().toISOString() });
     input.value = '';
     toast('✅ ¡Gracias! Sugerencia enviada');
+    if(document.getElementById('suggestionsPanel').classList.contains('open')) loadSuggestions();
   }catch(e){
     toast('❌ No se pudo enviar la sugerencia');
   } finally {
     if(btn){ btn.disabled = false; btn.textContent = 'Enviar sugerencia'; }
   }
+}
+
+/* ══ CAMPANITA — sugerencias enviadas, solo lectura (no se pueden borrar) ══ */
+async function toggleSuggestionsPanel(){
+  if(document.getElementById('suggestionsPanel').classList.contains('open')){
+    closeSuggestionsPanel();
+    return;
+  }
+  document.getElementById('suggestionsPanel').classList.add('open');
+  document.getElementById('suggestionsBellBtn').setAttribute('aria-expanded','true');
+  await loadSuggestions();
+}
+function closeSuggestionsPanel(){
+  document.getElementById('suggestionsPanel').classList.remove('open');
+  document.getElementById('suggestionsBellBtn').setAttribute('aria-expanded','false');
+}
+document.addEventListener('mousedown', e => {
+  const panel = document.getElementById('suggestionsPanel');
+  const btn = document.getElementById('suggestionsBellBtn');
+  if(!panel || !btn) return;
+  if(panel.classList.contains('open') && !panel.contains(e.target) && !btn.contains(e.target)){
+    closeSuggestionsPanel();
+  }
+});
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && document.getElementById('suggestionsPanel').classList.contains('open')) closeSuggestionsPanel();
+});
+
+async function loadSuggestions(){
+  const list = document.getElementById('suggestionsList');
+  list.innerHTML = '<div class="suggestions-empty">Cargando...</div>';
+  try{
+    const url = getSheetUrl() + '?action=getSuggestions&_=' + Date.now();
+    const r = await fetch(url);
+    const j = await r.json();
+    renderSuggestions(j.ok ? (j.suggestions || []) : []);
+  }catch(e){
+    list.innerHTML = '<div class="suggestions-empty">⚠️ Sin conexión</div>';
+  }
+}
+
+function renderSuggestions(suggestions){
+  const list = document.getElementById('suggestionsList');
+  if(!suggestions.length){
+    list.innerHTML = '<div class="suggestions-empty">Todavía no hay sugerencias enviadas</div>';
+    return;
+  }
+  const ordered = [...suggestions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  list.innerHTML = '';
+  ordered.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'suggestion-item';
+    const date = document.createElement('div');
+    date.className = 'suggestion-item-date';
+    date.textContent = formatSuggestionDate(s.timestamp);
+    const text = document.createElement('div');
+    text.className = 'suggestion-item-text';
+    text.textContent = s.text;
+    item.appendChild(date); item.appendChild(text);
+    list.appendChild(item);
+  });
+}
+
+function formatSuggestionDate(ts){
+  try{
+    const d = new Date(ts);
+    if(isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}) + ' · ' + d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){ return ''; }
 }
 
 /* ══════════════════════════════════════════
@@ -2730,7 +2837,7 @@ refrescarPlanes(checkLocalRestore);
 refreshWaPreview();
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.37';
+const APP_VERSION = '1.38';
 function checkForUpdate(){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })

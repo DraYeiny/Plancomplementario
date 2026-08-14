@@ -7,12 +7,13 @@
 // backend the next time it's redeployed.
 const SHEET_URL_PREFIX = 'https://script.google.com/macros/s/*/exec';
 
-async function installGasMock(page, { initialPlans = [], waResultCode = 200 } = {}) {
+async function installGasMock(page, { initialPlans = [], waResultCode = 200, initialSuggestions = [] } = {}) {
   const state = {
     plans: initialPlans.map(p => ({ ...p })),
     requests: [],
     waResultCode,
     driveUploads: [],
+    suggestions: initialSuggestions.map(s => ({ ...s })),
   };
 
   await page.route(`${SHEET_URL_PREFIX}**`, async route => {
@@ -36,6 +37,10 @@ async function installGasMock(page, { initialPlans = [], waResultCode = 200 } = 
         await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: false }) });
         return;
       }
+      if (action === 'getSuggestions') {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, suggestions: state.suggestions }) });
+        return;
+      }
       // Plain GET: list all saved plans (as doGet does with no action param)
       await route.fulfill({
         contentType: 'application/json',
@@ -54,6 +59,8 @@ async function installGasMock(page, { initialPlans = [], waResultCode = 200 } = 
         if (idx >= 0) state.plans[idx] = body.plan; else state.plans.push(body.plan);
       } else if (body.action === 'delete') {
         state.plans = state.plans.filter(p => String(p.id) !== String(body.id));
+      } else if (body.action === 'saveSuggestion') {
+        state.suggestions.push({ timestamp: body.timestamp || new Date().toISOString(), text: body.text || '' });
       } else if (body.action === 'saveToDrive') {
         state.driveUploads.push(body);
         // uploadToDrive() (unlike save/delete/notifyDownload) does NOT use

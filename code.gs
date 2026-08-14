@@ -117,6 +117,19 @@ function doGet(e) {
       return output({ ok: false });
     }
 
+    if (action === 'getSuggestions') {
+      const ss = getSuggestionsSheet();
+      const last = ss.getLastRow();
+      const suggestions = [];
+      if (last >= 2) {
+        const rows = ss.getRange(2, 1, last - 1, 2).getValues();
+        rows.forEach(r => {
+          if (r[1]) suggestions.push({ timestamp: String(r[0]), text: String(r[1]) });
+        });
+      }
+      return output({ ok: true, suggestions });
+    }
+
     if (action === 'getLocal') {
       const ls = getLocalSheet();
       if (ls.getLastRow() >= 2) {
