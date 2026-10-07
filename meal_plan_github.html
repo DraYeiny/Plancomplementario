@@ -499,6 +499,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .ro-pair { display: flex; align-items: center; gap: 8px; }
 .ro-pair input { flex: 1; min-width: 0; }
 .ro-sep { font-size: 1.1rem; font-weight: 700; color: #8b7fae; }
+.ro-unit { font-size: 0.85rem; }
 .ro-field.full { grid-column: 1 / -1; }
 .ro-actions { margin-top: 16px; }
 @media (max-width: 480px) { .ro-form { grid-template-columns: 1fr; } }
@@ -685,7 +686,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.51</span>
+      <span id="appVersion">v1.52</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1501,6 +1502,12 @@ const REF_WINDOWS = [
       <div class="ro-field"><label for="ro_alimentacion">Alimentación</label><input id="ro_alimentacion" type="text"></div>
       <div class="ro-field"><label for="ro_formulabase">Fórmula base</label><input id="ro_formulabase" type="text"></div>
       <div class="ro-field"><label for="ro_formulareto">Fórmula reto</label><input id="ro_formulareto" type="text"></div>
+      <div class="ro-field"><label for="ro_oz">Volumen de toma habitual</label>
+        <div class="ro-pair">
+          <input id="ro_oz" type="text" inputmode="decimal" placeholder="Onzas (oz)" aria-label="Volumen de toma habitual en onzas" oninput="roUpdateVolumen()">
+          <span class="ro-sep ro-unit">oz</span>
+        </div>
+        <span id="ro_ml" class="ro-edad" aria-live="polite"></span></div>
       <div class="ro-actions ro-field full"><button type="button" class="btn-mac" onclick="descargarRetoOralPDF()">Descargar PDF</button></div>
     </form>` }
 ];
@@ -1574,6 +1581,20 @@ function roPesoTallaText(peso, talla){
   const t = talla ? talla + ' cm' : '';
   return p && t ? p + ' / ' + t : (p || t);
 }
+/* Volumen de toma habitual: onzas -> ml (1 oz = 30 ml). Devuelve {oz, ml} como texto, o null si no es válido */
+function roVolumen(raw){
+  const n = parseFloat(String(raw || '').trim().replace(',', '.'));
+  if(isNaN(n) || n <= 0) return null;
+  const fmt = v => String(Math.round(v * 10) / 10);
+  return { oz: fmt(n), ml: fmt(n * 30) };
+}
+function roUpdateVolumen(){
+  const out = document.getElementById('ro_ml');
+  const i = document.getElementById('ro_oz');
+  if(!out || !i) return;
+  const v = roVolumen(i.value);
+  out.textContent = v ? '= ' + v.ml + ' ml' : '';
+}
 function roFormatDate(iso){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
   return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
@@ -1623,7 +1644,7 @@ function drawRetoOralHeader(doc){
       const x = M + padX + i * (colW + gap);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...blue);
       doc.text(c.lbl, x, y);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(30, 30, 35);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(80, 84, 94);
       c.lines.forEach((ln, k) => doc.text(ln, x + c.vxOff, y + k * lineH));
     });
     y += row.h;
@@ -1649,7 +1670,7 @@ function drawRichParagraph(doc, segs, x, y, maxW, lineH, fontSize){
 }
 function drawRetoOralSection1(doc, y){
   const W = doc.internal.pageSize.getWidth();
-  const M = 40, blue = [62, 84, 130], text = [30, 30, 35];
+  const M = 40, blue = [62, 84, 130], text = [80, 84, 94];
   const nombre = (document.getElementById('ro_paciente').value || '').trim() || 'el paciente';
 
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...blue);
@@ -1675,6 +1696,19 @@ function drawRetoOralSection1(doc, y){
   });
   return y;
 }
+function drawRetoOralSection2(doc, y){
+  const W = doc.internal.pageSize.getWidth();
+  const M = 40, blue = [62, 84, 130];
+  const v = roVolumen(document.getElementById('ro_oz').value);
+  const vol = v ? v.oz + ' oz / ' + v.ml + ' ml' : '';
+  const titulo = '2. ESQUEMA DE PROGRESIÓN DIARIA (VOLUMEN DE TOMA HABITUAL:' + (vol ? ' ' + vol : '    ') + ')';
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...blue);
+  const lines = doc.splitTextToSize(titulo, W - 2 * M);
+  lines.forEach((ln, k) => doc.text(ln, M, y + k * 14));
+  y += (lines.length - 1) * 14 + 8;
+  doc.setDrawColor(200, 207, 225); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+  return y + 16;
+}
 async function descargarRetoOralPDF(){
   const btn = document.querySelector('#retoOralForm .btn-mac');
   if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF...'; }
@@ -1683,6 +1717,7 @@ async function descargarRetoOralPDF(){
     const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
     let y = drawRetoOralHeader(doc);
     y = drawRetoOralSection1(doc, y + 6);
+    y = drawRetoOralSection2(doc, y + 14);
     const nombre = (document.getElementById('ro_paciente').value || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
     doc.save('Protocolo_reto_oral' + (nombre ? '_' + nombre : '') + '.pdf');
     toast('✅ PDF descargado');
@@ -2665,7 +2700,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.51';
+const APP_VERSION = '1.52';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
