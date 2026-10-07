@@ -489,12 +489,14 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .ro-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
 .ro-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .ro-field label { font-size: 0.72rem; font-weight: 700; color: #8b7fae; text-transform: uppercase; letter-spacing: 0.04em; }
-.ro-field input {
+.ro-field input, .ro-field textarea {
   width: 100%; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 9px 12px; outline: none;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
   font-size: 0.9rem; font-weight: 500; color: #374151; transition: border-color 0.2s;
 }
-.ro-field input:focus { border-color: #7c3aed; }
+.ro-field input:focus, .ro-field textarea:focus { border-color: #7c3aed; }
+/* Campos de texto: crecen en alto como un párrafo cuando el texto no cabe en una línea */
+.ro-field textarea { resize: none; overflow: hidden; line-height: 1.4; display: block; }
 .ro-hint { font-size: 0.72rem; font-weight: 500; color: #8b7fae; line-height: 1.3; }
 .ro-edad { font-size: 0.8rem; font-weight: 600; color: #3e5482; min-height: 1.1em; }
 .ro-pair { display: flex; align-items: center; gap: 8px; }
@@ -686,7 +688,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.63</span>
+      <span id="appVersion">v1.64</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="applyUpdate()">
@@ -1491,7 +1493,7 @@ document.addEventListener('keydown', e => {
 const REF_WINDOWS = [
   { id: 'reto-oral', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>', label: 'Protocolo de reto oral',
     html: `<form id="retoOralForm" class="ro-form" onsubmit="return false" autocomplete="off">
-      <div class="ro-field"><label for="ro_paciente">Paciente</label><input id="ro_paciente" type="text"></div>
+      <div class="ro-field"><label for="ro_paciente">Paciente</label><textarea id="ro_paciente" class="ro-auto" rows="1" oninput="roAutoGrow(this)" onkeydown="if(event.key==='Enter') event.preventDefault()"></textarea></div>
       <div class="ro-field"><label for="ro_fnac">Fecha de nacimiento</label><input id="ro_fnac" type="date" oninput="roUpdateEdad()" onchange="roUpdateEdad()"><span id="ro_edad" class="ro-edad" aria-live="polite"></span></div>
       <div class="ro-field"><label for="ro_peso">Peso / Talla</label>
         <div class="ro-pair">
@@ -1499,9 +1501,9 @@ const REF_WINDOWS = [
           <span class="ro-sep" aria-hidden="true">/</span>
           <input id="ro_talla" type="text" inputmode="decimal" placeholder="Talla (cm)" aria-label="Talla en cm" oninput="roSoloNumero(this)">
         </div></div>
-      <div class="ro-field"><label for="ro_alimentacion">Alimentación</label><input id="ro_alimentacion" type="text" value="Mixta (LM + FEH 6 oz x 4 tomas)"></div>
-      <div class="ro-field"><label for="ro_formulabase">Fórmula base</label><input id="ro_formulabase" type="text" value="Fórmula Extensamente Hidrolizada (FEH)"></div>
-      <div class="ro-field"><label for="ro_formulareto">Fórmula reto</label><input id="ro_formulareto" type="text" value="Fórmula para Iniciar Reto"></div>
+      <div class="ro-field"><label for="ro_alimentacion">Alimentación</label><textarea id="ro_alimentacion" class="ro-auto" rows="1" oninput="roAutoGrow(this)" onkeydown="if(event.key==='Enter') event.preventDefault()">Mixta (LM + FEH 6 oz x 4 tomas)</textarea></div>
+      <div class="ro-field"><label for="ro_formulabase">Fórmula base</label><textarea id="ro_formulabase" class="ro-auto" rows="1" oninput="roAutoGrow(this)" onkeydown="if(event.key==='Enter') event.preventDefault()">Fórmula Extensamente Hidrolizada (FEH)</textarea></div>
+      <div class="ro-field"><label for="ro_formulareto">Fórmula reto</label><textarea id="ro_formulareto" class="ro-auto" rows="1" oninput="roAutoGrow(this)" onkeydown="if(event.key==='Enter') event.preventDefault()">Fórmula para Iniciar Reto</textarea></div>
       <div class="ro-field"><label for="ro_oz">Volumen de toma habitual</label>
         <div class="ro-pair">
           <input id="ro_oz" type="text" inputmode="decimal" placeholder="Onzas (oz)" aria-label="Volumen de toma habitual de la fórmula base, en onzas" oninput="roSoloNumero(this); roUpdateVolumen()">
@@ -1520,7 +1522,8 @@ const REF_WINDOWS = [
       const f = document.getElementById('ro_fnac');
       f.value = hoy; f.max = hoy;               /* por defecto hoy; no se permiten fechas futuras */
       roUpdateEdad();
-    } }
+    },
+    onOpen: () => roGrowAll() }
 ];
 function renderRefGrid(){
   const grid = document.getElementById('refGrid');
@@ -1550,7 +1553,15 @@ function openRefWindow(id){
   if(!pane){ pane = document.createElement('div'); pane.setAttribute('data-ref-pane', w.id); pane.innerHTML = w.html || ''; body.appendChild(pane); if(w.onBuild) w.onBuild(); }
   body.querySelectorAll('[data-ref-pane]').forEach(p => { p.style.display = (p === pane) ? '' : 'none'; });
   document.getElementById('refWindowOverlay').classList.add('open');
+  if(w.onOpen) w.onOpen();          /* con la ventana ya visible se puede medir el alto del texto */
 }
+/* Ajusta el alto de un campo de texto al contenido (una fila más por cada línea que se necesite) */
+function roAutoGrow(el){
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 2 + 'px';
+}
+function roGrowAll(){ document.querySelectorAll('#refWindowBody .ro-auto').forEach(roAutoGrow); }
+window.addEventListener('resize', () => { if(document.getElementById('refWindowOverlay').classList.contains('open')) roGrowAll(); });
 /* Antes de salir pide confirmación (✕, clic fuera de la ventana o Escape).
    Lo escrito se conserva si se vuelve a abrir mientras no se recargue la página. */
 let refClosing = false;
@@ -2929,7 +2940,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.63';
+const APP_VERSION = '1.64';
 /* ── ACTUALIZACIÓN AUTOMÁTICA ──
    Al detectar una versión nueva, la página se recarga sola. Si el usuario está en medio de algo
    (escribiendo, con una ventana abierta o generando un PDF) espera y reintenta cada 15 s.
