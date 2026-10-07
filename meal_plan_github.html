@@ -496,6 +496,9 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 }
 .ro-field input:focus { border-color: #7c3aed; }
 .ro-edad { font-size: 0.8rem; font-weight: 600; color: #3e5482; min-height: 1.1em; }
+.ro-pair { display: flex; align-items: center; gap: 8px; }
+.ro-pair input { flex: 1; min-width: 0; }
+.ro-sep { font-size: 1.1rem; font-weight: 700; color: #8b7fae; }
 .ro-field.full { grid-column: 1 / -1; }
 .ro-actions { margin-top: 16px; }
 @media (max-width: 480px) { .ro-form { grid-template-columns: 1fr; } }
@@ -682,7 +685,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.50</span>
+      <span id="appVersion">v1.51</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1489,7 +1492,12 @@ const REF_WINDOWS = [
     html: `<form id="retoOralForm" class="ro-form" onsubmit="return false" autocomplete="off">
       <div class="ro-field"><label for="ro_paciente">Paciente</label><input id="ro_paciente" type="text"></div>
       <div class="ro-field"><label for="ro_fnac">Fecha de nacimiento</label><input id="ro_fnac" type="date" oninput="roUpdateEdad()" onchange="roUpdateEdad()"><span id="ro_edad" class="ro-edad" aria-live="polite"></span></div>
-      <div class="ro-field"><label for="ro_pesotalla">Peso / Talla</label><input id="ro_pesotalla" type="text" placeholder="Ej: 8.5 kg / 70 cm"></div>
+      <div class="ro-field"><label for="ro_peso">Peso / Talla</label>
+        <div class="ro-pair">
+          <input id="ro_peso" type="text" inputmode="decimal" placeholder="Peso (kg)" aria-label="Peso en kg">
+          <span class="ro-sep" aria-hidden="true">/</span>
+          <input id="ro_talla" type="text" inputmode="decimal" placeholder="Talla (cm)" aria-label="Talla en cm">
+        </div></div>
       <div class="ro-field"><label for="ro_alimentacion">Alimentación</label><input id="ro_alimentacion" type="text"></div>
       <div class="ro-field"><label for="ro_formulabase">Fórmula base</label><input id="ro_formulabase" type="text"></div>
       <div class="ro-field"><label for="ro_formulareto">Fórmula reto</label><input id="ro_formulareto" type="text"></div>
@@ -1560,6 +1568,12 @@ function roUpdateEdad(){
   const t = roAgeMonthsText(f.value);
   out.textContent = t ? 'Edad: ' + t : (f.value ? 'La fecha no puede ser futura' : '');
 }
+/* "8.5 kg / 70 cm" — agrega las unidades; si falta uno de los dos, solo muestra el que se llenó */
+function roPesoTallaText(peso, talla){
+  const p = peso ? peso + ' kg' : '';
+  const t = talla ? talla + ' cm' : '';
+  return p && t ? p + ' / ' + t : (p || t);
+}
 function roFormatDate(iso){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
   return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
@@ -1582,7 +1596,7 @@ function drawRetoOralHeader(doc){
   /* Segunda caja: borde azul, fondo blanco, datos del paciente (dato al frente de cada campo) */
   const rows = [
     [['Paciente', val('ro_paciente')],        ['Fecha de nacimiento', roFormatDate(val('ro_fnac')) + (roAgeMonthsText(val('ro_fnac')) ? ' (' + roAgeMonthsText(val('ro_fnac')) + ')' : '')]],
-    [['Peso / Talla', val('ro_pesotalla')],   ['Alimentación', val('ro_alimentacion')]],
+    [['Peso / Talla', roPesoTallaText(val('ro_peso'), val('ro_talla'))],   ['Alimentación', val('ro_alimentacion')]],
     [['Fórmula base', val('ro_formulabase')], ['Fórmula reto', val('ro_formulareto')]]
   ];
   const boxY = 108, padX = 14, lineH = 13, gap = 18;
@@ -2651,7 +2665,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.50';
+const APP_VERSION = '1.51';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
