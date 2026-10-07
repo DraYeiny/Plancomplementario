@@ -685,7 +685,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.53</span>
+      <span id="appVersion">v1.54</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1506,6 +1506,8 @@ const REF_WINDOWS = [
           <input id="ro_oz" type="text" inputmode="decimal" placeholder="Onzas (oz)" aria-label="Volumen de toma habitual en onzas" oninput="roUpdateVolumen()">
         </div>
         <span id="ro_ml" class="ro-edad" aria-live="polite"></span></div>
+      <div class="ro-field"><label for="ro_inicioreto">Cantidad inicio fórmula reto</label><input id="ro_inicioreto" type="text" inputmode="decimal" placeholder="Cantidad (ml)" aria-label="Cantidad de inicio de la fórmula reto en ml"></div>
+      <div class="ro-field"><label for="ro_medidas">Medidas de fórmula base</label><input id="ro_medidas" type="text" inputmode="decimal" placeholder="Número de medidas"></div>
       <div class="ro-actions ro-field full"><button type="button" class="btn-mac" onclick="descargarRetoOralPDF()">Descargar PDF</button></div>
     </form>` }
 ];
@@ -1717,6 +1719,72 @@ function drawRetoOralSection2(doc, y){
   doc.setTextColor(80, 84, 94);
   return drawRichParagraph(doc, segs, M, y, W - 2 * M, 14, 10) + 5;
 }
+/* Tabla de progresión diaria — columnas: Día | Agua base | Fórmula base | Fórmula nueva | Instrucciones */
+function drawRetoOralTable(doc, y){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 40, blue = [62, 84, 130], text = [80, 84, 94], line = [200, 207, 225];
+  const val = id => (document.getElementById(id).value || '').trim();
+  const v = roVolumen(val('ro_oz'));
+  const agua = v ? v.oz + ' oz (' + v.ml + ' ml)' : '____ oz (____ ml)';
+  const ozTxt = v ? v.oz : '____';
+  const inicio = val('ro_inicioreto') || '____';
+  const medidas = val('ro_medidas');
+  const blank = '____ medidas (polvo)';
+  const widths = [52, 92, 118, 118, W - 2 * M - 52 - 92 - 118 - 118];
+  const xs = widths.reduce((a, w, i) => (a.push(i ? a[i - 1] + widths[i - 1] : M), a), []);
+  const pad = 6, lh = 11.5;
+
+  const heads = [
+    { t: 'Día' }, { t: 'Agua base' },
+    { t: 'Fórmula Base', sub: val('ro_formulabase') },
+    { t: 'Fórmula nueva', sub: val('ro_formulareto') },
+    { t: 'Instrucciones' }
+  ];
+  const rows = [
+    ['Día 1', agua, medidas ? medidas + ' medidas (polvo)' : blank, '—', 'Agregar ' + inicio + ' ml de la fórmula para iniciar reto (ya lista) al tetero base.'],
+    ['Día 2', agua, blank, blank, 'Mezclar ambas medidas en polvo en las ' + ozTxt + ' oz de agua.'],
+    ['Día 3', agua, blank, blank, 'Transición al 33% de la fórmula para iniciar reto.'],
+    ['Día 4', agua, blank, blank, 'Transición al 50% de cada fórmula.'],
+    ['Día 5', agua, blank, blank, 'Predominio de la fórmula para iniciar reto (66%).'],
+    ['Día 6', agua, blank, blank, 'Casi total de la fórmula para iniciar reto.'],
+    ['Día 7+', agua, '—', blank, 'Transición 100% completada.']
+  ];
+
+  /* Encabezado azul (la fila crece si el nombre de la fórmula ocupa varias líneas) */
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+  const headLines = heads.map((hd, i) => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    return hd.sub ? doc.splitTextToSize(hd.sub, widths[i] - 2 * pad) : [];
+  });
+  const headH = 2 * pad + lh + Math.max(0, ...headLines.map(l => l.length)) * 10.5;
+  doc.setFillColor(...blue); doc.rect(M, y, W - 2 * M, headH, 'F');
+  heads.forEach((hd, i) => {
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+    doc.text(hd.t, xs[i] + pad, y + pad + 8);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    headLines[i].forEach((ln, k) => doc.text(ln, xs[i] + pad, y + pad + 8 + lh + k * 10.5));
+  });
+  y += headH;
+
+  /* Filas */
+  doc.setFontSize(9.5);
+  rows.forEach((r, ri) => {
+    const cells = r.map((c, i) => { doc.setFont('helvetica', i === 0 ? 'bold' : 'normal'); return doc.splitTextToSize(c, widths[i] - 2 * pad); });
+    const rh = 2 * pad + Math.max(...cells.map(c => c.length)) * lh;
+    if(y + rh > H - 40){ doc.addPage(); y = 40; }
+    if(ri % 2) { doc.setFillColor(245, 247, 251); doc.rect(M, y, W - 2 * M, rh, 'F'); }
+    cells.forEach((lines, i) => {
+      doc.setFont('helvetica', i === 0 ? 'bold' : 'normal'); doc.setFontSize(9.5);
+      doc.setTextColor(...(i === 0 ? blue : text));
+      lines.forEach((ln, k) => doc.text(ln, xs[i] + pad, y + pad + 8 + k * lh));
+    });
+    doc.setDrawColor(...line); doc.setLineWidth(0.6); doc.line(M, y + rh, W - M, y + rh);
+    y += rh;
+  });
+  /* Líneas verticales y borde exterior, muy suaves */
+  return y;
+}
 async function descargarRetoOralPDF(){
   const btn = document.querySelector('#retoOralForm .btn-mac');
   if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF...'; }
@@ -1726,6 +1794,7 @@ async function descargarRetoOralPDF(){
     let y = drawRetoOralHeader(doc);
     y = drawRetoOralSection1(doc, y + 6);
     y = drawRetoOralSection2(doc, y + 14);
+    y = drawRetoOralTable(doc, y + 4);
     const nombre = (document.getElementById('ro_paciente').value || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
     doc.save('Protocolo_reto_oral' + (nombre ? '_' + nombre : '') + '.pdf');
     toast('✅ PDF descargado');
@@ -2708,7 +2777,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.53';
+const APP_VERSION = '1.54';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
