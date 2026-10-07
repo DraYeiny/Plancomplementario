@@ -685,7 +685,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.54</span>
+      <span id="appVersion">v1.55</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1728,8 +1728,14 @@ function drawRetoOralTable(doc, y){
   const agua = v ? v.oz + ' oz (' + v.ml + ' ml)' : '____ oz (____ ml)';
   const ozTxt = v ? v.oz : '____';
   const inicio = val('ro_inicioreto') || '____';
-  const medidas = val('ro_medidas');
   const blank = '____ medidas (polvo)';
+  /* Medidas por día: la fórmula base baja de M (Día 1) a 0 (Día 7) en 6 pasos iguales y la fórmula nueva
+     sube lo que baja la base (Día 2 = M - base del Día 2, ..., Día 7 = M). */
+  const M0 = parseFloat(val('ro_medidas').replace(',', '.'));
+  const hayM = !isNaN(M0) && M0 > 0;
+  const fmtMed = n => { const r = Math.round(n * 100) / 100; return r + (r === 1 ? ' medida (polvo)' : ' medidas (polvo)'); };
+  const baseD = d => hayM ? fmtMed(M0 * (7 - d) / 6) : blank;          /* d = 1..7 */
+  const nuevaD = d => hayM ? fmtMed(M0 - M0 * (7 - d) / 6) : blank;
   const widths = [52, 92, 118, 118, W - 2 * M - 52 - 92 - 118 - 118];
   const xs = widths.reduce((a, w, i) => (a.push(i ? a[i - 1] + widths[i - 1] : M), a), []);
   const pad = 6, lh = 11.5;
@@ -1741,13 +1747,13 @@ function drawRetoOralTable(doc, y){
     { t: 'Instrucciones' }
   ];
   const rows = [
-    ['Día 1', agua, medidas ? medidas + ' medidas (polvo)' : blank, '—', 'Agregar ' + inicio + ' ml de la fórmula para iniciar reto (ya lista) al tetero base.'],
-    ['Día 2', agua, blank, blank, 'Mezclar ambas medidas en polvo en las ' + ozTxt + ' oz de agua.'],
-    ['Día 3', agua, blank, blank, 'Transición al 33% de la fórmula para iniciar reto.'],
-    ['Día 4', agua, blank, blank, 'Transición al 50% de cada fórmula.'],
-    ['Día 5', agua, blank, blank, 'Predominio de la fórmula para iniciar reto (66%).'],
-    ['Día 6', agua, blank, blank, 'Casi total de la fórmula para iniciar reto.'],
-    ['Día 7+', agua, '—', blank, 'Transición 100% completada.']
+    ['Día 1', agua, baseD(1), nuevaD(1), 'Agregar ' + inicio + ' ml de la fórmula para iniciar reto (ya lista) al tetero base.'],
+    ['Día 2', agua, baseD(2), nuevaD(2), 'Mezclar ambas medidas en polvo en las ' + ozTxt + ' oz de agua.'],
+    ['Día 3', agua, baseD(3), nuevaD(3), 'Transición al 33% de la fórmula para iniciar reto.'],
+    ['Día 4', agua, baseD(4), nuevaD(4), 'Transición al 50% de cada fórmula.'],
+    ['Día 5', agua, baseD(5), nuevaD(5), 'Predominio de la fórmula para iniciar reto (66%).'],
+    ['Día 6', agua, baseD(6), nuevaD(6), 'Casi total de la fórmula para iniciar reto.'],
+    ['Día 7+', agua, baseD(7), nuevaD(7), 'Transición 100% completada.']
   ];
 
   /* Encabezado azul (la fila crece si el nombre de la fórmula ocupa varias líneas) */
@@ -2777,7 +2783,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.54';
+const APP_VERSION = '1.55';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
