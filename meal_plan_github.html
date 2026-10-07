@@ -486,6 +486,18 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 }
 #refWindowTitle { display: flex; align-items: center; gap: 8px; }
 #refWindowTitle svg { width: 20px; height: 20px; color: #7c3aed; flex-shrink: 0; }
+.ro-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.ro-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ro-field label { font-size: 0.72rem; font-weight: 700; color: #8b7fae; text-transform: uppercase; letter-spacing: 0.04em; }
+.ro-field input {
+  width: 100%; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 9px 12px; outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.9rem; font-weight: 500; color: #374151; transition: border-color 0.2s;
+}
+.ro-field input:focus { border-color: #7c3aed; }
+.ro-field.full { grid-column: 1 / -1; }
+.ro-actions { margin-top: 16px; }
+@media (max-width: 480px) { .ro-form { grid-template-columns: 1fr; } }
 #refWindowOverlay {
   display: none; position: fixed; inset: 0; z-index: 9500; padding: 16px;
   background: rgba(15,10,40,0.22); backdrop-filter: blur(3px); align-items: center; justify-content: center;
@@ -669,7 +681,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.43</span>
+      <span id="appVersion">v1.44</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1473,7 +1485,15 @@ document.addEventListener('keydown', e => {
    minimalista (stroke="currentColor"), no un emoji. */
 const REF_WINDOWS = [
   { id: 'reto-oral', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>', label: 'Protocolo de reto oral',
-    html: '<form id="retoOralForm" onsubmit="return false"><p style="color:#8b7fae">Formulario en construcción.</p></form>' }
+    html: `<form id="retoOralForm" class="ro-form" onsubmit="return false" autocomplete="off">
+      <div class="ro-field"><label for="ro_paciente">Paciente</label><input id="ro_paciente" type="text"></div>
+      <div class="ro-field"><label for="ro_fnac">Fecha de nacimiento</label><input id="ro_fnac" type="date"></div>
+      <div class="ro-field"><label for="ro_pesotalla">Peso / Talla</label><input id="ro_pesotalla" type="text" placeholder="Ej: 8.5 kg / 70 cm"></div>
+      <div class="ro-field"><label for="ro_alimentacion">Alimentación</label><input id="ro_alimentacion" type="text"></div>
+      <div class="ro-field"><label for="ro_formulabase">Fórmula base</label><input id="ro_formulabase" type="text"></div>
+      <div class="ro-field"><label for="ro_formulareto">Fórmula reto</label><input id="ro_formulareto" type="text"></div>
+      <div class="ro-actions ro-field full"><button type="button" class="btn-mac" onclick="descargarRetoOralPDF()">Descargar PDF</button></div>
+    </form>` }
 ];
 function renderRefGrid(){
   const grid = document.getElementById('refGrid');
@@ -1497,7 +1517,11 @@ function openRefWindow(id){
   closeSideMenu();
   const t = document.getElementById('refWindowTitle');
   t.innerHTML = w.icon; t.appendChild(document.createTextNode(w.label));
-  document.getElementById('refWindowBody').innerHTML = w.html || '';
+  const body = document.getElementById('refWindowBody');
+  /* Cada ventana se construye una sola vez para conservar lo que se escribió al cerrarla */
+  let pane = body.querySelector('[data-ref-pane="' + w.id + '"]');
+  if(!pane){ pane = document.createElement('div'); pane.setAttribute('data-ref-pane', w.id); pane.innerHTML = w.html || ''; body.appendChild(pane); }
+  body.querySelectorAll('[data-ref-pane]').forEach(p => { p.style.display = (p === pane) ? '' : 'none'; });
   document.getElementById('refWindowOverlay').classList.add('open');
 }
 function closeRefWindow(){
@@ -1507,6 +1531,74 @@ document.addEventListener('keydown', e => {
   if(e.key==='Escape' && document.getElementById('refWindowOverlay').classList.contains('open')) closeRefWindow();
 });
 renderRefGrid();
+
+/* ══ PROTOCOLO DE RETO ORAL — PDF tamaño carta ══
+   Por ahora solo el encabezado; las demás secciones se agregan después. */
+function loadScriptOnce(src, check){
+  return new Promise((resolve, reject) => {
+    if(check()) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = () => resolve(); s.onerror = () => reject(new Error('No se pudo cargar ' + src));
+    document.head.appendChild(s);
+  });
+}
+function roFormatDate(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+}
+function drawRetoOralHeader(doc){
+  const W = doc.internal.pageSize.getWidth();
+  const M = 40, purple = [124, 58, 237], dark = [76, 29, 149], gray = [110, 110, 118];
+  const val = id => (document.getElementById(id).value || '').trim();
+
+  /* Franja superior y títulos */
+  doc.setFillColor(...purple); doc.rect(0, 0, W, 8, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(...dark);
+  doc.text('PROTOCOLO DE RETO ORAL', W / 2, 44, { align: 'center' });
+  doc.setFontSize(12); doc.setTextColor(...purple);
+  doc.text('REINTRODUCCIÓN PROGRESIVA', W / 2, 62, { align: 'center' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...gray);
+  doc.text('Gastroenterología Pediátrica — Plan Personalizado de Enfrentamiento', W / 2, 77, { align: 'center' });
+  doc.setDrawColor(...purple); doc.setLineWidth(1); doc.line(M, 86, W - M, 86);
+
+  /* Datos del paciente: 3 filas x 2 columnas */
+  const rows = [
+    [['Paciente', val('ro_paciente')],        ['Fecha de nacimiento', roFormatDate(val('ro_fnac'))]],
+    [['Peso / Talla', val('ro_pesotalla')],   ['Alimentación', val('ro_alimentacion')]],
+    [['Fórmula base', val('ro_formulabase')], ['Fórmula reto', val('ro_formulareto')]]
+  ];
+  const colW = (W - 2 * M - 20) / 2;
+  let y = 108;
+  rows.forEach(row => {
+    row.forEach(([label, value], i) => {
+      const x = M + i * (colW + 20);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...dark);
+      doc.text(label.toUpperCase(), x, y);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(30, 30, 35);
+      const txt = doc.splitTextToSize(value, colW)[0] || '';
+      doc.text(txt, x, y + 15);
+      doc.setDrawColor(200, 195, 225); doc.setLineWidth(0.6); doc.line(x, y + 19, x + colW, y + 19);
+    });
+    y += 38;
+  });
+  return y;
+}
+async function descargarRetoOralPDF(){
+  const btn = document.querySelector('#retoOralForm .btn-mac');
+  if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF...'; }
+  try{
+    await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf);
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+    drawRetoOralHeader(doc);
+    const nombre = (document.getElementById('ro_paciente').value || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
+    doc.save('Protocolo_reto_oral' + (nombre ? '_' + nombre : '') + '.pdf');
+    toast('✅ PDF descargado');
+  }catch(e){
+    toast('❌ No se pudo generar el PDF');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Descargar PDF'; }
+  }
+}
 
 /* ── AUTO-SAVE CROSS-DEVICE (plan oculto _local_autosave) ── */
 const AUTOSAVE_ID = '_local_autosave';
@@ -2480,7 +2572,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.43';
+const APP_VERSION = '1.44';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
