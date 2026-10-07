@@ -689,7 +689,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.65</span>
+      <span id="appVersion">v1.66</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="applyUpdate()">
@@ -1966,8 +1966,9 @@ async function descargarRetoOralPDF(){
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110, 114, 124);
       doc.text('Página ' + p + ' de ' + total, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 22, { align: 'center' });
     }
-    const nombre = (document.getElementById('ro_paciente').value || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
-    doc.save('Protocolo_reto_oral' + (nombre ? '_' + nombre : '') + '.pdf');
+    /* Nombre del archivo: "Nombre del paciente Protocolo de reto oral (Reintroducción progresiva).pdf" */
+    const nombre = (document.getElementById('ro_paciente').value || '').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim();
+    doc.save((nombre ? nombre + ' ' : '') + 'Protocolo de reto oral (Reintroducción progresiva).pdf');
     toast('✅ PDF descargado');
   }catch(e){
     toast('❌ No se pudo generar el PDF');
@@ -2948,7 +2949,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.65';
+const APP_VERSION = '1.66';
 /* ── ACTUALIZACIÓN AUTOMÁTICA ──
    Al detectar una versión nueva, la página se recarga sola. Si el usuario está en medio de algo
    (escribiendo, con una ventana abierta o generando un PDF) espera y reintenta cada 15 s.
