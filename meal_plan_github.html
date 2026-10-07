@@ -681,7 +681,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.47</span>
+      <span id="appVersion">v1.48</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1596,13 +1596,58 @@ function drawRetoOralHeader(doc){
   y = boxY + boxH + 20;
   return y;
 }
+/* Párrafo con tramos en negrita y salto de línea automático. segs = [{t, b}] */
+function drawRichParagraph(doc, segs, x, y, maxW, lineH, fontSize){
+  doc.setFontSize(fontSize);
+  const words = [];
+  segs.forEach(sg => String(sg.t).split(/\s+/).filter(Boolean).forEach(w => words.push({ w, b: !!sg.b })));
+  const space = () => { doc.setFont('helvetica', 'normal'); return doc.getTextWidth(' '); };
+  let cx = x;
+  words.forEach(({ w, b }) => {
+    doc.setFont('helvetica', b ? 'bold' : 'normal');
+    const ww = doc.getTextWidth(w);
+    if(cx > x && cx + ww > x + maxW){ cx = x; y += lineH; }
+    doc.text(w, cx, y);
+    cx += ww + space();
+  });
+  return y + lineH;
+}
+function drawRetoOralSection1(doc, y){
+  const W = doc.internal.pageSize.getWidth();
+  const M = 40, blue = [62, 84, 130], text = [30, 30, 35];
+  const nombre = (document.getElementById('ro_paciente').value || '').trim() || 'el paciente';
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...blue);
+  doc.text('1. CONSIDERACIONES PREVIAS PARA LOS PADRES', M, y);
+  y += 8;
+  doc.setDrawColor(200, 207, 225); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+  y += 16;
+
+  const items = [
+    [{ t: 'Requisito de salud: ', b: true }, { t: nombre + ' ', b: true },
+     { t: 'debe estar completamente sano. No inicie el reto si presenta fiebre, infección, diarrea, moco/sangre en heces o brote en piel en los últimos 7 días.' }],
+    [{ t: 'Lactancia Materna: ', b: true },
+     { t: 'Si la madre amamanta, debe mantener la dieta de exclusión estricta durante esta semana para que la única variable sea la fórmula del tetero.' }],
+    [{ t: 'Horario: ', b: true },
+     { t: 'Ofrezca los teteros de transición durante la mañana o tarde para vigilar su respuesta.' }]
+  ];
+  const indent = 14;
+  items.forEach(segs => {
+    doc.setTextColor(...blue); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('•', M + 2, y);
+    doc.setTextColor(...text);
+    y = drawRichParagraph(doc, segs, M + indent, y, W - 2 * M - indent, 14, 10) + 5;
+  });
+  return y;
+}
 async function descargarRetoOralPDF(){
   const btn = document.querySelector('#retoOralForm .btn-mac');
   if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF...'; }
   try{
     await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf);
     const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
-    drawRetoOralHeader(doc);
+    let y = drawRetoOralHeader(doc);
+    y = drawRetoOralSection1(doc, y + 6);
     const nombre = (document.getElementById('ro_paciente').value || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
     doc.save('Protocolo_reto_oral' + (nombre ? '_' + nombre : '') + '.pdf');
     toast('✅ PDF descargado');
@@ -2585,7 +2630,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.47';
+const APP_VERSION = '1.48';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
