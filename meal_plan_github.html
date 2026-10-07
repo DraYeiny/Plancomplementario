@@ -686,7 +686,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.61</span>
+      <span id="appVersion">v1.62</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1510,7 +1510,8 @@ const REF_WINDOWS = [
         <span id="ro_ml" class="ro-edad" aria-live="polite"></span></div>
       <div class="ro-field"><label for="ro_inicioreto">Cantidad inicio fórmula reto</label><input id="ro_inicioreto" type="text" inputmode="decimal" placeholder="Cantidad (ml)" aria-label="Cantidad inicial de fórmula reto en ml" oninput="roSoloNumero(this)">
         <span class="ro-hint">Cantidad inicial con la que se va a empezar el reto, en ml.</span></div>
-      <div class="ro-field"><label for="ro_medidas">Medidas de fórmula base</label><input id="ro_medidas" type="text" inputmode="decimal" placeholder="Número de medidas" oninput="roSoloNumero(this)"></div>
+      <div class="ro-field"><label for="ro_medidas">Cantidad de medidas de fórmula base habitual</label><input id="ro_medidas" type="text" inputmode="decimal" placeholder="Número de medidas" aria-label="Cantidad de medidas de la fórmula base habitual por toma" oninput="roSoloNumero(this)">
+        <span class="ro-hint">Número de medidas de polvo de la fórmula base que se usan actualmente en cada toma habitual. Con este número se calcula la tabla de progresión.</span></div>
       <div class="ro-actions ro-field full"><button type="button" class="btn-mac" onclick="descargarRetoOralPDF()">Descargar PDF</button></div>
     </form>`,
     onBuild: () => {
@@ -2928,7 +2929,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.61';
+const APP_VERSION = '1.62';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
