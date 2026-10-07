@@ -469,20 +469,23 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 /* Cuadrícula de iconos de referencia: 3 por fila, botones cuadrados 1x1 */
 #refGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 2px; }
 #refGrid:empty { display: none; }
+.ref-item { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
 .ref-icon-btn {
-  aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  background: linear-gradient(180deg, #8b5cf6, #7c3aed); border: none; border-radius: 12px; padding: 4px;
+  width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #8b5cf6, #7c3aed); border: none; border-radius: 14px; padding: 0;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 3px rgba(15,10,40,0.25); cursor: pointer; color: white;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
-  transition: background 0.12s, transform 0.1s;
+  transition: filter 0.1s, transform 0.1s;
 }
 .ref-icon-btn:hover { filter: brightness(1.06); }
-.ref-icon-btn:active { filter: brightness(0.94); transform: scale(0.95); }
-.ref-icon-btn .ref-icon { display: flex; width: 26px; height: 26px; color: white; }
+.ref-icon-btn:active { filter: brightness(0.94); transform: scale(0.96); }
+.ref-icon-btn .ref-icon { display: flex; width: 52%; height: 52%; color: white; }
 .ref-icon-btn .ref-icon svg { width: 100%; height: 100%; }
+.ref-label {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.68rem; font-weight: 600; line-height: 1.2; text-align: center; color: #4c1d95; word-break: break-word;
+}
 #refWindowTitle { display: flex; align-items: center; gap: 8px; }
 #refWindowTitle svg { width: 20px; height: 20px; color: #7c3aed; flex-shrink: 0; }
-.ref-icon-btn .ref-label { font-size: 0.62rem; font-weight: 600; line-height: 1.15; text-align: center; word-break: break-word; }
 #refWindowOverlay {
   display: none; position: fixed; inset: 0; z-index: 9500; padding: 16px;
   background: rgba(15,10,40,0.22); backdrop-filter: blur(3px); align-items: center; justify-content: center;
@@ -666,7 +669,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.42</span>
+      <span id="appVersion">v1.43</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1477,13 +1480,15 @@ function renderRefGrid(){
   if(!grid) return;
   grid.innerHTML = '';
   REF_WINDOWS.forEach(w => {
+    const item = document.createElement('div'); item.className = 'ref-item';
     const b = document.createElement('button');
     b.type = 'button'; b.className = 'ref-icon-btn'; b.title = w.label; b.setAttribute('aria-label', w.label);
     const i = document.createElement('span'); i.className = 'ref-icon'; i.innerHTML = w.icon;
-    const l = document.createElement('span'); l.className = 'ref-label'; l.textContent = w.label;
-    b.appendChild(i); b.appendChild(l);
+    b.appendChild(i);
     b.onclick = () => openRefWindow(w.id);
-    grid.appendChild(b);
+    const l = document.createElement('span'); l.className = 'ref-label'; l.textContent = w.label;
+    item.appendChild(b); item.appendChild(l);
+    grid.appendChild(item);
   });
 }
 function openRefWindow(id){
@@ -2475,7 +2480,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.42';
+const APP_VERSION = '1.43';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
