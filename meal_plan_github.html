@@ -495,6 +495,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   font-size: 0.9rem; font-weight: 500; color: #374151; transition: border-color 0.2s;
 }
 .ro-field input:focus { border-color: #7c3aed; }
+.ro-edad { font-size: 0.8rem; font-weight: 600; color: #3e5482; min-height: 1.1em; }
 .ro-field.full { grid-column: 1 / -1; }
 .ro-actions { margin-top: 16px; }
 @media (max-width: 480px) { .ro-form { grid-template-columns: 1fr; } }
@@ -681,7 +682,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.48</span>
+      <span id="appVersion">v1.49</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1487,7 +1488,7 @@ const REF_WINDOWS = [
   { id: 'reto-oral', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>', label: 'Protocolo de reto oral',
     html: `<form id="retoOralForm" class="ro-form" onsubmit="return false" autocomplete="off">
       <div class="ro-field"><label for="ro_paciente">Paciente</label><input id="ro_paciente" type="text"></div>
-      <div class="ro-field"><label for="ro_fnac">Fecha de nacimiento</label><input id="ro_fnac" type="date"></div>
+      <div class="ro-field"><label for="ro_fnac">Fecha de nacimiento</label><input id="ro_fnac" type="date" oninput="roUpdateEdad()" onchange="roUpdateEdad()"><span id="ro_edad" class="ro-edad" aria-live="polite"></span></div>
       <div class="ro-field"><label for="ro_pesotalla">Peso / Talla</label><input id="ro_pesotalla" type="text" placeholder="Ej: 8.5 kg / 70 cm"></div>
       <div class="ro-field"><label for="ro_alimentacion">Alimentación</label><input id="ro_alimentacion" type="text"></div>
       <div class="ro-field"><label for="ro_formulabase">Fórmula base</label><input id="ro_formulabase" type="text"></div>
@@ -1542,6 +1543,23 @@ function loadScriptOnce(src, check){
     document.head.appendChild(s);
   });
 }
+/* Edad en meses con un decimal (ej. "3.5 meses") a partir de la fecha de nacimiento; '' si no es válida */
+function roAgeMonthsText(iso){
+  const p = String(iso || '').split('-').map(Number);
+  if(p.length !== 3 || p.some(isNaN)) return '';
+  const born = new Date(p[0], p[1] - 1, p[2]);
+  const now = new Date();
+  const days = (new Date(now.getFullYear(), now.getMonth(), now.getDate()) - born) / 86400000;
+  if(days < 0) return '';
+  return (days / 30.4375).toFixed(1) + ' meses';
+}
+function roUpdateEdad(){
+  const out = document.getElementById('ro_edad');
+  const f = document.getElementById('ro_fnac');
+  if(!out || !f) return;
+  const t = roAgeMonthsText(f.value);
+  out.textContent = t ? 'Edad: ' + t : (f.value ? 'La fecha no puede ser futura' : '');
+}
 function roFormatDate(iso){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
   return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
@@ -1563,7 +1581,7 @@ function drawRetoOralHeader(doc){
 
   /* Segunda caja: borde azul, fondo blanco, datos del paciente (dato al frente de cada campo) */
   const rows = [
-    [['Paciente', val('ro_paciente')],        ['Fecha de nacimiento', roFormatDate(val('ro_fnac'))]],
+    [['Paciente', val('ro_paciente')],        ['Fecha de nacimiento', roFormatDate(val('ro_fnac')) + (roAgeMonthsText(val('ro_fnac')) ? ' (' + roAgeMonthsText(val('ro_fnac')) + ')' : '')]],
     [['Peso / Talla', val('ro_pesotalla')],   ['Alimentación', val('ro_alimentacion')]],
     [['Fórmula base', val('ro_formulabase')], ['Fórmula reto', val('ro_formulareto')]]
   ];
@@ -2630,7 +2648,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.48';
+const APP_VERSION = '1.49';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
