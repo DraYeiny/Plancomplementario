@@ -686,10 +686,10 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.62</span>
+      <span id="appVersion">v1.63</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
-    <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
+    <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="applyUpdate()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
     </button>
     <span id="localSaveLabel"></span>
@@ -2929,7 +2929,39 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.62';
+const APP_VERSION = '1.63';
+/* ── ACTUALIZACIÓN AUTOMÁTICA ──
+   Al detectar una versión nueva, la página se recarga sola. Si el usuario está en medio de algo
+   (escribiendo, con una ventana abierta o generando un PDF) espera y reintenta cada 15 s.
+   El plan principal se guarda en el navegador (autoSave), así que no se pierde al recargar. */
+let pendingVersion = null, updateTimer = null;
+function canReloadNow(){
+  if(typeof pdfInProgress !== 'undefined' && pdfInProgress) return false;
+  if(document.querySelector('#modalOverlay.open, #syncProgressOverlay.open, #pdfProgressOverlay.open, #refWindowOverlay.open')) return false;
+  const a = document.activeElement;
+  if(a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)) return false;
+  return true;
+}
+function applyUpdate(){
+  /* La URL lleva la versión nueva para saltarse cualquier copia en caché */
+  const base = location.href.split('?')[0].split('#')[0];
+  if(pendingVersion) location.replace(base + '?v=' + encodeURIComponent(pendingVersion));
+  else location.reload();
+}
+function tryAutoUpdate(){
+  clearTimeout(updateTimer); updateTimer = null;
+  if(!pendingVersion) return;
+  /* Evita un bucle de recargas si, por caché, la versión nueva no llega a cargarse */
+  try{
+    if(sessionStorage.getItem('autoUpdateTried') === pendingVersion) return;
+  }catch(e){}
+  if(canReloadNow()){
+    try{ sessionStorage.setItem('autoUpdateTried', pendingVersion); }catch(e){}
+    applyUpdate();
+  } else {
+    updateTimer = setTimeout(tryAutoUpdate, 15000);
+  }
+}
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
@@ -2941,7 +2973,10 @@ function checkForUpdate(manual){
         const btnEl = document.getElementById('appUpdateBtn');
         if(verEl) verEl.style.display = 'none';
         if(btnEl) btnEl.style.display = '';
-        if(manual) toast('⬆️ Hay una nueva versión (v' + m[1] + ') — toca el botón para actualizar');
+        pendingVersion = m[1];
+        if(manual) toast('🔄 Actualizando a la v' + m[1] + '...');
+        if(manual){ try{ sessionStorage.removeItem('autoUpdateTried'); }catch(e){} }
+        tryAutoUpdate();
       } else if(manual){
         toast('✅ Ya tienes la última versión');
       }
@@ -2961,7 +2996,7 @@ function checkForUpdate(manual){
 })();
 checkForUpdate();
 setInterval(checkForUpdate, 5 * 60 * 1000);
-document.addEventListener('visibilitychange', () => { if(!document.hidden) checkForUpdate(); });
+document.addEventListener('visibilitychange', () => { if(!document.hidden) checkForUpdate(); else tryAutoUpdate(); });
 </script>
 </body>
 </html>
