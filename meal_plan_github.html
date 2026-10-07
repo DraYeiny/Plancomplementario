@@ -685,7 +685,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.57</span>
+      <span id="appVersion">v1.58</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1656,14 +1656,14 @@ function drawRetoOralHeader(doc){
 function drawRichParagraph(doc, segs, x, y, maxW, lineH, fontSize, dry){
   doc.setFontSize(fontSize);
   const words = [];
-  segs.forEach(sg => String(sg.t).split(/\s+/).filter(Boolean).forEach(w => words.push({ w, b: !!sg.b })));
+  segs.forEach(sg => String(sg.t).split(/\s+/).filter(Boolean).forEach(w => words.push({ w, b: !!sg.b, c: sg.c })));
   const space = () => { doc.setFont('helvetica', 'normal'); return doc.getTextWidth(' '); };
   let cx = x;
-  words.forEach(({ w, b }) => {
+  words.forEach(({ w, b, c }) => {
     doc.setFont('helvetica', b ? 'bold' : 'normal');
     const ww = doc.getTextWidth(w);
     if(cx > x && cx + ww > x + maxW){ cx = x; y += lineH; }
-    if(!dry) doc.text(w, cx, y);
+    if(!dry){ if(c) doc.setTextColor(...c); doc.text(w, cx, y); }
     cx += ww + space();
   });
   return y + lineH;
@@ -1807,13 +1807,17 @@ function drawRetoOralAlarm(doc, y){
     [{ t: 'Cutáneos: ', b: true }, { t: 'Brotes o ronchas en piel, enrojecimiento, inflamación de labios o párpados.' }],
     [{ t: 'Respiratorios / Generales: ', b: true }, { t: 'Dificultad para respirar, silbido al respirar, rechazo de tomas, letargo.' }]
   ];
+  const fbase = (document.getElementById('ro_formulabase').value || '').trim() || 'la fórmula base';
+  const cond = [{ t: 'Conducta ante síntomas: ', b: true, c: red },
+    { c: text, t: 'Suspenda la fórmula para iniciar reto inmediatamente, vuelva al tetero 100% con ' + fbase + ', registre la reacción en la tabla y contacte a su Gastroenterólogo Pediátrico.' }];
   const innerW = W - 2 * M - 2 * padX;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
   const tLines = doc.splitTextToSize(titulo, innerW);
   /* Altura: se mide primero (dry) para dibujar la caja detrás del texto */
   let hh = padY + tLines.length * 14 + 4;
   items.forEach(segs => { hh = drawRichParagraph(doc, segs, 0, hh, innerW - indent, 14, 10, true) + 4; });
-  hh += padY - 4 - 14 + 14;
+  hh += 6;                                            /* separación antes de la conducta */
+  hh = drawRichParagraph(doc, cond, 0, hh + 8, innerW, 14, 10, true) - 14 + padY + 4;
   if(y + hh > H - 40){ doc.addPage(); y = 40; }
   doc.setFillColor(251, 246, 246); doc.setDrawColor(205, 170, 170); doc.setLineWidth(0.8);
   doc.roundedRect(M, y, W - 2 * M, hh, 8, 8, 'FD');
@@ -1827,6 +1831,10 @@ function drawRetoOralAlarm(doc, y){
     doc.setTextColor(...text);
     ty = drawRichParagraph(doc, segs, M + padX + indent, ty, innerW - indent, 14, 10) + 4;
   });
+  /* Conducta ante síntomas: separada de las viñetas por una línea suave */
+  ty += 2;
+  doc.setDrawColor(222, 196, 196); doc.setLineWidth(0.6); doc.line(M + padX, ty - 6, W - M - padX, ty - 6);
+  drawRichParagraph(doc, cond, M + padX, ty + 8, innerW, 14, 10);
   return y + hh;
 }
 async function descargarRetoOralPDF(){
@@ -2822,7 +2830,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.57';
+const APP_VERSION = '1.58';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
