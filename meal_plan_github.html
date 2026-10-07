@@ -685,7 +685,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.55</span>
+      <span id="appVersion">v1.56</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1733,9 +1733,14 @@ function drawRetoOralTable(doc, y){
      sube lo que baja la base (Día 2 = M - base del Día 2, ..., Día 7 = M). */
   const M0 = parseFloat(val('ro_medidas').replace(',', '.'));
   const hayM = !isNaN(M0) && M0 > 0;
-  const fmtMed = n => { const r = Math.round(n * 100) / 100; return r + (r === 1 ? ' medida (polvo)' : ' medidas (polvo)'); };
-  const baseD = d => hayM ? fmtMed(M0 * (7 - d) / 6) : blank;          /* d = 1..7 */
-  const nuevaD = d => hayM ? fmtMed(M0 - M0 * (7 - d) / 6) : blank;
+  /* Todo se aproxima a saltos de 0.5 (6, 6.5, 7...). La base se redondea y la nueva es lo que falta para el total,
+     así base + nueva siempre suma las medidas del usuario. */
+  const r05 = n => Math.round(n * 2) / 2;
+  const Mt = r05(M0);
+  const fmtMed = n => n + (n === 1 ? ' medida (polvo)' : ' medidas (polvo)');
+  const baseV = d => r05(Mt * (7 - d) / 6);                              /* d = 1..7 */
+  const baseD = d => hayM ? fmtMed(baseV(d)) : blank;
+  const nuevaD = d => hayM ? fmtMed(Mt - baseV(d)) : blank;
   const widths = [52, 92, 118, 118, W - 2 * M - 52 - 92 - 118 - 118];
   const xs = widths.reduce((a, w, i) => (a.push(i ? a[i - 1] + widths[i - 1] : M), a), []);
   const pad = 6, lh = 11.5;
@@ -2783,7 +2788,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.55';
+const APP_VERSION = '1.56';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
