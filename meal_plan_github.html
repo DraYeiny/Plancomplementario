@@ -466,6 +466,37 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .side-menu-btn:hover { background: rgba(124,58,237,0.1); }
 .side-menu-btn:active { background: rgba(124,58,237,0.16); }
 .side-menu-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Cuadrícula de iconos de referencia: 3 por fila, botones cuadrados 1x1 */
+#refGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 2px; }
+#refGrid:empty { display: none; }
+.ref-icon-btn {
+  aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: linear-gradient(180deg, #8b5cf6, #7c3aed); border: none; border-radius: 12px; padding: 4px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 3px rgba(15,10,40,0.25); cursor: pointer; color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  transition: background 0.12s, transform 0.1s;
+}
+.ref-icon-btn:hover { filter: brightness(1.06); }
+.ref-icon-btn:active { filter: brightness(0.94); transform: scale(0.95); }
+.ref-icon-btn .ref-icon { display: flex; width: 26px; height: 26px; color: white; }
+.ref-icon-btn .ref-icon svg { width: 100%; height: 100%; }
+#refWindowTitle { display: flex; align-items: center; gap: 8px; }
+#refWindowTitle svg { width: 20px; height: 20px; color: #7c3aed; flex-shrink: 0; }
+.ref-icon-btn .ref-label { font-size: 0.62rem; font-weight: 600; line-height: 1.15; text-align: center; word-break: break-word; }
+#refWindowOverlay {
+  display: none; position: fixed; inset: 0; z-index: 9500; padding: 16px;
+  background: rgba(15,10,40,0.22); backdrop-filter: blur(3px); align-items: center; justify-content: center;
+}
+#refWindowOverlay.open { display: flex; }
+#refWindowBox {
+  background: white; border-radius: 18px; width: 100%; max-width: 640px; max-height: 88vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 16px 48px rgba(15,10,40,0.18), 0 0 0 1px rgba(15,10,40,0.04);
+}
+#refWindowHead { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #f0ecff; }
+#refWindowTitle { flex: 1; font-size: 1rem; font-weight: 700; color: #4c1d95; }
+#refWindowClose { background: #f5f3ff; color: #7c3aed; border: none; border-radius: 9px; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; }
+#refWindowBody { padding: 18px; overflow-y: auto; font-size: 0.92rem; line-height: 1.55; color: #374151; }
 .side-menu-label {
   font-size: 0.72rem; font-weight: 600; color: #8b7fae; text-transform: uppercase;
   letter-spacing: 0.04em; padding: 10px 4px 2px;
@@ -599,6 +630,17 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 </head>
 <body>
 
+<!-- VENTANA DE REFERENCIA -->
+<div id="refWindowOverlay" onclick="if(event.target===this) closeRefWindow()">
+  <div id="refWindowBox" role="dialog" aria-modal="true" aria-labelledby="refWindowTitle">
+    <div id="refWindowHead">
+      <span id="refWindowTitle"></span>
+      <button id="refWindowClose" type="button" aria-label="Cerrar" onclick="closeRefWindow()">✕</button>
+    </div>
+    <div id="refWindowBody"></div>
+  </div>
+</div>
+
 <!-- RIGHT SIDE MENU -->
 <button id="sideMenuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="sideMenu" onclick="openSideMenu()">☰</button>
 <div id="sideMenuOverlay" onclick="closeSideMenu()"></div>
@@ -618,10 +660,13 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <p class="side-menu-label">Descargar material</p>
   <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">Descargar</button>
 
+  <!-- Iconos de referencia (3 por fila, 1x1) — se llenan desde REF_WINDOWS -->
+  <div id="refGrid" role="group" aria-label="Referencias"></div>
+
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.41</span>
+      <span id="appVersion">v1.42</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1418,6 +1463,45 @@ function closeSideMenu(){
 document.addEventListener('keydown', e => {
   if(e.key==='Escape' && document.getElementById('sideMenu').classList.contains('open')) closeSideMenu();
 });
+
+/* ══ ICONOS DE REFERENCIA (menú lateral, 3 por fila) ══
+   Para agregar un botón: { id, icon, label, html } — "html" es el contenido
+   de la ventana que se abre al oprimirlo. "icon" es un SVG de línea
+   minimalista (stroke="currentColor"), no un emoji. */
+const REF_WINDOWS = [
+  { id: 'reto-oral', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>', label: 'Protocolo de reto oral',
+    html: '<form id="retoOralForm" onsubmit="return false"><p style="color:#8b7fae">Formulario en construcción.</p></form>' }
+];
+function renderRefGrid(){
+  const grid = document.getElementById('refGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  REF_WINDOWS.forEach(w => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'ref-icon-btn'; b.title = w.label; b.setAttribute('aria-label', w.label);
+    const i = document.createElement('span'); i.className = 'ref-icon'; i.innerHTML = w.icon;
+    const l = document.createElement('span'); l.className = 'ref-label'; l.textContent = w.label;
+    b.appendChild(i); b.appendChild(l);
+    b.onclick = () => openRefWindow(w.id);
+    grid.appendChild(b);
+  });
+}
+function openRefWindow(id){
+  const w = REF_WINDOWS.find(x => x.id === id);
+  if(!w) return;
+  closeSideMenu();
+  const t = document.getElementById('refWindowTitle');
+  t.innerHTML = w.icon; t.appendChild(document.createTextNode(w.label));
+  document.getElementById('refWindowBody').innerHTML = w.html || '';
+  document.getElementById('refWindowOverlay').classList.add('open');
+}
+function closeRefWindow(){
+  document.getElementById('refWindowOverlay').classList.remove('open');
+}
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && document.getElementById('refWindowOverlay').classList.contains('open')) closeRefWindow();
+});
+renderRefGrid();
 
 /* ── AUTO-SAVE CROSS-DEVICE (plan oculto _local_autosave) ── */
 const AUTOSAVE_ID = '_local_autosave';
@@ -2391,7 +2475,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.41';
+const APP_VERSION = '1.42';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
