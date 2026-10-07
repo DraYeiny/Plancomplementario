@@ -497,6 +497,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .ro-field input:focus, .ro-field textarea:focus { border-color: #7c3aed; }
 /* Campos de texto: crecen en alto como un párrafo cuando el texto no cabe en una línea */
 .ro-field textarea { resize: none; overflow: hidden; line-height: 1.4; display: block; }
+.ro-field input.ro-bad { border-color: #c27a7a; background: #fbf4f4; }
 .ro-hint { font-size: 0.72rem; font-weight: 500; color: #8b7fae; line-height: 1.3; }
 .ro-edad { font-size: 0.8rem; font-weight: 600; color: #3e5482; min-height: 1.1em; }
 .ro-pair { display: flex; align-items: center; gap: 8px; }
@@ -688,7 +689,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.64</span>
+      <span id="appVersion">v1.65</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="applyUpdate()">
@@ -1500,20 +1501,21 @@ const REF_WINDOWS = [
           <input id="ro_peso" type="text" inputmode="decimal" placeholder="Peso (kg)" aria-label="Peso en kg" oninput="roSoloNumero(this)">
           <span class="ro-sep" aria-hidden="true">/</span>
           <input id="ro_talla" type="text" inputmode="decimal" placeholder="Talla (cm)" aria-label="Talla en cm" oninput="roSoloNumero(this)">
-        </div></div>
+        </div>
+        <span class="ro-hint">Solo números. Primero el peso en kg y después la talla en cm.</span></div>
       <div class="ro-field"><label for="ro_alimentacion">Alimentación</label><textarea id="ro_alimentacion" class="ro-auto" rows="1" oninput="roAutoGrow(this)" onkeydown="if(event.key==='Enter') event.preventDefault()">Mixta (LM + FEH 6 oz x 4 tomas)</textarea></div>
       <div class="ro-field"><label for="ro_formulabase">Fórmula base</label><textarea id="ro_formulabase" class="ro-auto" rows="1" oninput="roAutoGrow(this)" onkeydown="if(event.key==='Enter') event.preventDefault()">Fórmula Extensamente Hidrolizada (FEH)</textarea></div>
       <div class="ro-field"><label for="ro_formulareto">Fórmula reto</label><textarea id="ro_formulareto" class="ro-auto" rows="1" oninput="roAutoGrow(this)" onkeydown="if(event.key==='Enter') event.preventDefault()">Fórmula para Iniciar Reto</textarea></div>
       <div class="ro-field"><label for="ro_oz">Volumen de toma habitual</label>
         <div class="ro-pair">
-          <input id="ro_oz" type="text" inputmode="decimal" placeholder="Onzas (oz)" aria-label="Volumen de toma habitual de la fórmula base, en onzas" oninput="roSoloNumero(this); roUpdateVolumen()">
+          <input id="ro_oz" type="text" inputmode="decimal" placeholder="Solo números (oz)" aria-label="Volumen de toma habitual de la fórmula base, en onzas" oninput="roSoloNumero(this); roUpdateVolumen()">
         </div>
-        <span class="ro-hint">Volumen de toma habitual de la fórmula base que el paciente toma actualmente, en onzas (oz).</span>
+        <span class="ro-hint">Volumen de toma habitual de la fórmula base que el paciente toma actualmente, en onzas (oz). Solo números.</span>
         <span id="ro_ml" class="ro-edad" aria-live="polite"></span></div>
-      <div class="ro-field"><label for="ro_inicioreto">Cantidad inicio fórmula reto</label><input id="ro_inicioreto" type="text" inputmode="decimal" placeholder="Cantidad (ml)" aria-label="Cantidad inicial de fórmula reto en ml" oninput="roSoloNumero(this)">
-        <span class="ro-hint">Cantidad inicial con la que se va a empezar el reto, en ml.</span></div>
-      <div class="ro-field"><label for="ro_medidas">Cantidad de medidas de fórmula base habitual</label><input id="ro_medidas" type="text" inputmode="decimal" placeholder="Número de medidas" aria-label="Cantidad de medidas de la fórmula base habitual por toma" oninput="roSoloNumero(this)">
-        <span class="ro-hint">Número de medidas de polvo de la fórmula base que se usan actualmente en cada toma habitual. Con este número se calcula la tabla de progresión.</span></div>
+      <div class="ro-field"><label for="ro_inicioreto">Cantidad inicio fórmula reto</label><input id="ro_inicioreto" type="text" inputmode="decimal" placeholder="Solo números (ml)" aria-label="Cantidad inicial de fórmula reto en ml" oninput="roSoloNumero(this)">
+        <span class="ro-hint">Cantidad inicial con la que se va a empezar el reto, en ml. Solo números.</span></div>
+      <div class="ro-field"><label for="ro_medidas">Cantidad de medidas de fórmula base habitual</label><input id="ro_medidas" type="text" inputmode="decimal" placeholder="Solo números" aria-label="Cantidad de medidas de la fórmula base habitual por toma" oninput="roSoloNumero(this)">
+        <span class="ro-hint">Número de medidas de polvo de la fórmula base que se usan actualmente en cada toma habitual. Solo números. Con este número se calcula la tabla de progresión.</span></div>
       <div class="ro-actions ro-field full"><button type="button" class="btn-mac" onclick="descargarRetoOralPDF()">Descargar PDF</button></div>
     </form>`,
     onBuild: () => {
@@ -1595,7 +1597,13 @@ function roSoloNumero(el){
     if(ch >= '0' && ch <= '9') out += ch;
     else if((ch === '.' || ch === ',') && !sep){ out += ch; sep = true; }
   }
-  if(out !== el.value) el.value = out;
+  if(out !== el.value){
+    el.value = out;
+    /* Aviso breve: el borde se tiñe de rojo suave y sale un mensaje */
+    el.classList.add('ro-bad'); clearTimeout(el._badT);
+    el._badT = setTimeout(() => el.classList.remove('ro-bad'), 1400);
+    toast('Este campo solo acepta números');
+  }
 }
 /* Edad en meses con un decimal (ej. "3.5 meses") a partir de la fecha de nacimiento; '' si no es válida */
 function roAgeMonthsText(iso){
@@ -2940,7 +2948,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.64';
+const APP_VERSION = '1.65';
 /* ── ACTUALIZACIÓN AUTOMÁTICA ──
    Al detectar una versión nueva, la página se recarga sola. Si el usuario está en medio de algo
    (escribiendo, con una ventana abierta o generando un PDF) espera y reintenta cada 15 s.
