@@ -685,7 +685,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.58</span>
+      <span id="appVersion">v1.59</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1837,6 +1837,68 @@ function drawRetoOralAlarm(doc, y){
   drawRichParagraph(doc, cond, M + padX, ty + 8, innerW, 14, 10);
   return y + hh;
 }
+/* 3. Diario de registro de tolerancia — tabla en blanco de 7 días para llenar a mano */
+function drawRetoOralDiary(doc, y){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 40, blue = [62, 84, 130], line = [200, 207, 225];
+  const widths = [52, 92, 170, W - 2 * M - 52 - 92 - 170];
+  const xs = widths.reduce((a, w, i) => (a.push(i ? a[i - 1] + widths[i - 1] : M), a), []);
+  const heads = ['Día', '¿Toleró tetero?', 'Deposiciones (Frecuencia / Consistencia / Moco)', 'Observaciones (Cólicos, Piel, Sueño)'];
+  const pad = 6, lh = 11.5, rowH = 34;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+  const headLines = heads.map((t, i) => doc.splitTextToSize(t, widths[i] - 2 * pad));
+  const headH = 2 * pad + Math.max(...headLines.map(l => l.length)) * lh;
+  const total = 30 + headH + 7 * rowH;
+  if(y + total > H - 40){ doc.addPage(); y = 40; }
+
+  /* Título de la sección (mismo estilo que las demás) */
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...blue);
+  doc.text('3. DIARIO DE REGISTRO DE TOLERANCIA', M, y);
+  y += 8;
+  doc.setDrawColor(...line); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+  y += 12;
+
+  doc.setFillColor(...blue); doc.rect(M, y, W - 2 * M, headH, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+  headLines.forEach((ls, i) => ls.forEach((ln, k) => doc.text(ln, xs[i] + pad, y + pad + 8 + k * lh)));
+  const top = y;
+  y += headH;
+  for(let d = 1; d <= 7; d++){
+    if(d % 2 === 0){ doc.setFillColor(245, 247, 251); doc.rect(M, y, W - 2 * M, rowH, 'F'); }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...blue);
+    doc.text('Día ' + d, xs[0] + pad, y + rowH / 2 + 3.5);
+    doc.setDrawColor(...line); doc.setLineWidth(0.6); doc.line(M, y + rowH, W - M, y + rowH);
+    y += rowH;
+  }
+  /* Líneas verticales suaves para separar las columnas a llenar */
+  for(let i = 1; i < xs.length; i++) doc.line(xs[i], top + headH, xs[i], y);
+  doc.line(M, top + headH, M, y); doc.line(W - M, top + headH, W - M, y);
+  return y;
+}
+/* Cierre: firma del médico, contacto de emergencia y nota final con el nombre del paciente */
+function drawRetoOralClosing(doc, y){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 40, text = [80, 84, 94];
+  const nombre = (document.getElementById('ro_paciente').value || '').trim() || 'el paciente';
+  const nota = 'Documento médico personalizado para ' + nombre + '. Válido bajo indicación y seguimiento de Gastroenterología Pediátrica.';
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5);
+  const nLines = doc.splitTextToSize(nota, W - 2 * M);
+  const need = 56 + 20 + nLines.length * 11;
+  if(y + need > H - 40){ doc.addPage(); y = 40; }
+
+  const gap = 30, colW = (W - 2 * M - gap) / 2;
+  const sy = y + 56;                                  /* espacio para firmar sobre la línea */
+  doc.setDrawColor(150, 155, 170); doc.setLineWidth(0.8);
+  ['Firma / Sello Médico Gastroenterólogo Pediátrico', 'Teléfono / Contacto de Emergencia'].forEach((lbl, i) => {
+    const x = M + i * (colW + gap);
+    doc.line(x, sy, x + colW, sy);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...text);
+    doc.text(lbl, x, sy + 12);
+  });
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(...text);
+  nLines.forEach((ln, k) => doc.text(ln, W / 2, sy + 36 + k * 11, { align: 'center' }));
+  return sy + 36 + nLines.length * 11;
+}
 async function descargarRetoOralPDF(){
   const btn = document.querySelector('#retoOralForm .btn-mac');
   if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF...'; }
@@ -1848,6 +1910,8 @@ async function descargarRetoOralPDF(){
     y = drawRetoOralSection2(doc, y + 14);
     y = drawRetoOralTable(doc, y + 4);
     y = drawRetoOralAlarm(doc, y + 18);
+    y = drawRetoOralDiary(doc, y + 22);
+    y = drawRetoOralClosing(doc, y);
     const nombre = (document.getElementById('ro_paciente').value || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
     doc.save('Protocolo_reto_oral' + (nombre ? '_' + nombre : '') + '.pdf');
     toast('✅ PDF descargado');
@@ -2830,7 +2894,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.58';
+const APP_VERSION = '1.59';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
