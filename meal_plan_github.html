@@ -681,7 +681,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.45</span>
+      <span id="appVersion">v1.46</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1548,7 +1548,7 @@ function roFormatDate(iso){
 }
 function drawRetoOralHeader(doc){
   const W = doc.internal.pageSize.getWidth();
-  const M = 40, blue = [30, 64, 175], dark = [76, 29, 149];
+  const M = 40, blue = [30, 64, 175];
   const val = id => (document.getElementById(id).value || '').trim();
 
   /* Caja contenedora azul con los títulos en blanco */
@@ -1561,26 +1561,32 @@ function drawRetoOralHeader(doc){
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
   doc.text('Gastroenterología Pediátrica — Plan Personalizado de Entrenamiento', W / 2, 80, { align: 'center' });
 
-  /* Datos del paciente: 3 filas x 2 columnas */
+  /* Segunda caja: borde azul, fondo blanco, datos del paciente (dato al frente de cada campo) */
   const rows = [
     [['Paciente', val('ro_paciente')],        ['Fecha de nacimiento', roFormatDate(val('ro_fnac'))]],
     [['Peso / Talla', val('ro_pesotalla')],   ['Alimentación', val('ro_alimentacion')]],
     [['Fórmula base', val('ro_formulabase')], ['Fórmula reto', val('ro_formulareto')]]
   ];
-  const colW = (W - 2 * M - 20) / 2;
-  let y = 124;
+  const boxY = 108, padX = 14, rowH = 28, boxH = rows.length * rowH + 12;
+  doc.setFillColor(255, 255, 255); doc.setDrawColor(...blue); doc.setLineWidth(1.5);
+  doc.roundedRect(M, boxY, W - 2 * M, boxH, 8, 8, 'FD');
+  const gap = 18, colW = (W - 2 * M - 2 * padX - gap) / 2;
+  let y = boxY + 26;
   rows.forEach(row => {
     row.forEach(([label, value], i) => {
-      const x = M + i * (colW + 20);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...dark);
-      doc.text(label.toUpperCase(), x, y);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(30, 30, 35);
-      const txt = doc.splitTextToSize(value, colW)[0] || '';
-      doc.text(txt, x, y + 15);
-      doc.setDrawColor(200, 195, 225); doc.setLineWidth(0.6); doc.line(x, y + 19, x + colW, y + 19);
+      const x = M + padX + i * (colW + gap);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...blue);
+      const lbl = label.toUpperCase() + ':';
+      doc.text(lbl, x, y);
+      const vx = x + doc.getTextWidth(lbl) + 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(30, 30, 35);
+      const txt = doc.splitTextToSize(value, x + colW - vx)[0] || '';
+      doc.text(txt, vx, y);
+      doc.setDrawColor(190, 200, 235); doc.setLineWidth(0.6); doc.line(vx, y + 4, x + colW, y + 4);
     });
-    y += 38;
+    y += rowH;
   });
+  y = boxY + boxH + 20;
   return y;
 }
 async function descargarRetoOralPDF(){
@@ -2572,7 +2578,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.45';
+const APP_VERSION = '1.46';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
