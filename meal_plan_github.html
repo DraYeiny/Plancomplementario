@@ -685,7 +685,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.56</span>
+      <span id="appVersion">v1.57</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1653,7 +1653,7 @@ function drawRetoOralHeader(doc){
   return y;
 }
 /* Párrafo con tramos en negrita y salto de línea automático. segs = [{t, b}] */
-function drawRichParagraph(doc, segs, x, y, maxW, lineH, fontSize){
+function drawRichParagraph(doc, segs, x, y, maxW, lineH, fontSize, dry){
   doc.setFontSize(fontSize);
   const words = [];
   segs.forEach(sg => String(sg.t).split(/\s+/).filter(Boolean).forEach(w => words.push({ w, b: !!sg.b })));
@@ -1663,7 +1663,7 @@ function drawRichParagraph(doc, segs, x, y, maxW, lineH, fontSize){
     doc.setFont('helvetica', b ? 'bold' : 'normal');
     const ww = doc.getTextWidth(w);
     if(cx > x && cx + ww > x + maxW){ cx = x; y += lineH; }
-    doc.text(w, cx, y);
+    if(!dry) doc.text(w, cx, y);
     cx += ww + space();
   });
   return y + lineH;
@@ -1796,6 +1796,39 @@ function drawRetoOralTable(doc, y){
   /* Líneas verticales y borde exterior, muy suaves */
   return y;
 }
+/* Signos de alarma: caja suave (borde y fondo tenues) con el nombre del paciente en el título */
+function drawRetoOralAlarm(doc, y){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 40, red = [140, 56, 56], text = [80, 84, 94], padX = 14, padY = 12, indent = 14;
+  const nombre = (document.getElementById('ro_paciente').value || '').trim().toUpperCase() || 'EL PACIENTE';
+  const titulo = 'SIGNOS DE ALARMA EN ' + nombre + ' — SUSPENDA EL RETO SI PRESENTA:';
+  const items = [
+    [{ t: 'Digestivos: ', b: true }, { t: 'Vómitos repetidos, diarrea, moco o hebras de sangre en la deposición, llanto inconsolable por cólico, distensión abdominal.' }],
+    [{ t: 'Cutáneos: ', b: true }, { t: 'Brotes o ronchas en piel, enrojecimiento, inflamación de labios o párpados.' }],
+    [{ t: 'Respiratorios / Generales: ', b: true }, { t: 'Dificultad para respirar, silbido al respirar, rechazo de tomas, letargo.' }]
+  ];
+  const innerW = W - 2 * M - 2 * padX;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
+  const tLines = doc.splitTextToSize(titulo, innerW);
+  /* Altura: se mide primero (dry) para dibujar la caja detrás del texto */
+  let hh = padY + tLines.length * 14 + 4;
+  items.forEach(segs => { hh = drawRichParagraph(doc, segs, 0, hh, innerW - indent, 14, 10, true) + 4; });
+  hh += padY - 4 - 14 + 14;
+  if(y + hh > H - 40){ doc.addPage(); y = 40; }
+  doc.setFillColor(251, 246, 246); doc.setDrawColor(205, 170, 170); doc.setLineWidth(0.8);
+  doc.roundedRect(M, y, W - 2 * M, hh, 8, 8, 'FD');
+  let ty = y + padY + 10;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(...red);
+  tLines.forEach((ln, k) => doc.text(ln, M + padX, ty + k * 14));
+  ty += (tLines.length - 1) * 14 + 18;
+  items.forEach(segs => {
+    doc.setTextColor(...red); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('•', M + padX + 2, ty);
+    doc.setTextColor(...text);
+    ty = drawRichParagraph(doc, segs, M + padX + indent, ty, innerW - indent, 14, 10) + 4;
+  });
+  return y + hh;
+}
 async function descargarRetoOralPDF(){
   const btn = document.querySelector('#retoOralForm .btn-mac');
   if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF...'; }
@@ -1806,6 +1839,7 @@ async function descargarRetoOralPDF(){
     y = drawRetoOralSection1(doc, y + 6);
     y = drawRetoOralSection2(doc, y + 14);
     y = drawRetoOralTable(doc, y + 4);
+    y = drawRetoOralAlarm(doc, y + 18);
     const nombre = (document.getElementById('ro_paciente').value || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
     doc.save('Protocolo_reto_oral' + (nombre ? '_' + nombre : '') + '.pdf');
     toast('✅ PDF descargado');
@@ -2788,7 +2822,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.56';
+const APP_VERSION = '1.57';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
