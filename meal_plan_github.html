@@ -1,0 +1,2966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Plan de Alimentación Semanal</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  background: #f7f5ff;
+  min-height: 100vh; padding: 28px 286px 28px 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── CALENDAR MODAL ── */
+#calOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,10,40,0.18); z-index: 9000;
+  align-items: center; justify-content: center; backdrop-filter: blur(3px);
+}
+#calOverlay.open { display: flex; }
+#calBox {
+  background: white; border-radius: 20px; padding: 22px;
+  box-shadow: 0 16px 44px rgba(15,10,40,0.14), 0 0 0 1px rgba(15,10,40,0.04); min-width: 280px; user-select: none;
+}
+.cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-nav button {
+  background: #f5f3ff; border: none; border-radius: 10px;
+  width: 32px; height: 32px; cursor: pointer; font-size: 1.05rem;
+  color: #7c3aed; font-weight: 600; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+.cal-nav button:hover { background: #ede9fe; }
+.cal-nav button:active { transform: scale(0.92); }
+.cal-title { font-weight: 600; color: #5b21b6; font-size: 15px; letter-spacing: -0.01em; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; text-align: center; }
+.cal-grid .dow { font-size: 12px; font-weight: 600; color: #c4b5fd; padding: 4px 0; text-transform: uppercase; letter-spacing: 0.02em; }
+.cal-grid .day {
+  font-size: 14px; font-weight: 500; padding: 8px 2px;
+  border-radius: 10px; cursor: pointer; color: #374151; transition: all 0.12s;
+}
+.cal-grid .day:hover { background: #f5f3ff; color: #7c3aed; }
+.cal-grid .day.today { border: 1.5px solid #a78bfa; color: #7c3aed; font-weight: 600; }
+.cal-grid .day.selected { background: #7c3aed; color: white; font-weight: 600; }
+.cal-grid .day.other-month { color: #e5e7eb; pointer-events: none; }
+.cal-close-row { text-align: center; margin-top: 14px; }
+.cal-close-row button {
+  background: #f5f3ff; border: none; border-radius: 50px;
+  padding: 8px 24px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600; color: #7c3aed; cursor: pointer; font-size: 0.85rem; transition: background 0.15s, transform 0.1s;
+}
+.cal-close-row button:hover { background: #ede9fe; }
+.cal-close-row button:active { transform: scale(0.96); }
+
+/* ── PROGRESS MODAL (compartido entre PDF y sincronización) ── */
+#pdfProgressOverlay, #syncProgressOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,10,40,0.3); z-index: 9800;
+  align-items: center; justify-content: center; backdrop-filter: blur(3px); padding: 16px;
+}
+#pdfProgressOverlay.open, #syncProgressOverlay.open { display: flex; }
+#pdfProgressBox, #syncProgressBox {
+  background: white; border-radius: 20px; padding: 30px 28px; max-width: 340px; width: 100%;
+  box-shadow: 0 16px 48px rgba(15,10,40,0.2), 0 0 0 1px rgba(15,10,40,0.04); text-align: center;
+}
+#pdfProgressSpinner, #syncProgressSpinner {
+  width: 38px; height: 38px; margin: 0 auto 16px; border-radius: 50%;
+  border: 3px solid #ede9fe; border-top-color: #7c3aed;
+  animation: progress-spin 0.8s linear infinite;
+}
+@keyframes progress-spin { to { transform: rotate(360deg); } }
+#pdfProgressLabel, #syncProgressLabel { font-size: 0.92rem; font-weight: 600; color: #5b21b6; margin-bottom: 14px; min-height: 40px; }
+.progress-track { background: #ede9fe; border-radius: 50px; height: 8px; overflow: hidden; margin-bottom: 8px; }
+.progress-fill {
+  height: 100%; width: 0%; background: #7c3aed;
+  border-radius: 50px; transition: width 0.3s ease;
+}
+#pdfProgressPct, #syncProgressPct { font-size: 0.8rem; font-weight: 600; color: #7c3aed; margin-bottom: 10px; }
+.progress-note { font-size: 0.72rem; color: #a78bfa; font-weight: 500; }
+
+/* ── MODAL (reemplazo de prompt/confirm nativos) ── */
+#modalOverlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,10,40,0.22); z-index: 9500;
+  align-items: center; justify-content: center; backdrop-filter: blur(3px); padding: 16px;
+}
+#modalOverlay.open { display: flex; }
+#modalBox {
+  background: white; border-radius: 18px; padding: 26px 24px; max-width: 360px; width: 100%;
+  box-shadow: 0 16px 48px rgba(15,10,40,0.18), 0 0 0 1px rgba(15,10,40,0.04); text-align: center;
+}
+#modalIcon { font-size: 2.2rem; margin-bottom: 8px; }
+#modalMsg { font-size: 0.95rem; font-weight: 500; color: #374151; margin-bottom: 16px; line-height: 1.5; white-space: pre-line; text-align: left; }
+#modalInput {
+  width: 100%; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 10px 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.92rem; font-weight: 600; color: #5b21b6;
+  outline: none; margin-bottom: 16px; text-align: center; transition: border-color 0.2s;
+}
+#modalInput:focus { border-color: #7c3aed; }
+.modal-btns { display: flex; gap: 10px; justify-content: center; }
+.modal-btns button {
+  flex: 1; border: none; border-radius: 12px; padding: 11px 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.86rem; font-weight: 600; cursor: pointer;
+  transition: transform 0.1s, opacity 0.1s;
+}
+.modal-btns button:active { transform: scale(0.97); opacity: 0.9; }
+#modalCancel { background: #f5f3ff; color: #7c3aed; }
+#modalOk { background: #7c3aed; color: white; }
+#modalOk.danger { background: #ef4444; }
+
+/* ── PAGE ── */
+.page {
+  position: relative;
+  background: white; border-radius: 22px; padding: 36px 30px;
+  box-shadow: 0 0 0 1px rgba(15,10,40,0.05), 0 20px 50px -12px rgba(15,10,40,0.12);
+  max-width: 1180px; margin: 0 auto 32px;
+}
+#undoBtn {
+  display: none; position: absolute; top: 18px; left: 18px; z-index: 10;
+  background: #f5f3ff; border: none; border-radius: 50%;
+  width: 38px; height: 38px; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.2rem; color: #7c3aed;
+  box-shadow: 0 2px 8px rgba(15,10,40,0.08); transition: background 0.15s, transform 0.1s;
+}
+#undoBtn.show { display: flex; }
+#undoBtn:hover { background: #ede9fe; }
+#undoBtn:active { transform: scale(0.92); }
+
+/* ── HEADER ── */
+.header {
+  text-align: center; margin-bottom: 32px;
+  padding-bottom: 24px; border-bottom: 1px solid #f0edfb;
+}
+.header h1 {
+  font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #5b21b6 0%, #a855f7 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.header p { font-size: 0.86rem; color: #a78bfa; margin-top: 7px; font-weight: 500; }
+
+/* ── PLANES BAR ── */
+.planes-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  background: #f3fbf5; border-radius: 14px; padding: 10px 18px; margin-bottom: 16px;
+  border: 1px solid #d7f3dd;
+}
+.planes-bar label { font-size: 0.82rem; font-weight: 600; color: #15803d; white-space: nowrap; }
+.plan-picker { position: relative; flex: 1; min-width: 160px; }
+.plan-picker-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border: 1px solid #bbf0c4; border-radius: 9px; padding: 6px 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; font-weight: 600;
+  color: #15803d; background: white; outline: none; cursor: pointer; text-align: left;
+  transition: border-color 0.15s;
+}
+.plan-picker-btn:hover { border-color: #86efac; }
+#planPickerLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-picker-arrow { color: #86efac; font-size: 0.7rem; flex-shrink: 0; }
+.plan-picker-list {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
+  background: white; border-radius: 12px; border: 1px solid #ede9fe;
+  box-shadow: 0 8px 28px rgba(15,10,40,0.14), 0 0 0 1px rgba(15,10,40,0.03);
+  max-height: 240px; overflow-y: auto; padding: 4px;
+}
+.plan-picker-list.open { display: block; }
+.plan-picker-empty { padding: 10px 12px; font-size: 0.8rem; color: #9ca3af; font-weight: 500; }
+.plan-picker-item { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+.plan-picker-item:hover { background: #f5f3ff; }
+.plan-picker-item.selected { background: #f0fdf4; }
+.plan-picker-item-name {
+  flex: 1; min-width: 0; text-align: left; background: none; border: none; cursor: pointer;
+  padding: 8px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.82rem; font-weight: 600; color: #374151; border-radius: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase;
+}
+.plan-picker-item.selected .plan-picker-item-name { color: #15803d; }
+.plan-picker-item-del {
+  flex-shrink: 0; background: none; border: none; cursor: pointer; color: #fca5a5;
+  width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s; font-size: 0.8rem; margin-right: 2px;
+}
+.plan-picker-item-del:hover { background: #fdeeee; color: #ef4444; }
+.btn-plan {
+  background: #e6f9ea; border: none; border-radius: 9px; padding: 7px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.79rem; font-weight: 600;
+  color: #15803d; cursor: pointer; white-space: nowrap; transition: background 0.15s, transform 0.1s;
+}
+.btn-plan:hover { background: #d7f3dd; }
+.btn-plan:active { transform: scale(0.97); }
+#planesStatus {
+  font-size: 0.78rem; font-weight: 600; color: #16a34a; white-space: nowrap;
+  background: #e6f9ea; padding: 5px 12px; border-radius: 50px; display: inline-flex;
+  align-items: center; gap: 4px;
+}
+#planesStatus.status-error { color: #b91c1c; background: #fdeeee; }
+#planesStatus:empty { display: none; }
+
+/* ── CONTROLS BAR ── */
+.controls-bar {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  background: #faf9ff; border-radius: 14px; padding: 14px 20px; margin-bottom: 20px;
+  border: 1px solid #ede9fe;
+}
+.controls-bar label { font-weight: 600; color: #5b21b6; font-size: 0.86rem; white-space: nowrap; }
+#childName {
+  border: none; background: #f0edfb;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.92rem; color: #3730a3; font-weight: 500;
+  outline: none; padding: 7px 12px; border-radius: 9px; flex: 1; min-width: 120px; transition: box-shadow 0.2s;
+}
+#childName:focus { box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
+#childName::placeholder { color: #b8adda; font-weight: 400; }
+.date-btn {
+  display: flex; align-items: center; gap: 6px; background: white; border: 1px solid #e2ddf7;
+  border-radius: 9px; padding: 7px 14px; cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.86rem; font-weight: 500; color: #5b21b6; transition: all 0.15s;
+}
+.date-btn:hover { background: #f5f3ff; border-color: #a78bfa; }
+
+/* ── TABS (control segmentado) ── */
+.tabs-bar {
+  display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 16px; justify-content: center;
+  background: #f0edfb; border-radius: 12px; padding: 3px;
+}
+.tab-btn {
+  padding: 7px 18px; border: none; border-radius: 9px;
+  background: transparent; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.79rem;
+  font-weight: 500; color: #6d28d9; cursor: pointer; transition: all 0.15s; flex: 1 1 auto;
+}
+.tab-btn:hover { color: #5b21b6; }
+.tab-btn.active {
+  background: white; color: #5b21b6; font-weight: 600;
+  box-shadow: 0 1px 3px rgba(15,10,40,0.12), 0 0 0 1px rgba(15,10,40,0.03);
+}
+
+/* ── WEEK SHEETS ── */
+.week-sheet { position: absolute; visibility: hidden; pointer-events: none; height: 0; overflow: hidden; }
+.week-sheet.visible { position: static; visibility: visible; pointer-events: auto; height: auto; overflow: visible; }
+@keyframes weekFadeIn {
+  from { opacity: 0; transform: translateX(18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.week-sheet.visible.week-anim { animation: weekFadeIn 0.32s ease; }
+.week-del-row { text-align: right; margin-top: 12px; }
+.btn-del-week {
+  background: none; border: none; color: #b91c1c; border-radius: 50px;
+  padding: 6px 10px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.76rem; font-weight: 500;
+  cursor: pointer; transition: background 0.15s, opacity 0.1s;
+}
+.btn-del-week:hover { background: #fdeeee; }
+.btn-del-week:active { opacity: 0.7; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; border-radius: 12px; position: relative; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: 0.8rem; }
+th.day-header {
+  background: #e5eefe; color: #1e40af;
+  font-weight: 600; font-size: 0.8rem; text-align: center; padding: 10px 4px; border-radius: 10px;
+}
+th.empty-corner { background: transparent; }
+td.meal-header {
+  font-weight: 600; font-size: 0.84rem; text-align: center; padding: 6px 8px;
+  border-radius: 10px; vertical-align: middle; white-space: nowrap;
+}
+.meal-desayuno { background: #fff7ed; color: #c2410c; }
+.meal-almuerzo { background: #f0fdf4; color: #15803d; }
+.meal-cena     { background: #eff6ff; color: #1d4ed8; }
+td.sub-header {
+  font-weight: 500; font-size: 0.72rem; padding: 4px 8px;
+  border-radius: 8px; text-align: right; white-space: nowrap; vertical-align: middle;
+}
+.sub-cereal   { background: #fffbeb; color: #92400e; }
+.sub-fruta    { background: #fff1f2; color: #9f1239; }
+.sub-verdura  { background: #f0fdf4; color: #14532d; }
+.sub-proteina { background: #faf5ff; color: #6b21a8; }
+td.cell { padding: 2px; border-radius: 8px; vertical-align: middle; position: relative; }
+.cell-cereal   { background: #fef9c3; }
+.cell-fruta    { background: #ffe4e6; }
+.cell-verdura  { background: #dcfce7; }
+.cell-proteina { background: #ede9fe; }
+.cell-edit {
+  display: block; min-height: 44px; border: 1.5px dashed #d1d5db; border-radius: 8px;
+  padding: 7px 8px; cursor: text; overflow: visible;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-weight: 500; color: #374151; font-size: 13px;
+  text-align: center; white-space: pre-wrap; word-break: break-word; outline: none;
+}
+.cell-clear-btn {
+  display: none; position: absolute; top: 2px; right: 2px; width: 18px; height: 18px;
+  border-radius: 50%; background: white; border: 1.5px solid #fca5a5; color: #ef4444;
+  font-size: 9px; line-height: 1; padding: 0; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 3; box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+td.cell.has-content .cell-clear-btn { display: flex; }
+.cell-clear-btn:hover { background: #fef2f2; }
+.cell-edit:focus {
+  border-color: #a78bfa; border-style: solid; background: #fdf9ff;
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.13);
+}
+.cell-edit:empty::before { content: attr(data-placeholder); color: #e5e7eb; font-size: 12px; font-weight: 400; }
+.cell-edit.cell-source     { border: 2.5px solid #f59e0b !important; background: #fffbeb !important; }
+.cell-edit.cell-selectable { border: 2px dashed #f59e0b !important; background: #fef9ee !important; cursor: pointer !important; }
+.cell-edit.cell-selectable:hover { background: #fef3c7 !important; }
+.cell-edit.cell-selected   { border: 2.5px solid #f59e0b !important; background: #fde68a !important; }
+
+/* ── COPY WEEK BAR ── */
+#copyWeekBar {
+  display: none; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
+  background: #eff6ff; border: 1px solid #d5e6fd; border-radius: 14px;
+  padding: 10px 18px; margin-bottom: 14px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+}
+#copyWeekBar.open { display: flex; }
+#copyWeekMsg { font-size: 0.84rem; font-weight: 600; color: #1e40af; }
+.copy-week-select {
+  border: 1px solid #d5e6fd; border-radius: 50px; padding: 5px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; font-weight: 600;
+  color: #1e40af; background: white; cursor: pointer; outline: none;
+}
+.copy-week-arrow { font-size: 0.84rem; font-weight: 600; color: #1e40af; }
+.btn-copy-yes {
+  background: #3b82f6; color: white; border: none;
+  border-radius: 50px; padding: 6px 16px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: transform 0.1s;
+}
+.btn-copy-yes:active { transform: scale(0.96); }
+.btn-copy-no {
+  background: #e2edfe; color: #1e40af; border: none; border-radius: 50px;
+  padding: 6px 14px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.8rem;
+  font-weight: 600; cursor: pointer; transition: background 0.15s;
+}
+.btn-copy-no:hover { background: #d5e6fd; }
+
+/* ── REPEAT BAR ── */
+#repeatBar {
+  display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,0.85); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 50px; padding: 10px 22px;
+  box-shadow: 0 8px 28px rgba(15,10,40,0.16), 0 0 0 1px rgba(15,10,40,0.05);
+  z-index: 9200; align-items: center; gap: 12px; white-space: nowrap;
+}
+#repeatBar.open { display: flex; }
+#repeatBarCount { font-size: 0.85rem; font-weight: 600; color: #5b21b6; }
+.btn-rbar-apply {
+  background: #7c3aed; color: white; border: none;
+  border-radius: 50px; padding: 7px 18px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: transform 0.1s;
+}
+.btn-rbar-apply:active { transform: scale(0.96); }
+.btn-rbar-cancel {
+  background: #f5f3ff; color: #7c3aed; border: none; border-radius: 50px;
+  padding: 7px 14px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem;
+  font-weight: 600; cursor: pointer; transition: background 0.15s;
+}
+.btn-rbar-cancel:hover { background: #ede9fe; }
+tr.spacer td { height: 8px; background: transparent; }
+
+/* ── AUTOCOMPLETE ── */
+#acDropdown {
+  position: fixed; z-index: 99998; background: rgba(255,255,255,0.92); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(15,10,40,0.14), 0 0 0 1px rgba(15,10,40,0.05); overflow-y: auto;
+  max-height: 200px; min-width: 160px; max-width: 240px;
+  display: none; overscroll-behavior: contain;
+}
+#acDropdown.open { display: block; }
+.ac-item {
+  padding: 9px 14px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.82rem; font-weight: 500;
+  color: #374151; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background 0.1s;
+}
+.ac-item:hover, .ac-item.active { background: #f5f3ff; color: #7c3aed; }
+.ac-item strong { color: #7c3aed; font-weight: 700; }
+
+/* ── REGISTRO + OBSERVACIONES (dos columnas, misma altura) ── */
+.two-col-row {
+  display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap;
+  margin-top: 36px; border-top: 1px solid #f0edfb; padding-top: 28px;
+}
+.registro-section, .observaciones-section {
+  flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column;
+}
+.registro-section h2 { text-align: center; font-size: 1.2rem; font-weight: 700; color: #5b21b6; margin-bottom: 6px; letter-spacing: -0.01em; }
+.registro-table-wrap {
+  overflow-x: auto; overflow-y: auto; border-radius: 14px; border: 1px solid #ede9fe;
+  background: #fdfcff; flex: 1;
+}
+table.registro-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.registro-table thead tr { background: #f7f5fc; }
+table.registro-table thead th {
+  padding: 12px 14px; font-weight: 600; font-size: 13px; color: #6d28d9; text-align: center;
+  border-bottom: 1px solid #ede9fe; white-space: nowrap;
+}
+table.registro-table thead th.col-hora { width: 168px; min-width: 148px; }
+table.registro-table tbody tr { border-bottom: 1px solid #f5f3ff; transition: background 0.12s; }
+table.registro-table tbody tr:hover { background: #fdf9ff; }
+table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
+.registro-hora-cell { text-align: center; }
+.time-select-wrap {
+  display: inline-flex; align-items: center; gap: 3px; border: 1px solid #ede9fe;
+  border-radius: 9px; padding: 4px 8px; background: white; transition: border-color 0.2s;
+}
+.time-select-wrap:focus-within { border-color: #7c3aed; background: #fdf9ff; }
+.time-select {
+  border: none; background: transparent; outline: none; cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 600; color: #5b21b6;
+  text-align: center; -webkit-appearance: none; appearance: none; padding: 2px;
+}
+.time-colon { font-weight: 600; color: #a78bfa; }
+.time-period {
+  font-size: 11px !important; font-weight: 700 !important; color: #7c3aed !important;
+  background: #f5f3ff !important; border-radius: 6px !important; padding: 3px 4px !important;
+  margin-left: 2px;
+}
+.registro-alim-cell { width: 100%; }
+.registro-alim-edit {
+  display: block; min-height: 38px; width: 100%; border: 1.5px dashed #e5e7eb; border-radius: 9px;
+  padding: 7px 12px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 500;
+  color: #374151; text-align: center; outline: none; cursor: text;
+  white-space: pre-wrap; word-break: break-word; transition: border-color 0.2s; box-sizing: border-box;
+}
+.registro-alim-edit:focus { border-color: #a78bfa; border-style: solid; background: #fdf9ff; }
+.registro-alim-edit:empty::before { content: 'Describe el alimento...'; color: #d1d5db; font-weight: 400; }
+.btn-del-row {
+  background: none; border: none; cursor: pointer; font-size: 1rem; color: #fca5a5;
+  border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center;
+  justify-content: center; transition: background 0.15s, color 0.15s; flex-shrink: 0;
+}
+.btn-del-row:hover { background: #fef2f2; color: #ef4444; }
+.registro-add-row td { padding: 8px; text-align: right; }
+.btn-add-row {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #7c3aed; color: white; border: none;
+  border-radius: 50%; width: 34px; height: 34px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  cursor: pointer; transition: transform 0.1s, opacity 0.1s;
+}
+.btn-add-row:active { transform: scale(0.94); opacity: 0.9; }
+.btn-add-row-icon { font-size: 1.1rem; line-height: 1; }
+
+/* ── OBSERVACIONES ── */
+.observaciones-section h2 { text-align: center; font-size: 1.2rem; font-weight: 700; color: #5b21b6; margin-bottom: 6px; letter-spacing: -0.01em; }
+.obs-num-cell { text-align: center; font-size: 0.82rem; font-weight: 600; color: #a78bfa; width: 44px; }
+.obs-text:empty::before { content: 'Escribe una observación...'; }
+
+/* ── RIGHT SIDE MENU (estilo barra lateral macOS, vidrio esmerilado) ── */
+/* Escritorio: panel siempre visible, fijo a la derecha (el body deja espacio con padding-right) */
+#sideMenuToggle { display: none; }
+#sideMenuOverlay { display: none; }
+#sideMenu {
+  position: fixed; top: 0; right: 0; height: 100%; width: 270px; max-width: 82vw;
+  background: rgba(250,249,255,0.82); backdrop-filter: saturate(180%) blur(24px); -webkit-backdrop-filter: saturate(180%) blur(24px);
+  box-shadow: -1px 0 0 rgba(15,10,40,0.06); z-index: 9400;
+  transform: translateX(0); transition: transform 0.25s ease;
+  padding: 20px 16px; display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto;
+}
+.side-menu-head { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px; padding: 0 4px; }
+#sideMenuClose { display: none; }
+.side-menu-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: transparent; border: none; border-radius: 9px; padding: 10px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.88rem; font-weight: 500; color: #4c1d95;
+  cursor: pointer; transition: background 0.12s;
+}
+.side-menu-btn:hover { background: rgba(124,58,237,0.1); }
+.side-menu-btn:active { background: rgba(124,58,237,0.16); }
+.side-menu-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Cuadrícula de iconos de referencia: 3 por fila, botones cuadrados 1x1 */
+#refGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 2px; }
+#refGrid:empty { display: none; }
+.ref-item { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; }
+.ref-icon-btn {
+  width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #8b5cf6, #7c3aed); border: none; border-radius: 14px; padding: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 3px rgba(15,10,40,0.25); cursor: pointer; color: white;
+  transition: filter 0.1s, transform 0.1s;
+}
+.ref-icon-btn:hover { filter: brightness(1.06); }
+.ref-icon-btn:active { filter: brightness(0.94); transform: scale(0.96); }
+.ref-icon-btn .ref-icon { display: flex; width: 52%; height: 52%; color: white; }
+.ref-icon-btn .ref-icon svg { width: 100%; height: 100%; }
+.ref-label {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.68rem; font-weight: 600; line-height: 1.2; text-align: center; color: #4c1d95; word-break: break-word;
+}
+#refWindowTitle { display: flex; align-items: center; gap: 8px; }
+#refWindowTitle svg { width: 20px; height: 20px; color: #7c3aed; flex-shrink: 0; }
+.ro-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.ro-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ro-field label { font-size: 0.72rem; font-weight: 700; color: #8b7fae; text-transform: uppercase; letter-spacing: 0.04em; }
+.ro-field input {
+  width: 100%; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 9px 12px; outline: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.9rem; font-weight: 500; color: #374151; transition: border-color 0.2s;
+}
+.ro-field input:focus { border-color: #7c3aed; }
+.ro-hint { font-size: 0.72rem; font-weight: 500; color: #8b7fae; line-height: 1.3; }
+.ro-edad { font-size: 0.8rem; font-weight: 600; color: #3e5482; min-height: 1.1em; }
+.ro-pair { display: flex; align-items: center; gap: 8px; }
+.ro-pair input { flex: 1; min-width: 0; }
+.ro-sep { font-size: 1.1rem; font-weight: 700; color: #8b7fae; }
+.ro-field.full { grid-column: 1 / -1; }
+.ro-actions { margin-top: 16px; }
+@media (max-width: 480px) { .ro-form { grid-template-columns: 1fr; } }
+#refWindowOverlay {
+  display: none; position: fixed; inset: 0; z-index: 9500; padding: 16px;
+  background: rgba(15,10,40,0.22); backdrop-filter: blur(3px); align-items: center; justify-content: center;
+}
+#refWindowOverlay.open { display: flex; }
+#refWindowBox {
+  background: white; border-radius: 18px; width: 100%; max-width: 640px; max-height: 88vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 16px 48px rgba(15,10,40,0.18), 0 0 0 1px rgba(15,10,40,0.04);
+}
+#refWindowHead { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #f0ecff; }
+#refWindowTitle { flex: 1; font-size: 1rem; font-weight: 700; color: #4c1d95; }
+#refWindowClose { background: #f5f3ff; color: #7c3aed; border: none; border-radius: 9px; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; }
+#refWindowBody { padding: 18px; overflow-y: auto; font-size: 0.92rem; line-height: 1.55; color: #374151; }
+.side-menu-label {
+  font-size: 0.72rem; font-weight: 600; color: #8b7fae; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 10px 4px 2px;
+}
+.side-menu-check {
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 9px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.86rem; font-weight: 500; color: #4c1d95; cursor: pointer; transition: background 0.12s;
+}
+.side-menu-check:hover { background: rgba(124,58,237,0.08); }
+.side-menu-check input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: #7c3aed; cursor: pointer; flex-shrink: 0;
+}
+/* Botón "Descargar" con estilo mac (relleno, como el botón por defecto de un diálogo macOS) */
+.btn-mac {
+  display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+  background: linear-gradient(180deg, #8b5cf6, #7c3aed);
+  color: white; border: none; border-radius: 7px; padding: 9px 14px; margin-top: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.86rem; font-weight: 600; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 3px rgba(15,10,40,0.25);
+  transition: filter 0.1s, transform 0.1s;
+}
+.btn-mac:hover:not(:disabled) { filter: brightness(1.06); }
+.btn-mac:active:not(:disabled) { filter: brightness(0.94); transform: scale(0.98); }
+.btn-mac:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Botón "Plan en blanco" — mismo estilo que btn-mac pero en otro color,
+   para distinguirlo claramente del botón de Descargar */
+.btn-blank { background: linear-gradient(180deg, #fb923c, #f97316); margin-top: 0; margin-bottom: 4px; }
+.side-menu-foot {
+  margin-top: auto; padding-top: 14px; padding-left: 4px; padding-right: 4px; border-top: 1px solid rgba(109,40,217,0.1);
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;
+}
+.side-menu-foot #localSaveLabel, .side-menu-foot #appVersion, .side-menu-foot #appBuildDate {
+  font-size: 0.72rem; font-weight: 500; color: #9ca3af; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif;
+}
+#appVersionInfo { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; display: flex; flex-direction: column; gap: 1px; line-height: 1.3; }
+.app-update-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border: none; border-radius: 6px; padding: 0;
+  background: rgba(124,58,237,0.12); color: #7c3aed; cursor: pointer;
+  animation: appUpdateSpin 2.2s linear infinite;
+}
+.app-update-btn:hover { background: rgba(124,58,237,0.22); }
+.app-update-btn svg { width: 13px; height: 13px; }
+@keyframes appUpdateSpin { to { transform: rotate(360deg); } }
+
+/* ── WEEKS INPUT ── */
+.weeks-input {
+  width: 64px; border: 1px solid #ddd6fe; border-radius: 9px; padding: 5px 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-size: 0.88rem; font-weight: 600; color: #5b21b6;
+  text-align: center; background: white; outline: none; transition: box-shadow 0.2s;
+}
+.weeks-input:focus { box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
+
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: rgba(40,30,60,0.92); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  color: white; padding: 10px 26px; border-radius: 50px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Nunito', 'Helvetica Neue', Arial, sans-serif; font-weight: 600; font-size: 0.85rem;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 99999;
+  box-shadow: 0 8px 24px rgba(15,10,40,0.3);
+}
+#toast.show { opacity: 1; }
+
+/* ══════════════════════════════════════════
+   RESPONSIVE — MÓVIL
+   ══════════════════════════════════════════ */
+@media (max-width: 720px) {
+  body { padding: 14px 8px; }
+  .page { padding: 20px 12px; border-radius: 20px; }
+  .header h1 { font-size: 1.4rem; }
+
+  .planes-bar, .controls-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .planes-bar label, .controls-bar label { margin-bottom: -4px; }
+  .btn-plan { width: 100%; justify-content: center; }
+
+  .two-col-row { flex-direction: column; }
+
+  /* Tabla: mantiene scroll horizontal pero con columnas de contexto fijas */
+  .table-wrap { overflow-x: auto; }
+  table { font-size: 12px; }
+  td.meal-header, td.sub-header {
+    position: sticky; z-index: 2;
+  }
+  td.meal-header { left: 0; min-width: 60px; }
+  td.sub-header  { left: 60px; min-width: 66px; box-shadow: 4px 0 6px -4px rgba(0,0,0,0.15); }
+  th.empty-corner:first-child { position: sticky; left: 0; z-index: 3; background: white; }
+  th.empty-corner:nth-child(2) { position: sticky; left: 60px; z-index: 3; background: white; }
+
+  .cell-edit { min-height: 48px; font-size: 14px; padding: 8px 6px; }
+  td.cell { min-width: 84px; }
+
+  /* Móvil: el panel vuelve a ser un cajón oculto, activado con el botón ☰ */
+  #sideMenuToggle {
+    display: flex; position: fixed; top: 14px; right: 14px; z-index: 9400;
+    background: rgba(255,255,255,0.85); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: none; border-radius: 12px;
+    width: 42px; height: 42px; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(15,10,40,0.14); font-size: 1.2rem;
+    color: #7c3aed; transition: background 0.15s, transform 0.1s;
+  }
+  #sideMenuToggle:hover { background: #f5f3ff; }
+  #sideMenuToggle:active { transform: scale(0.94); }
+  #sideMenuOverlay {
+    display: none; position: fixed; inset: 0; background: rgba(15,10,40,0.22); backdrop-filter: blur(1px); z-index: 9350;
+  }
+  #sideMenuOverlay.open { display: block; }
+  #sideMenu { width: 84vw; transform: translateX(100%); }
+  #sideMenu.open { transform: translateX(0); }
+  #sideMenuClose {
+    display: flex; align-items: center; justify-content: center;
+    background: #f5f3ff; border: none; border-radius: 50%;
+    width: 32px; height: 32px; font-size: 1rem; color: #7c3aed; cursor: pointer;
+    transition: background 0.15s;
+  }
+  #sideMenuClose:hover { background: #ede9fe; }
+
+  #repeatBar { left: 8px; right: 8px; transform: none; width: auto; flex-wrap: wrap; justify-content: center; }
+
+  .registro-table-wrap { overflow-x: auto; }
+  table.registro-table { font-size: 13px; }
+
+  #scrollHint { display: block; }
+}
+#scrollHint {
+  display: none; text-align: center; font-size: 0.74rem; font-weight: 700;
+  color: #a78bfa; margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+
+<!-- VENTANA DE REFERENCIA -->
+<div id="refWindowOverlay" onclick="if(event.target===this) closeRefWindow()">
+  <div id="refWindowBox" role="dialog" aria-modal="true" aria-labelledby="refWindowTitle">
+    <div id="refWindowHead">
+      <span id="refWindowTitle"></span>
+      <button id="refWindowClose" type="button" aria-label="Cerrar" onclick="closeRefWindow()">✕</button>
+    </div>
+    <div id="refWindowBody"></div>
+  </div>
+</div>
+
+<!-- RIGHT SIDE MENU -->
+<button id="sideMenuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="sideMenu" onclick="openSideMenu()">☰</button>
+<div id="sideMenuOverlay" onclick="closeSideMenu()"></div>
+<nav id="sideMenu" role="navigation" aria-label="Menú principal">
+  <div class="side-menu-head">
+    <button id="sideMenuClose" aria-label="Cerrar menú" onclick="closeSideMenu()">✕</button>
+  </div>
+  <!-- SECCIÓN 0 — Empezar plan nuevo -->
+  <button id="btnPlanEnBlanco" class="btn-mac btn-blank" onclick="nuevoPlanEnBlanco()">PLAN EN BLANCO</button>
+  <!-- SECCIÓN 1 — Documentos disponibles -->
+  <p class="side-menu-label">Material de alimentación disponible</p>
+  <label class="side-menu-check"><input type="checkbox" id="dlPlan" checked> Plan de alimentación</label>
+  <label class="side-menu-check"><input type="checkbox" id="dlAplv"> APLV</label>
+  <label class="side-menu-check"><input type="checkbox" id="dlHuevo"> Alergia al huevo</label>
+
+  <!-- SECCIÓN 2 — Descarga de material -->
+  <p class="side-menu-label">Descargar material</p>
+  <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">Descargar</button>
+
+  <!-- Iconos de referencia (3 por fila, 1x1) — se llenan desde REF_WINDOWS -->
+  <div id="refGrid" role="group" aria-label="Referencias"></div>
+
+  <!-- SECCIÓN 5 — Versión / fecha -->
+  <div class="side-menu-foot">
+    <span id="appVersionInfo">
+      <span id="appVersion">v1.61</span>
+      <span id="appBuildDate">7 oct 2026</span>
+    </span>
+    <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+    </button>
+    <span id="localSaveLabel"></span>
+  </div>
+</nav>
+
+<!-- PDF PROGRESS MODAL -->
+<div id="pdfProgressOverlay" role="dialog" aria-modal="true" aria-labelledby="pdfProgressLabel">
+  <div id="pdfProgressBox">
+    <div id="pdfProgressSpinner"></div>
+    <p id="pdfProgressLabel">Preparando...</p>
+    <div class="progress-track"><div id="pdfProgressFill" class="progress-fill"></div></div>
+    <p id="pdfProgressPct">0%</p>
+    <p class="progress-note">Esto puede tardar hasta 30-40 segundos. No cierres esta ventana.</p>
+  </div>
+</div>
+
+<!-- SYNC PROGRESS MODAL (carga inicial de datos) -->
+<div id="syncProgressOverlay" role="dialog" aria-modal="true" aria-labelledby="syncProgressLabel">
+  <div id="syncProgressBox">
+    <div id="syncProgressSpinner"></div>
+    <p id="syncProgressLabel">Cargando datos...</p>
+    <div class="progress-track"><div id="syncProgressFill" class="progress-fill"></div></div>
+    <p id="syncProgressPct">0%</p>
+    <p class="progress-note">Sincronizando con el servidor...</p>
+  </div>
+</div>
+
+<!-- MODAL A MEDIDA (reemplaza prompt/confirm) -->
+<div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalMsg">
+  <div id="modalBox">
+    <div id="modalIcon">💭</div>
+    <p id="modalMsg"></p>
+    <input id="modalInput" type="text" style="display:none">
+    <div class="modal-btns">
+      <button id="modalCancel">Cancelar</button>
+      <button id="modalOk">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR MODAL -->
+<div id="calOverlay" role="dialog" aria-modal="true" aria-label="Selector de fecha">
+  <div id="calBox">
+    <div class="cal-nav">
+      <button id="calPrev" aria-label="Mes anterior">‹</button>
+      <span class="cal-title" id="calTitle"></span>
+      <button id="calNext" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid" role="grid"></div>
+    <div class="cal-close-row"><button id="calClose">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- REPEAT ACTION BAR -->
+<div id="repeatBar">
+  <span id="repeatBarCount">Haz clic en las casillas donde repetir el texto</span>
+  <button class="btn-rbar-apply" onclick="applyRepeatInline()">✓ Aplicar</button>
+  <button class="btn-rbar-cancel" onclick="exitRepeatMode()">✕ Cancelar</button>
+</div>
+
+<div class="page">
+  <button id="undoBtn" onclick="undoLastAction()" aria-label="Deshacer última acción" title="Deshacer última acción">↺</button>
+  <div class="header">
+    <h1>Mi Plan de Alimentación Semanal</h1>
+    <p>¡Comer bien es divertido y delicioso! ✨</p>
+  </div>
+
+  <!-- PLANES GUARDADOS -->
+  <div class="planes-bar">
+    <label>📋 Plan:</label>
+    <div class="plan-picker" id="planPicker">
+      <button type="button" class="plan-picker-btn" id="planPickerBtn" onclick="togglePlanPicker()" aria-haspopup="listbox" aria-expanded="false">
+        <span id="planPickerLabel">— Seleccionar plan —</span>
+        <span class="plan-picker-arrow">▾</span>
+      </button>
+      <div class="plan-picker-list" id="planPickerList" role="listbox"></div>
+    </div>
+    <button id="btnGuardarComo" class="btn-plan" style="display:none" onclick="guardarPlan()">💾 Guardar como...</button>
+    <span id="planesStatus"></span>
+  </div>
+
+  <div class="controls-bar">
+    <label>👦 Nombre:</label>
+    <input type="text" id="childName" placeholder="Escribe tu nombre aquí..." oninput="autoSave();" onfocus="armUndoSnapshot(this)" onblur="commitUndoSnapshotIfChanged(this)">
+    <label>Del:</label>
+    <button class="date-btn" id="btnStart">📅 <span id="lblStart">Seleccionar</span></button>
+    <label># Semanas:</label>
+    <input type="number" id="weeksInput" class="weeks-input" min="1" max="52" value="1" onchange="onWeeksChange()">
+  </div>
+
+  <div class="tabs-bar" id="tabsBar" role="tablist"></div>
+  <div id="copyWeekBar" role="status" aria-live="polite">
+    <span id="copyWeekMsg">📋 Copiar semana:</span>
+    <select id="copyWeekSelect" class="copy-week-select"></select>
+    <span class="copy-week-arrow">→ Semana <span id="copyWeekTo"></span></span>
+    <button class="btn-copy-yes" onclick="doCopyWeek()">✓ Sí, copiar</button>
+    <button class="btn-copy-no"  onclick="hideCopyBar()">✕ No</button>
+  </div>
+  <p id="scrollHint">👉 Desliza la tabla hacia los lados para ver los demás días</p>
+  <div id="sheetsContainer"></div>
+
+  <div class="two-col-row">
+  <!-- ══ TABLA DE REGISTRO ══ -->
+  <div class="registro-section" id="registroSection">
+    <h2>📋 Registro de Alimentación</h2>
+    <div class="registro-table-wrap">
+      <table class="registro-table" id="registroTable">
+        <thead>
+          <tr>
+            <th class="col-hora">🕐 Hora</th>
+            <th class="col-alim">🥗 Alimentación</th>
+            <th style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="registroBody">
+          <!-- filas dinámicas -->
+        </tbody>
+        <tfoot>
+          <tr class="registro-add-row" id="addRowTr">
+            <td colspan="3">
+              <button class="btn-add-row" onclick="addRegistroRow()" aria-label="Agregar fila">
+                <span class="btn-add-row-icon">＋</span>
+              </button>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+  <!-- ══ FIN TABLA DE REGISTRO ══ -->
+
+  <!-- ══ OBSERVACIONES ══ -->
+  <div class="observaciones-section" id="observacionesSection">
+    <h2>📝 Observaciones</h2>
+    <div class="registro-table-wrap">
+      <table class="registro-table" id="obsTable">
+        <thead>
+          <tr>
+            <th style="width:44px;">#</th>
+            <th>📝 Observación</th>
+            <th style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="obsList"></tbody>
+        <tfoot>
+          <tr class="registro-add-row">
+            <td colspan="3">
+              <button class="btn-add-row" onclick="addObservacion()" aria-label="Agregar observación">
+                <span class="btn-add-row-icon">＋</span>
+              </button>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+  <!-- ══ FIN OBSERVACIONES ══ -->
+  </div>
+
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="acDropdown"></div>
+
+<script>
+const KEY = 'mealPlan_v6';
+
+/* ── FOOD LISTS PER CATEGORY ── */
+const FOODS = {
+  cereal:   ['Arepa','Amaranto','Arroz','Avena','Cebada','Cereal de arroz','Cereal de maíz','Cereal de trigo','Cous cous','Galletas','Mazorca','Pancake','Pan','Papa amarilla','Papa blanca','Pasta','Plátano amarillo','Plátano verde','Quinoa','Waffle','Yuca'],
+  fruta:    ['Arándanos','Banano','Ciruelas','Durazno','Fresas','Granadilla','Guanábana','Guayaba','Mandarina','Mango','Manzana roja','Manzana verde','Maracuyá','Moras','Naranja','Papaya','Pera','Piña','Sandía','Uvas rojas','Uvas verdes'],
+  verdura:  ['Acelga','Aguacate','Ahuyama','Arveja','Berenjena','Brócoli','Cebolla','Champiñones','Coliflor','Espárragos','Espinaca','Habichuelas','Pepino','Pimentón','Rábano','Remolacha','Repollo','Tomate','Zanahoria','Zucchini verde','Zucchini amarillo'],
+  proteina: ['Almendras','Arveja seca','Atún','Camarón','Carne de res','Carne de cerdo','Frijol rojo','Garbanzo','Hígado','Huevo de codorniz','Huevo de gallina','Lenteja','Maní','Pollo','Queso fresco','Róbalo','Salmón','Soya / tofu','Tilapia','Trucha','Yogur sin azúcar']
+};
+
+/* ══ AUTOCOMPLETE ══ */
+const acDrop    = document.getElementById('acDropdown');
+let   acActive  = -1;
+let   acCurrent = null;
+let   acList    = [];
+
+function normalize(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+function acReposition(){
+  if(!acCurrent || !acDrop.classList.contains('open')) return;
+  const rect = acCurrent.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom - 6;
+  const spaceAbove = rect.top - 6;
+  const dropH      = Math.min(200, acList.length * 37);
+  let top, maxH;
+  if(spaceBelow >= dropH || spaceBelow >= spaceAbove){
+    top  = rect.bottom + 4;
+    maxH = Math.min(200, spaceBelow);
+  } else {
+    maxH = Math.min(200, spaceAbove);
+    top  = rect.top - 4 - Math.min(dropH, maxH);
+  }
+  acDrop.style.top      = top + 'px';
+  acDrop.style.left     = rect.left + 'px';
+  acDrop.style.minWidth = rect.width + 'px';
+  acDrop.style.maxHeight= maxH + 'px';
+}
+
+function acShow(div){
+  const category = div.dataset.category;
+  const text     = div.textContent.trim();
+  if(!text){ acHide(); return; }
+  const norm   = normalize(text);
+  const source = FOODS[category] || [];
+  acList = source.filter(f => normalize(f).includes(norm));
+  if(!acList.length){ acHide(); return; }
+  acActive  = -1;
+  acCurrent = div;
+  acDrop.innerHTML = acList.map((f, i) => {
+    const normF  = normalize(f);
+    const idx    = normF.indexOf(norm);
+    let   display = f;
+    if(idx >= 0){
+      display = f.slice(0, idx)
+        + '<strong>' + f.slice(idx, idx + text.length) + '</strong>'
+        + f.slice(idx + text.length);
+    }
+    return `<div class="ac-item" data-i="${i}">${display}</div>`;
+  }).join('');
+  acDrop.classList.add('open');
+  acReposition();
+  acDrop.querySelectorAll('.ac-item').forEach(el => {
+    el.addEventListener('mousedown', e => { e.preventDefault(); acSelect(+el.dataset.i); });
+  });
+}
+
+function acHide(){
+  acDrop.classList.remove('open');
+  acDrop.innerHTML = '';
+  acActive = -1;
+}
+
+function acSelect(i){
+  if(!acCurrent || i < 0 || i >= acList.length) return;
+  acCurrent.textContent = acList[i];
+  const range = document.createRange();
+  const sel   = window.getSelection();
+  range.selectNodeContents(acCurrent);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  acHide();
+  toggleCellClearBtn(acCurrent);
+  autoSave();
+}
+
+function acKeyNav(e){
+  if(!acDrop.classList.contains('open')) return;
+  const items = acDrop.querySelectorAll('.ac-item');
+  if(e.key === 'ArrowDown'){
+    e.preventDefault();
+    acActive = Math.min(acActive + 1, items.length - 1);
+  } else if(e.key === 'ArrowUp'){
+    e.preventDefault();
+    acActive = Math.max(acActive - 1, 0);
+  } else if(e.key === 'Enter' || e.key === 'Tab'){
+    if(acActive >= 0){ e.preventDefault(); acSelect(acActive); return; }
+    acHide(); return;
+  } else if(e.key === 'Escape'){
+    acHide(); return;
+  } else { return; }
+  items.forEach((el, i) => el.classList.toggle('active', i === acActive));
+  if(acActive >= 0) items[acActive].scrollIntoView({ block: 'nearest' });
+}
+
+window.addEventListener('scroll', acReposition, true);
+window.addEventListener('resize', acReposition);
+document.addEventListener('mousedown', e => {
+  if(!acDrop.contains(e.target) && e.target !== acCurrent) acHide();
+});
+
+/* ── CONSTANTES ── */
+const MONTHS    = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DOWS      = ['Do','Lu','Ma','Mi','Ju','Vi','Sá'];
+const DAY_ICONS_ALL = ['🌞','🌙','🔥','⚡','🌈','🎉','⭐'];
+const DAY_NAMES_ES  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+const meals = [
+  { id:'desayuno', label:'☀️ Desayuno', hClass:'meal-desayuno',
+    subs:[
+      {id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',   cClass:'cell-cereal'},
+      {id:'fruta',    icon:'🍎', label:'Fruta',     sClass:'sub-fruta',    cClass:'cell-fruta'},
+      {id:'verdura',  icon:'🥦', label:'Verdura',   sClass:'sub-verdura',  cClass:'cell-verdura'},
+      {id:'proteina', icon:'🍗', label:'Proteína',  sClass:'sub-proteina', cClass:'cell-proteina'}
+    ]},
+  { id:'almuerzo', label:'🌤️ Almuerzo', hClass:'meal-almuerzo',
+    subs:[
+      {id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',   cClass:'cell-cereal'},
+      {id:'fruta',    icon:'🍎', label:'Fruta',     sClass:'sub-fruta',    cClass:'cell-fruta'},
+      {id:'verdura',  icon:'🥦', label:'Verdura',   sClass:'sub-verdura',  cClass:'cell-verdura'},
+      {id:'proteina', icon:'🍗', label:'Proteína',  sClass:'sub-proteina', cClass:'cell-proteina'}
+    ]},
+  { id:'cena', label:'🌙 Cena', hClass:'meal-cena',
+    subs:[
+      {id:'cereal',   icon:'🥣', label:'Cereal',   sClass:'sub-cereal',   cClass:'cell-cereal'},
+      {id:'fruta',    icon:'🍎', label:'Fruta',     sClass:'sub-fruta',    cClass:'cell-fruta'},
+      {id:'verdura',  icon:'🥦', label:'Verdura',   sClass:'sub-verdura',  cClass:'cell-verdura'},
+      {id:'proteina', icon:'🍗', label:'Proteína',  sClass:'sub-proteina', cClass:'cell-proteina'}
+    ]}
+];
+
+/* ── FECHAS ── */
+let startDate = null, endDate = null, numWeeks = 1;
+let planDirty = false;
+
+function fmt(d){ return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function isSame(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function weeksBetween(a,b){ return Math.max(1,Math.ceil((b-a)/(7*864e5))); }
+
+/* ── CALENDARIO MODAL ── */
+let calTarget = null, calCur = new Date();
+
+function renderCal(){
+  const y=calCur.getFullYear(), m=calCur.getMonth();
+  document.getElementById('calTitle').textContent = MONTHS[m]+' '+y;
+  const firstDow    = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const today       = new Date();
+  const selDate     = startDate;
+  let html = DOWS.map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<firstDow;i++) html+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const dt=new Date(y,m,d);
+    let cls='day';
+    if(isSame(dt,today)) cls+=' today';
+    if(selDate && isSame(dt,selDate)) cls+=' selected';
+    html+=`<div class="${cls}" role="button" tabindex="0" aria-label="${d} de ${MONTHS[m]} de ${y}" data-y="${y}" data-m="${m}" data-d="${d}">${d}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+  document.querySelectorAll('#calGrid .day').forEach(el=>{
+    const pick = () => {
+      const picked=new Date(+el.dataset.y,+el.dataset.m,+el.dataset.d);
+      startDate=picked;
+      document.getElementById('lblStart').textContent=fmt(picked);
+      closeCalModal(); onDatesChange();
+    };
+    el.addEventListener('click', pick);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); } });
+  });
+}
+function openCalModal(target){
+  calTarget=target;
+  calCur=startDate?new Date(startDate):new Date();
+  document.getElementById('calOverlay').classList.add('open'); renderCal();
+}
+function closeCalModal(){ document.getElementById('calOverlay').classList.remove('open'); }
+document.getElementById('calPrev').onclick=()=>{ calCur.setMonth(calCur.getMonth()-1); renderCal(); };
+document.getElementById('calNext').onclick=()=>{ calCur.setMonth(calCur.getMonth()+1); renderCal(); };
+document.getElementById('calClose').onclick=closeCalModal;
+document.getElementById('calOverlay').addEventListener('click',e=>{ if(e.target===document.getElementById('calOverlay')) closeCalModal(); });
+document.getElementById('btnStart').onclick=()=>openCalModal('start');
+
+/* ── SHEETS ── */
+async function onWeeksChange(){
+  const input = document.getElementById('weeksInput');
+  const requested = Math.max(1, Math.min(52, parseInt(input.value) || 1));
+  if(requested < numWeeks){
+    const removedWeeks = [];
+    for(let w = requested; w < numWeeks; w++){ if(weekHasData(w)) removedWeeks.push(w+1); }
+    if(removedWeeks.length){
+      const label = removedWeeks.length === 1 ? `la semana ${removedWeeks[0]}` : `las semanas ${removedWeeks.join(', ')}`;
+      const ok = await showConfirm(`¿Reducir a ${requested} semana${requested>1?'s':''}? Se perderán los datos de ${label}.`, {okText:'Sí, reducir', danger:true});
+      if(!ok){ input.value = numWeeks; return; }
+      pushUndoSnapshot(collect());
+    }
+  }
+  numWeeks = requested;
+  input.value = numWeeks;
+  if(startDate){ endDate = addDays(startDate, numWeeks * 7 - 1); rebuildSheets(); autoSave(); }
+}
+
+function onDatesChange(){
+  if(!startDate) return;
+  numWeeks = Math.max(1, Math.min(52, parseInt(document.getElementById('weeksInput').value) || 1));
+  endDate = addDays(startDate, numWeeks * 7 - 1);
+  rebuildSheets(); autoSave();
+}
+
+function rebuildSheets(){
+  const existing=collectCells();
+  document.getElementById('tabsBar').innerHTML='';
+  document.getElementById('sheetsContainer').innerHTML='';
+  for(let w=0;w<numWeeks;w++){
+    const ws=addDays(startDate,w*7);
+    const btn=document.createElement('button');
+    btn.className='tab-btn'+(w===0?' active':'');
+    btn.textContent=`Sem ${w+1}: ${fmt(ws)}`;
+    btn.dataset.week=w; btn.onclick=()=>switchTab(w);
+    btn.setAttribute('role','tab');
+    btn.setAttribute('aria-selected', w===0?'true':'false');
+    document.getElementById('tabsBar').appendChild(btn);
+    const sheet=document.createElement('div');
+    sheet.className='week-sheet'+(w===0?' visible':'');
+    sheet.id='sheet-'+w;
+    const dayHeaders=Array.from({length:7},(_,i)=>{
+      const dd=addDays(ws,i); const dowIdx=dd.getDay();
+      return `${DAY_ICONS_ALL[dowIdx]}<br>${DAY_NAMES_ES[dowIdx]}<br><small style="font-size:0.65rem;font-weight:700;color:#888">${dd.getDate()}/${dd.getMonth()+1}</small>`;
+    });
+    const wrap=document.createElement('div'); wrap.className='table-wrap';
+    wrap.appendChild(buildTable(w,dayHeaders)); sheet.appendChild(wrap);
+    const delRow=document.createElement('div'); delRow.className='week-del-row';
+    const delBtn=document.createElement('button');
+    delBtn.className='btn-del-week';
+    delBtn.textContent=`🗑️ Borrar semana ${w+1}`;
+    delBtn.setAttribute('aria-label', `Borrar todos los datos de la semana ${w+1}`);
+    delBtn.addEventListener('click', () => deleteWeek(w));
+    delRow.appendChild(delBtn);
+    sheet.appendChild(delRow);
+    document.getElementById('sheetsContainer').appendChild(sheet);
+  }
+  restoreCells(existing);
+  refreshCellClearButtons();
+}
+
+async function deleteWeek(w){
+  if(!weekHasData(w)){ toast('Esa semana ya está vacía'); return; }
+  if(!await showConfirm(`¿Borrar todos los datos de la Semana ${w+1}?`, {okText:'Sí, borrar semana', danger:true})) return;
+  pushUndoSnapshot(collect());
+  document.querySelectorAll(`[data-id^="w${w}_"]`).forEach(el=>el.textContent='');
+  refreshCellClearButtons();
+  autoSave();
+  toast(`🗑️ Semana ${w+1} borrada`);
+}
+
+function weekHasData(w){
+  return [...document.querySelectorAll(`[data-id^="w${w}_"]`)].some(el=>el.textContent.trim()!=='');
+}
+
+let _copyTo = -1;
+
+function showCopyBar(filledWeeks, to){
+  _copyTo = to;
+  const sel = document.getElementById('copyWeekSelect');
+  sel.innerHTML = '';
+  filledWeeks.forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w;
+    opt.textContent = `Semana ${w + 1}`;
+    sel.appendChild(opt);
+  });
+  document.getElementById('copyWeekTo').textContent = to + 1;
+  document.getElementById('copyWeekBar').classList.add('open');
+}
+function hideCopyBar(){
+  document.getElementById('copyWeekBar').classList.remove('open');
+  _copyTo = -1;
+}
+function doCopyWeek(){
+  const from = +document.getElementById('copyWeekSelect').value;
+  if(isNaN(from)||_copyTo<0) return;
+  pushUndoSnapshot(collect());
+  document.querySelectorAll(`[data-id^="w${_copyTo}_"]`).forEach(el=>{
+    const srcId = el.dataset.id.replace(`w${_copyTo}_`,`w${from}_`);
+    const src = document.querySelector(`[data-id="${srcId}"]`);
+    if(src) el.textContent = src.textContent;
+  });
+  refreshCellClearButtons();
+  autoSave(); hideCopyBar(); toast(`✅ Semana ${from+1} copiada a Semana ${_copyTo+1}`);
+}
+
+function switchTab(w){
+  hideCopyBar();
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    const active = +b.dataset.week===w;
+    b.classList.toggle('active',active);
+    b.setAttribute('aria-selected', active?'true':'false');
+  });
+  document.querySelectorAll('.week-sheet').forEach(s=>{
+    const isTarget = s.id==='sheet-'+w;
+    s.classList.toggle('visible', isTarget);
+    if(isTarget){
+      s.classList.remove('week-anim');
+      void s.offsetWidth; /* fuerza reflow para reiniciar la animación */
+      s.classList.add('week-anim');
+    }
+  });
+  if(!weekHasData(w)){
+    const total = document.querySelectorAll('.tab-btn').length;
+    const filledWeeks = Array.from({length:total},(_,i)=>i).filter(i=>i!==w && weekHasData(i));
+    if(filledWeeks.length > 0) showCopyBar(filledWeeks, w);
+  }
+}
+
+function buildTable(wi, dayHeaders){
+  const tbl=document.createElement('table');
+  const thead=document.createElement('thead');
+  const hrow=document.createElement('tr');
+  const c1=document.createElement('th'); c1.className='empty-corner'; c1.style.width='88px'; hrow.appendChild(c1);
+  const c2=document.createElement('th'); c2.className='empty-corner'; c2.style.width='78px'; hrow.appendChild(c2);
+  dayHeaders.forEach(h=>{ const th=document.createElement('th'); th.className='day-header'; th.innerHTML=h; hrow.appendChild(th); });
+  thead.appendChild(hrow); tbl.appendChild(thead);
+
+  const tbody=document.createElement('tbody');
+  meals.forEach((meal, mi)=>{
+    meal.subs.forEach((sub, si)=>{
+      const tr=document.createElement('tr');
+      if(si===0){
+        const td=document.createElement('td');
+        td.rowSpan=meal.subs.length; td.className='meal-header '+meal.hClass;
+        td.innerHTML=meal.label.replace(' ','<br>'); tr.appendChild(td);
+      }
+      const std=document.createElement('td');
+      std.className='sub-header '+sub.sClass;
+      std.innerHTML=sub.icon+' '+sub.label; tr.appendChild(std);
+      for(let d=0;d<7;d++){
+        const ctd=document.createElement('td'); ctd.className='cell '+sub.cClass;
+        const div=document.createElement('div');
+        div.className='cell-edit';
+        div.contentEditable='true';
+        div.dataset.id       = `w${wi}_${meal.id}_${sub.id}_${d}`;
+        div.dataset.placeholder = '...';
+        div.dataset.category = sub.id;
+        div.spellcheck=false;
+        div.setAttribute('role','textbox');
+        div.setAttribute('aria-label', `${meal.label} — ${sub.label}, día ${d+1}`);
+        div.addEventListener('input', () => { autoSave(); acShow(div); toggleCellClearBtn(div); });
+        div.addEventListener('click', () => {
+          if(repeatMode) {
+            if(div.classList.contains('cell-selectable')){
+              div.classList.toggle('cell-selected');
+              updateRepeatBar();
+            }
+          }
+        });
+        div.addEventListener('keydown', e => {
+          acKeyNav(e);
+          if(e.key === 'Enter'){
+            e.preventDefault();
+            setTimeout(() => {
+              acHide(); div.blur();
+              const text = div.textContent.trim();
+              if(text) enterRepeatMode(div);
+            }, 30);
+          }
+        });
+        div.addEventListener('blur', () => { setTimeout(acHide, 180); commitUndoSnapshotIfChanged(div); });
+        div.addEventListener('focus', () => { armUndoSnapshot(div); if(div.textContent.trim()) acShow(div); });
+        div.addEventListener('paste', e => {
+          e.preventDefault();
+          const t=(e.clipboardData||window.clipboardData).getData('text/plain').replace(/\n/g,' ');
+          document.execCommand('insertText', false, t);
+        });
+        const clearBtn=document.createElement('button');
+        clearBtn.type='button';
+        clearBtn.className='cell-clear-btn';
+        clearBtn.innerHTML='✕';
+        clearBtn.tabIndex=-1;
+        clearBtn.setAttribute('aria-label', `Borrar contenido de ${meal.label} — ${sub.label}, día ${d+1}`);
+        clearBtn.addEventListener('click', async e => {
+          e.stopPropagation();
+          if(!div.textContent.trim()) return;
+          if(!await showConfirm('¿Borrar el contenido de esta casilla?', {okText:'Sí, borrar', danger:true})) return;
+          pushUndoSnapshot(collect());
+          div.textContent='';
+          toggleCellClearBtn(div);
+          autoSave();
+        });
+        ctd.appendChild(div); ctd.appendChild(clearBtn); tr.appendChild(ctd);
+      }
+      tbody.appendChild(tr);
+    });
+    if(mi < meals.length-1){
+      const sp=document.createElement('tr'); sp.className='spacer';
+      const td=document.createElement('td'); td.colSpan=9; sp.appendChild(td); tbody.appendChild(sp);
+    }
+  });
+  tbl.appendChild(tbody); return tbl;
+}
+
+/* ══════════════════════════════════════════
+   TABLA DE REGISTRO — LÓGICA
+   ══════════════════════════════════════════ */
+let registroRowCount = 0;
+
+/* Selector de hora a medida en formato 12h con AM/PM (más intuitivo que 24h) */
+function buildTimeSelect(hora=''){
+  let h12 = '', m = '', period = 'AM';
+  if(hora){
+    const [hh, mm] = hora.split(':');
+    const hnum = parseInt(hh, 10);
+    period = hnum >= 12 ? 'PM' : 'AM';
+    let h12num = hnum % 12; if(h12num === 0) h12num = 12;
+    h12 = String(h12num).padStart(2,'0');
+    m = mm;
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'time-select-wrap';
+
+  const selH = document.createElement('select');
+  selH.className = 'time-select'; selH.setAttribute('aria-label','Hora');
+  selH.appendChild(new Option('--',''));
+  for(let i=1;i<=12;i++){ const v=String(i).padStart(2,'0'); selH.appendChild(new Option(v,v)); }
+  selH.value = h12;
+
+  const colon = document.createElement('span');
+  colon.className = 'time-colon'; colon.textContent = ':';
+
+  const selM = document.createElement('select');
+  selM.className = 'time-select'; selM.setAttribute('aria-label','Minutos');
+  selM.appendChild(new Option('--',''));
+  for(let i=0;i<60;i+=5){ const v=String(i).padStart(2,'0'); selM.appendChild(new Option(v,v)); }
+  selM.value = m;
+
+  const selP = document.createElement('select');
+  selP.className = 'time-select time-period'; selP.setAttribute('aria-label','AM o PM');
+  selP.appendChild(new Option('AM','AM'));
+  selP.appendChild(new Option('PM','PM'));
+  selP.value = period;
+
+  selH.addEventListener('change', autoSave);
+  selM.addEventListener('change', autoSave);
+  selP.addEventListener('change', autoSave);
+  wrap.appendChild(selH); wrap.appendChild(colon); wrap.appendChild(selM); wrap.appendChild(selP);
+  return wrap;
+}
+function getTimeValue(wrap){
+  const [selH, selM] = wrap.querySelectorAll('.time-select:not(.time-period)');
+  const selP = wrap.querySelector('.time-period');
+  if(!selH.value || !selM.value) return '';
+  let h = parseInt(selH.value, 10) % 12;
+  if(selP.value === 'PM') h += 12;
+  return String(h).padStart(2,'0') + ':' + selM.value;
+}
+function formatHora12(hora){
+  if(!hora) return '';
+  const [hh, mm] = hora.split(':');
+  const hnum = parseInt(hh, 10);
+  const period = hnum >= 12 ? 'PM' : 'AM';
+  let h12 = hnum % 12; if(h12 === 0) h12 = 12;
+  return `${h12}:${mm} ${period}`;
+}
+
+function addRegistroRow(hora='', alim=''){
+  const tbody = document.getElementById('registroBody');
+  const rowId = 'reg-' + (registroRowCount++);
+  const tr = document.createElement('tr');
+  tr.dataset.rowid = rowId;
+
+  /* Celda HORA — selector a medida (reemplaza <input type="time"> nativo) */
+  const tdHora = document.createElement('td');
+  tdHora.className = 'registro-hora-cell';
+  tdHora.appendChild(buildTimeSelect(hora));
+  tr.appendChild(tdHora);
+
+  /* Celda ALIMENTACIÓN */
+  const tdAlim = document.createElement('td');
+  tdAlim.className = 'registro-alim-cell';
+  const div = document.createElement('div');
+  div.className = 'registro-alim-edit';
+  div.contentEditable = 'true';
+  div.spellcheck = false;
+  if(alim) div.textContent = alim;
+  div.addEventListener('input', autoSave);
+  div.addEventListener('focus', () => armUndoSnapshot(div));
+  div.addEventListener('blur', () => commitUndoSnapshotIfChanged(div));
+  div.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); div.blur(); }
+  });
+  div.addEventListener('paste', e => {
+    e.preventDefault();
+    const t = (e.clipboardData||window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, t);
+  });
+  tdAlim.appendChild(div);
+  tr.appendChild(tdAlim);
+
+  /* Botón eliminar */
+  const tdDel = document.createElement('td');
+  tdDel.style.textAlign = 'center';
+  const btnDel = document.createElement('button');
+  btnDel.className = 'btn-del-row';
+  btnDel.innerHTML = '✕';
+  btnDel.title = 'Eliminar fila';
+  btnDel.setAttribute('aria-label', 'Eliminar fila');
+  btnDel.addEventListener('click', async () => {
+    const wrap = tr.querySelector('.time-select-wrap');
+    const hasData = div.textContent.trim() || (wrap && getTimeValue(wrap));
+    if(hasData && !await showConfirm('¿Eliminar esta fila del registro de alimentación?', {okText:'Sí, eliminar', danger:true})) return;
+    if(hasData) pushUndoSnapshot(collect());
+    tr.remove();
+    autoSave();
+  });
+  tdDel.appendChild(btnDel);
+  tr.appendChild(tdDel);
+
+  tbody.appendChild(tr);
+  autoSave();
+  return tr;
+}
+
+function collectRegistro(){
+  const rows = [];
+  document.querySelectorAll('#registroBody tr').forEach(tr => {
+    const wrap = tr.querySelector('.time-select-wrap');
+    const div = tr.querySelector('.registro-alim-edit');
+    if(!wrap || !div) return;
+    rows.push({ hora: getTimeValue(wrap), alim: div.textContent.trim() });
+  });
+  return rows;
+}
+
+function restoreRegistro(rows){
+  document.getElementById('registroBody').innerHTML = '';
+  registroRowCount = 0;
+  (rows || []).forEach(r => addRegistroRow(r.hora || '', r.alim || ''));
+}
+
+/* ══ INLINE REPEAT MODE ══ */
+let repeatMode = false;
+let repeatSrcDiv = null;
+let repeatMealId = '', repeatSubId = '';
+
+function enterRepeatMode(div){
+  const text = div.textContent.trim();
+  if(!text || numWeeks === 0) return;
+  const id = div.dataset.id;
+  const parts = id.match(/^w(\d+)_(.+)_(.+)_(\d+)$/);
+  if(!parts) return;
+  const [, , mealId, subId] = parts;
+
+  repeatMode = true;
+  repeatSrcDiv = div;
+  repeatMealId = mealId;
+  repeatSubId = subId;
+
+  div.classList.add('cell-source');
+  div.contentEditable = 'false';
+
+  document.querySelectorAll('.cell-edit').forEach(cell => {
+    if(cell === div) return;
+    const cp = (cell.dataset.id||'').match(/^w\d+_(.+)_(.+)_\d+$/);
+    if(cp && cp[2] === subId){  /* same category across ALL meals */
+      cell.classList.add('cell-selectable');
+      cell.contentEditable = 'false';
+    }
+  });
+
+  updateRepeatBar();
+  document.getElementById('repeatBar').classList.add('open');
+}
+
+function updateRepeatBar(){
+  const n = document.querySelectorAll('.cell-edit.cell-selected').length;
+  document.getElementById('repeatBarCount').textContent =
+    n === 0 ? 'Haz clic en las casillas donde repetir el texto'
+            : `${n} casilla${n>1?'s':''} seleccionada${n>1?'s':''}`;
+}
+
+function applyRepeatInline(){
+  if(!repeatSrcDiv){ exitRepeatMode(); return; }
+  const text = repeatSrcDiv.textContent.trim();
+  let count = 0;
+  pushUndoSnapshot(collect());
+  document.querySelectorAll('.cell-edit.cell-selected').forEach(cell => {
+    cell.textContent = text; count++;
+    toggleCellClearBtn(cell);
+  });
+  exitRepeatMode();
+  autoSave();
+  if(count > 0) toast(`✅ Texto copiado en ${count} casilla${count>1?'s':''}`);
+}
+
+function exitRepeatMode(){
+  repeatMode = false;
+  if(repeatSrcDiv){ repeatSrcDiv.classList.remove('cell-source'); repeatSrcDiv.contentEditable='true'; repeatSrcDiv=null; }
+  document.querySelectorAll('.cell-edit.cell-selectable,.cell-edit.cell-selected').forEach(c => {
+    c.classList.remove('cell-selectable','cell-selected'); c.contentEditable='true';
+  });
+  document.getElementById('repeatBar').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape' && repeatMode) exitRepeatMode(); });
+
+/* ══ MENÚ LATERAL ══ */
+function openSideMenu(){
+  document.getElementById('sideMenu').classList.add('open');
+  document.getElementById('sideMenuOverlay').classList.add('open');
+  document.getElementById('sideMenuToggle').setAttribute('aria-expanded','true');
+}
+function closeSideMenu(){
+  document.getElementById('sideMenu').classList.remove('open');
+  document.getElementById('sideMenuOverlay').classList.remove('open');
+  document.getElementById('sideMenuToggle').setAttribute('aria-expanded','false');
+}
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && document.getElementById('sideMenu').classList.contains('open')) closeSideMenu();
+});
+
+/* ══ ICONOS DE REFERENCIA (menú lateral, 3 por fila) ══
+   Para agregar un botón: { id, icon, label, html } — "html" es el contenido
+   de la ventana que se abre al oprimirlo. "icon" es un SVG de línea
+   minimalista (stroke="currentColor"), no un emoji. */
+const REF_WINDOWS = [
+  { id: 'reto-oral', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/></svg>', label: 'Protocolo de reto oral',
+    html: `<form id="retoOralForm" class="ro-form" onsubmit="return false" autocomplete="off">
+      <div class="ro-field"><label for="ro_paciente">Paciente</label><input id="ro_paciente" type="text"></div>
+      <div class="ro-field"><label for="ro_fnac">Fecha de nacimiento</label><input id="ro_fnac" type="date" oninput="roUpdateEdad()" onchange="roUpdateEdad()"><span id="ro_edad" class="ro-edad" aria-live="polite"></span></div>
+      <div class="ro-field"><label for="ro_peso">Peso / Talla</label>
+        <div class="ro-pair">
+          <input id="ro_peso" type="text" inputmode="decimal" placeholder="Peso (kg)" aria-label="Peso en kg" oninput="roSoloNumero(this)">
+          <span class="ro-sep" aria-hidden="true">/</span>
+          <input id="ro_talla" type="text" inputmode="decimal" placeholder="Talla (cm)" aria-label="Talla en cm" oninput="roSoloNumero(this)">
+        </div></div>
+      <div class="ro-field"><label for="ro_alimentacion">Alimentación</label><input id="ro_alimentacion" type="text" value="Mixta (LM + FEH 6 oz x 4 tomas)"></div>
+      <div class="ro-field"><label for="ro_formulabase">Fórmula base</label><input id="ro_formulabase" type="text" value="Fórmula Extensamente Hidrolizada (FEH)"></div>
+      <div class="ro-field"><label for="ro_formulareto">Fórmula reto</label><input id="ro_formulareto" type="text" value="Fórmula para Iniciar Reto"></div>
+      <div class="ro-field"><label for="ro_oz">Volumen de toma habitual</label>
+        <div class="ro-pair">
+          <input id="ro_oz" type="text" inputmode="decimal" placeholder="Onzas (oz)" aria-label="Volumen de toma habitual de la fórmula base, en onzas" oninput="roSoloNumero(this); roUpdateVolumen()">
+        </div>
+        <span class="ro-hint">Volumen de toma habitual de la fórmula base que el paciente toma actualmente, en onzas (oz).</span>
+        <span id="ro_ml" class="ro-edad" aria-live="polite"></span></div>
+      <div class="ro-field"><label for="ro_inicioreto">Cantidad inicio fórmula reto</label><input id="ro_inicioreto" type="text" inputmode="decimal" placeholder="Cantidad (ml)" aria-label="Cantidad inicial de fórmula reto en ml" oninput="roSoloNumero(this)">
+        <span class="ro-hint">Cantidad inicial con la que se va a empezar el reto, en ml.</span></div>
+      <div class="ro-field"><label for="ro_medidas">Medidas de fórmula base</label><input id="ro_medidas" type="text" inputmode="decimal" placeholder="Número de medidas" oninput="roSoloNumero(this)"></div>
+      <div class="ro-actions ro-field full"><button type="button" class="btn-mac" onclick="descargarRetoOralPDF()">Descargar PDF</button></div>
+    </form>`,
+    onBuild: () => {
+      const d = new Date(), p = n => String(n).padStart(2, '0');
+      const hoy = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+      const f = document.getElementById('ro_fnac');
+      f.value = hoy; f.max = hoy;               /* por defecto hoy; no se permiten fechas futuras */
+      roUpdateEdad();
+    } }
+];
+function renderRefGrid(){
+  const grid = document.getElementById('refGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  REF_WINDOWS.forEach(w => {
+    const item = document.createElement('div'); item.className = 'ref-item';
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'ref-icon-btn'; b.title = w.label; b.setAttribute('aria-label', w.label);
+    const i = document.createElement('span'); i.className = 'ref-icon'; i.innerHTML = w.icon;
+    b.appendChild(i);
+    b.onclick = () => openRefWindow(w.id);
+    const l = document.createElement('span'); l.className = 'ref-label'; l.textContent = w.label;
+    item.appendChild(b); item.appendChild(l);
+    grid.appendChild(item);
+  });
+}
+function openRefWindow(id){
+  const w = REF_WINDOWS.find(x => x.id === id);
+  if(!w) return;
+  closeSideMenu();
+  const t = document.getElementById('refWindowTitle');
+  t.innerHTML = w.icon; t.appendChild(document.createTextNode(w.label));
+  const body = document.getElementById('refWindowBody');
+  /* Cada ventana se construye una sola vez para conservar lo que se escribió al cerrarla */
+  let pane = body.querySelector('[data-ref-pane="' + w.id + '"]');
+  if(!pane){ pane = document.createElement('div'); pane.setAttribute('data-ref-pane', w.id); pane.innerHTML = w.html || ''; body.appendChild(pane); if(w.onBuild) w.onBuild(); }
+  body.querySelectorAll('[data-ref-pane]').forEach(p => { p.style.display = (p === pane) ? '' : 'none'; });
+  document.getElementById('refWindowOverlay').classList.add('open');
+}
+/* Antes de salir pide confirmación (✕, clic fuera de la ventana o Escape).
+   Lo escrito se conserva si se vuelve a abrir mientras no se recargue la página. */
+let refClosing = false;
+async function closeRefWindow(){
+  if(refClosing) return;
+  refClosing = true;
+  try{
+    const ok = await showConfirm('¿Quieres salir del formulario?', { okText: 'Sí, salir', cancelText: 'Seguir editando', icon: '📋' });
+    if(ok) document.getElementById('refWindowOverlay').classList.remove('open');
+  } finally { refClosing = false; }
+}
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && document.getElementById('refWindowOverlay').classList.contains('open')) closeRefWindow();
+});
+renderRefGrid();
+
+/* ══ PROTOCOLO DE RETO ORAL — PDF tamaño carta ══
+   Por ahora solo el encabezado; las demás secciones se agregan después. */
+function loadScriptOnce(src, check){
+  return new Promise((resolve, reject) => {
+    if(check()) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = () => resolve(); s.onerror = () => reject(new Error('No se pudo cargar ' + src));
+    document.head.appendChild(s);
+  });
+}
+/* Solo números: deja dígitos y un único separador decimal (. o ,) */
+function roSoloNumero(el){
+  let out = '', sep = false;
+  for(const ch of el.value){
+    if(ch >= '0' && ch <= '9') out += ch;
+    else if((ch === '.' || ch === ',') && !sep){ out += ch; sep = true; }
+  }
+  if(out !== el.value) el.value = out;
+}
+/* Edad en meses con un decimal (ej. "3.5 meses") a partir de la fecha de nacimiento; '' si no es válida */
+function roAgeMonthsText(iso){
+  const p = String(iso || '').split('-').map(Number);
+  if(p.length !== 3 || p.some(isNaN)) return '';
+  const born = new Date(p[0], p[1] - 1, p[2]);
+  const now = new Date();
+  const days = (new Date(now.getFullYear(), now.getMonth(), now.getDate()) - born) / 86400000;
+  if(days < 0) return '';
+  return (days / 30.4375).toFixed(1) + ' meses';
+}
+function roUpdateEdad(){
+  const out = document.getElementById('ro_edad');
+  const f = document.getElementById('ro_fnac');
+  if(!out || !f) return;
+  const t = roAgeMonthsText(f.value);
+  out.textContent = t ? 'Edad: ' + t : (f.value ? 'La fecha no puede ser futura' : '');
+}
+/* "8.5 kg / 70 cm" — agrega las unidades; si falta uno de los dos, solo muestra el que se llenó */
+function roPesoTallaText(peso, talla){
+  const p = peso ? peso + ' kg' : '';
+  const t = talla ? talla + ' cm' : '';
+  return p && t ? p + ' / ' + t : (p || t);
+}
+/* Volumen de toma habitual: onzas -> ml (1 oz = 30 ml). Devuelve {oz, ml} como texto, o null si no es válido */
+function roVolumen(raw){
+  const n = parseFloat(String(raw || '').trim().replace(',', '.'));
+  if(isNaN(n) || n <= 0) return null;
+  const fmt = v => String(Math.round(v * 10) / 10);
+  return { oz: fmt(n), ml: fmt(n * 30) };
+}
+function roUpdateVolumen(){
+  const out = document.getElementById('ro_ml');
+  const i = document.getElementById('ro_oz');
+  if(!out || !i) return;
+  const v = roVolumen(i.value);
+  out.textContent = v ? '= ' + v.ml + ' ml' : '';
+}
+function roFormatDate(iso){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+}
+function drawRetoOralHeader(doc){
+  const W = doc.internal.pageSize.getWidth();
+  const M = 40, blue = [62, 84, 130]; /* azul apagado: contraste 7.5:1 con blanco */
+  const val = id => (document.getElementById(id).value || '').trim();
+
+  /* Caja contenedora azul con los títulos en blanco */
+  doc.setFillColor(...blue); doc.roundedRect(M, 20, W - 2 * M, 74, 8, 8, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+  doc.text('PROTOCOLO DE RETO ORAL', W / 2, 46, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text('REINTRODUCCIÓN PROGRESIVA', W / 2, 64, { align: 'center' });
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.text('Gastroenterología Pediátrica — Plan Personalizado de Entrenamiento', W / 2, 80, { align: 'center' });
+
+  /* Segunda caja: borde azul, fondo blanco, datos del paciente (dato al frente de cada campo) */
+  const rows = [
+    [['Paciente', val('ro_paciente')],        ['Fecha de nacimiento', roFormatDate(val('ro_fnac')) + (roAgeMonthsText(val('ro_fnac')) ? ' (' + roAgeMonthsText(val('ro_fnac')) + ')' : '')]],
+    [['Peso / Talla', roPesoTallaText(val('ro_peso'), val('ro_talla'))],   ['Alimentación', val('ro_alimentacion')]],
+    [['Fórmula base', val('ro_formulabase')], ['Fórmula reto', val('ro_formulareto')]]
+  ];
+  const boxY = 108, padX = 14, lineH = 13, gap = 18;
+  const colW = (W - 2 * M - 2 * padX - gap) / 2;
+  /* Primero se calcula cuántas líneas ocupa cada dato (la letra no se reduce: si no cabe, la fila crece) */
+  const layout = rows.map(row => {
+    const cells = row.map(([label, value]) => {
+      const lbl = label.toUpperCase() + ':';
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      const vxOff = doc.getTextWidth(lbl) + 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
+      const lines = doc.splitTextToSize(value, colW - vxOff);
+      return { lbl, vxOff, lines: lines.length ? lines : [''] };
+    });
+    const n = Math.max(...cells.map(c => c.lines.length));
+    return { cells, h: 28 + (n - 1) * lineH };
+  });
+  const boxH = layout.reduce((a, r) => a + r.h, 0) + 12;
+  doc.setFillColor(255, 255, 255); doc.setDrawColor(...blue); doc.setLineWidth(1);
+  doc.roundedRect(M, boxY, W - 2 * M, boxH, 8, 8, 'FD');
+  let y = boxY + 26;
+  layout.forEach(row => {
+    row.cells.forEach((c, i) => {
+      const x = M + padX + i * (colW + gap);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...blue);
+      doc.text(c.lbl, x, y);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(80, 84, 94);
+      c.lines.forEach((ln, k) => doc.text(ln, x + c.vxOff, y + k * lineH));
+    });
+    y += row.h;
+  });
+  y = boxY + boxH + 20;
+  return y;
+}
+/* Párrafo con tramos en negrita y salto de línea automático. segs = [{t, b}] */
+function drawRichParagraph(doc, segs, x, y, maxW, lineH, fontSize, dry){
+  doc.setFontSize(fontSize);
+  const words = [];
+  segs.forEach(sg => String(sg.t).split(/\s+/).filter(Boolean).forEach(w => words.push({ w, b: !!sg.b, c: sg.c })));
+  const space = () => { doc.setFont('helvetica', 'normal'); return doc.getTextWidth(' '); };
+  let cx = x;
+  words.forEach(({ w, b, c }) => {
+    doc.setFont('helvetica', b ? 'bold' : 'normal');
+    const ww = doc.getTextWidth(w);
+    if(cx > x && cx + ww > x + maxW){ cx = x; y += lineH; }
+    if(!dry){ if(c) doc.setTextColor(...c); doc.text(w, cx, y); }
+    cx += ww + space();
+  });
+  return y + lineH;
+}
+function drawRetoOralSection1(doc, y){
+  const W = doc.internal.pageSize.getWidth();
+  const M = 40, blue = [62, 84, 130], text = [80, 84, 94];
+  const nombre = (document.getElementById('ro_paciente').value || '').trim() || 'el paciente';
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...blue);
+  doc.text('1. CONSIDERACIONES PREVIAS PARA LOS PADRES', M, y);
+  y += 8;
+  doc.setDrawColor(200, 207, 225); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+  y += 16;
+
+  const items = [
+    [{ t: 'Requisito de salud: ', b: true }, { t: nombre + ' ', b: true },
+     { t: 'debe estar completamente sano. No inicie el reto si presenta fiebre, infección, diarrea, moco/sangre en heces o brote en piel en los últimos 7 días.' }],
+    [{ t: 'Lactancia Materna: ', b: true },
+     { t: 'Si la madre amamanta, debe mantener la dieta de exclusión estricta durante esta semana para que la única variable sea la fórmula del tetero.' }],
+    [{ t: 'Horario: ', b: true },
+     { t: 'Ofrezca los teteros de transición durante la mañana o tarde para vigilar su respuesta.' }]
+  ];
+  const indent = 14;
+  items.forEach(segs => {
+    doc.setTextColor(...blue); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('•', M + 2, y);
+    doc.setTextColor(...text);
+    y = drawRichParagraph(doc, segs, M + indent, y, W - 2 * M - indent, 14, 10) + 5;
+  });
+  return y;
+}
+function drawRetoOralSection2(doc, y){
+  const W = doc.internal.pageSize.getWidth();
+  const M = 40, blue = [62, 84, 130];
+  const v = roVolumen(document.getElementById('ro_oz').value);
+  const vol = v ? v.oz + ' oz / ' + v.ml + ' ml' : '';
+  const titulo = '2. ESQUEMA DE PROGRESIÓN DIARIA (VOLUMEN DE TOMA HABITUAL:' + (vol ? ' ' + vol : '    ') + ')';
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...blue);
+  const lines = doc.splitTextToSize(titulo, W - 2 * M);
+  lines.forEach((ln, k) => doc.text(ln, M, y + k * 14));
+  y += (lines.length - 1) * 14 + 8;
+  doc.setDrawColor(200, 207, 225); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+  y += 16;
+
+  /* Modo de preparación: usa las onzas y los ml del formulario (en blanco si no se llenó) */
+  const uno = v && v.oz === '1';
+  const agua = v ? (uno ? 'la 1 onza' : 'las ' + v.oz + ' onzas') + ' de agua (' + v.ml + ' ml)' : 'las ____ onzas de agua (____ ml)';
+  const segs = [
+    { t: 'Modo de preparación: ', b: true },
+    { t: 'Vierta siempre primero ' + agua + ' a temperatura adecuada. Luego agregue las medidas en polvo indicadas de cada fórmula y mezcle bien.' }
+  ];
+  doc.setTextColor(80, 84, 94);
+  return drawRichParagraph(doc, segs, M, y, W - 2 * M, 14, 10) + 5;
+}
+/* Tabla de progresión diaria — columnas: Día | Agua base | Fórmula base | Fórmula nueva | Instrucciones */
+function drawRetoOralTable(doc, y){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 40, blue = [62, 84, 130], text = [80, 84, 94], line = [200, 207, 225];
+  const val = id => (document.getElementById(id).value || '').trim();
+  const v = roVolumen(val('ro_oz'));
+  const agua = v ? v.oz + ' oz (' + v.ml + ' ml)' : '____ oz (____ ml)';
+  const ozTxt = v ? v.oz : '____';
+  const inicio = val('ro_inicioreto') || '____';
+  const blank = '____ medidas (polvo)';
+  /* Medidas por día: la fórmula base baja de M (Día 1) a 0 (Día 7) en 6 pasos iguales y la fórmula nueva
+     sube lo que baja la base (Día 2 = M - base del Día 2, ..., Día 7 = M). */
+  const M0 = parseFloat(val('ro_medidas').replace(',', '.'));
+  const hayM = !isNaN(M0) && M0 > 0;
+  /* Todo se aproxima a saltos de 0.5 (6, 6.5, 7...). La base se redondea y la nueva es lo que falta para el total,
+     así base + nueva siempre suma las medidas del usuario. */
+  const r05 = n => Math.round(n * 2) / 2;
+  const Mt = r05(M0);
+  const fmtMed = n => n + (n === 1 ? ' medida (polvo)' : ' medidas (polvo)');
+  const baseV = d => r05(Mt * (7 - d) / 6);                              /* d = 1..7 */
+  const baseD = d => hayM ? fmtMed(baseV(d)) : blank;
+  const nuevaD = d => hayM ? fmtMed(Mt - baseV(d)) : blank;
+  const widths = [52, 92, 118, 118, W - 2 * M - 52 - 92 - 118 - 118];
+  const xs = widths.reduce((a, w, i) => (a.push(i ? a[i - 1] + widths[i - 1] : M), a), []);
+  const pad = 6, lh = 11.5;
+
+  const heads = [
+    { t: 'Día' }, { t: 'Agua base' },
+    { t: 'Fórmula Base', sub: val('ro_formulabase') },
+    { t: 'Fórmula nueva', sub: val('ro_formulareto') },
+    { t: 'Instrucciones' }
+  ];
+  const rows = [
+    ['Día 1', agua, baseD(1), nuevaD(1), 'Agregar ' + inicio + ' ml de la fórmula para iniciar reto (ya lista) al tetero base.'],
+    ['Día 2', agua, baseD(2), nuevaD(2), 'Mezclar ambas medidas en polvo en las ' + ozTxt + ' oz de agua.'],
+    ['Día 3', agua, baseD(3), nuevaD(3), 'Transición al 33% de la fórmula para iniciar reto.'],
+    ['Día 4', agua, baseD(4), nuevaD(4), 'Transición al 50% de cada fórmula.'],
+    ['Día 5', agua, baseD(5), nuevaD(5), 'Predominio de la fórmula para iniciar reto (66%).'],
+    ['Día 6', agua, baseD(6), nuevaD(6), 'Casi total de la fórmula para iniciar reto.'],
+    ['Día 7+', agua, baseD(7), nuevaD(7), 'Transición 100% completada.']
+  ];
+
+  /* Encabezado azul (la fila crece si el nombre de la fórmula ocupa varias líneas) */
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+  const headLines = heads.map((hd, i) => {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    return hd.sub ? doc.splitTextToSize(hd.sub, widths[i] - 2 * pad) : [];
+  });
+  const headH = 2 * pad + lh + Math.max(0, ...headLines.map(l => l.length)) * 10.5;
+  doc.setFillColor(...blue); doc.rect(M, y, W - 2 * M, headH, 'F');
+  heads.forEach((hd, i) => {
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+    doc.text(hd.t, xs[i] + pad, y + pad + 8);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    headLines[i].forEach((ln, k) => doc.text(ln, xs[i] + pad, y + pad + 8 + lh + k * 10.5));
+  });
+  y += headH;
+
+  /* Filas */
+  doc.setFontSize(9.5);
+  rows.forEach((r, ri) => {
+    const cells = r.map((c, i) => { doc.setFont('helvetica', i === 0 ? 'bold' : 'normal'); return doc.splitTextToSize(c, widths[i] - 2 * pad); });
+    const rh = 2 * pad + Math.max(...cells.map(c => c.length)) * lh;
+    if(y + rh > H - 40){ doc.addPage(); y = 40; }
+    if(ri % 2) { doc.setFillColor(245, 247, 251); doc.rect(M, y, W - 2 * M, rh, 'F'); }
+    cells.forEach((lines, i) => {
+      doc.setFont('helvetica', i === 0 ? 'bold' : 'normal'); doc.setFontSize(9.5);
+      doc.setTextColor(...(i === 0 ? blue : text));
+      lines.forEach((ln, k) => doc.text(ln, xs[i] + pad, y + pad + 8 + k * lh));
+    });
+    doc.setDrawColor(...line); doc.setLineWidth(0.6); doc.line(M, y + rh, W - M, y + rh);
+    y += rh;
+  });
+  /* Líneas verticales y borde exterior, muy suaves */
+  return y;
+}
+/* Signos de alarma: caja suave (borde y fondo tenues) con el nombre del paciente en el título */
+function drawRetoOralAlarm(doc, y){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 40, red = [140, 56, 56], text = [80, 84, 94], padX = 14, padY = 12, indent = 14;
+  const nombre = (document.getElementById('ro_paciente').value || '').trim().toUpperCase() || 'EL PACIENTE';
+  const titulo = 'SIGNOS DE ALARMA EN ' + nombre + ' — SUSPENDA EL RETO SI PRESENTA:';
+  const items = [
+    [{ t: 'Digestivos: ', b: true }, { t: 'Vómitos repetidos, diarrea, moco o hebras de sangre en la deposición, llanto inconsolable por cólico, distensión abdominal.' }],
+    [{ t: 'Cutáneos: ', b: true }, { t: 'Brotes o ronchas en piel, enrojecimiento, inflamación de labios o párpados.' }],
+    [{ t: 'Respiratorios / Generales: ', b: true }, { t: 'Dificultad para respirar, silbido al respirar, rechazo de tomas, letargo.' }]
+  ];
+  const fbase = (document.getElementById('ro_formulabase').value || '').trim() || 'la fórmula base';
+  const cond = [{ t: 'Conducta ante síntomas: ', b: true, c: red },
+    { c: text, t: 'Suspenda la fórmula para iniciar reto inmediatamente, vuelva al tetero 100% con ' + fbase + ', registre la reacción en la tabla y contacte a su Gastroenterólogo Pediátrico.' }];
+  const innerW = W - 2 * M - 2 * padX;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
+  const tLines = doc.splitTextToSize(titulo, innerW);
+  /* Altura: se mide primero (dry) para dibujar la caja detrás del texto */
+  let hh = padY + tLines.length * 14 + 4;
+  items.forEach(segs => { hh = drawRichParagraph(doc, segs, 0, hh, innerW - indent, 14, 10, true) + 4; });
+  hh += 6;                                            /* separación antes de la conducta */
+  hh = drawRichParagraph(doc, cond, 0, hh + 8, innerW, 14, 10, true) - 14 + padY + 4;
+  if(y + hh > H - 40){ doc.addPage(); y = 40; }
+  doc.setFillColor(251, 246, 246); doc.setDrawColor(205, 170, 170); doc.setLineWidth(0.8);
+  doc.roundedRect(M, y, W - 2 * M, hh, 8, 8, 'FD');
+  let ty = y + padY + 10;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(...red);
+  tLines.forEach((ln, k) => doc.text(ln, M + padX, ty + k * 14));
+  ty += (tLines.length - 1) * 14 + 18;
+  items.forEach(segs => {
+    doc.setTextColor(...red); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('•', M + padX + 2, ty);
+    doc.setTextColor(...text);
+    ty = drawRichParagraph(doc, segs, M + padX + indent, ty, innerW - indent, 14, 10) + 4;
+  });
+  /* Conducta ante síntomas: separada de las viñetas por una línea suave */
+  ty += 2;
+  doc.setDrawColor(222, 196, 196); doc.setLineWidth(0.6); doc.line(M + padX, ty - 6, W - M - padX, ty - 6);
+  drawRichParagraph(doc, cond, M + padX, ty + 8, innerW, 14, 10);
+  return y + hh;
+}
+/* 3. Diario de registro de tolerancia — tabla en blanco de 7 días para llenar a mano */
+function drawRetoOralDiary(doc, y){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 40, blue = [62, 84, 130], line = [200, 207, 225];
+  const widths = [52, 92, 170, W - 2 * M - 52 - 92 - 170];
+  const xs = widths.reduce((a, w, i) => (a.push(i ? a[i - 1] + widths[i - 1] : M), a), []);
+  const heads = ['Día', '¿Toleró tetero?', 'Deposiciones (Frecuencia / Consistencia / Moco)', 'Observaciones (Cólicos, Piel, Sueño)'];
+  const pad = 6, lh = 11.5, rowH = 34;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+  const headLines = heads.map((t, i) => doc.splitTextToSize(t, widths[i] - 2 * pad));
+  const headH = 2 * pad + Math.max(...headLines.map(l => l.length)) * lh;
+  const total = 30 + headH + 7 * rowH;
+  if(y + total > H - 40){ doc.addPage(); y = 40; }
+
+  /* Título de la sección (mismo estilo que las demás) */
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...blue);
+  doc.text('3. DIARIO DE REGISTRO DE TOLERANCIA', M, y);
+  y += 8;
+  doc.setDrawColor(...line); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+  y += 12;
+
+  doc.setFillColor(...blue); doc.rect(M, y, W - 2 * M, headH, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+  headLines.forEach((ls, i) => ls.forEach((ln, k) => doc.text(ln, xs[i] + pad, y + pad + 8 + k * lh)));
+  const top = y;
+  y += headH;
+  for(let d = 1; d <= 7; d++){
+    if(d % 2 === 0){ doc.setFillColor(245, 247, 251); doc.rect(M, y, W - 2 * M, rowH, 'F'); }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...blue);
+    doc.text('Día ' + d, xs[0] + pad, y + rowH / 2 + 3.5);
+    doc.setDrawColor(...line); doc.setLineWidth(0.6); doc.line(M, y + rowH, W - M, y + rowH);
+    y += rowH;
+  }
+  /* Líneas verticales suaves para separar las columnas a llenar */
+  for(let i = 1; i < xs.length; i++) doc.line(xs[i], top + headH, xs[i], y);
+  doc.line(M, top + headH, M, y); doc.line(W - M, top + headH, W - M, y);
+  return y;
+}
+/* Cierre: firma del médico, contacto de emergencia y nota final con el nombre del paciente */
+function drawRetoOralClosing(doc, y){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 40, text = [80, 84, 94];
+  const nombre = (document.getElementById('ro_paciente').value || '').trim() || 'el paciente';
+  const nota = 'Documento médico personalizado para ' + nombre + '. Válido bajo indicación y seguimiento de Gastroenterología Pediátrica.';
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5);
+  const nLines = doc.splitTextToSize(nota, W - 2 * M);
+  const need = 56 + 20 + nLines.length * 11;
+  if(y + need > H - 40){ doc.addPage(); y = 40; }
+
+  const gap = 30, colW = (W - 2 * M - gap) / 2;
+  const sy = y + 56;                                  /* espacio para firmar sobre la línea */
+  doc.setDrawColor(150, 155, 170); doc.setLineWidth(0.8);
+  ['Firma / Sello Médico Gastroenterólogo Pediátrico', 'Teléfono / Contacto de Emergencia'].forEach((lbl, i) => {
+    const x = M + i * (colW + gap);
+    doc.line(x, sy, x + colW, sy);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...text);
+    doc.text(lbl, x, sy + 12);
+  });
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(...text);
+  nLines.forEach((ln, k) => doc.text(ln, W / 2, sy + 36 + k * 11, { align: 'center' }));
+  return sy + 36 + nLines.length * 11;
+}
+async function descargarRetoOralPDF(){
+  const btn = document.querySelector('#retoOralForm .btn-mac');
+  if(btn){ btn.disabled = true; btn.textContent = 'Generando PDF...'; }
+  try{
+    await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf);
+    const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+    let y = drawRetoOralHeader(doc);
+    y = drawRetoOralSection1(doc, y + 6);
+    y = drawRetoOralSection2(doc, y + 14);
+    y = drawRetoOralTable(doc, y + 4);
+    y = drawRetoOralAlarm(doc, y + 18);
+    y = drawRetoOralDiary(doc, y + 22);
+    y = drawRetoOralClosing(doc, y);
+    /* Numeración al pie de cada hoja: "Página 1 de 2" */
+    const total = doc.getNumberOfPages();
+    for(let p = 1; p <= total; p++){
+      doc.setPage(p);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110, 114, 124);
+      doc.text('Página ' + p + ' de ' + total, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 22, { align: 'center' });
+    }
+    const nombre = (document.getElementById('ro_paciente').value || '').trim().replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_');
+    doc.save('Protocolo_reto_oral' + (nombre ? '_' + nombre : '') + '.pdf');
+    toast('✅ PDF descargado');
+  }catch(e){
+    toast('❌ No se pudo generar el PDF');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Descargar PDF'; }
+  }
+}
+
+/* ── AUTO-SAVE CROSS-DEVICE (plan oculto _local_autosave) ── */
+const AUTOSAVE_ID = '_local_autosave';
+let _localTimer = null;
+
+function scheduleLocalSave(){
+  clearTimeout(_localTimer);
+  _localTimer = setTimeout(doLocalSave, 5000);
+}
+
+async function doLocalSave(){
+  try{
+    const plan = {
+      id: AUTOSAVE_ID,
+      name: '__autosave__',
+      created: new Date().toISOString(),
+      data: collect()
+    };
+    await sheetPost({ action: 'save', plan });
+    const el = document.getElementById('localSaveLabel');
+    if(el){
+      const d = new Date();
+      el.textContent = `💾 ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+  } catch(e){}
+}
+
+async function checkLocalRestore(){
+  if(sessionStorage.getItem('localChecked')) return;
+  sessionStorage.setItem('localChecked','1');
+  const autosave = planesCache.find(p => p.id === AUTOSAVE_ID);
+  if(!autosave || !autosave.data) return;
+  const hasCells = autosave.data.cells && Object.values(autosave.data.cells).some(v=>v&&v.trim());
+  if(!hasCells) return;
+  const ts = new Date(autosave.created);
+  const agoMin = Math.round((Date.now()-ts.getTime())/60000);
+  const label = agoMin < 60 ? `hace ${agoMin} min`
+    : agoMin < 1440 ? `hace ${Math.round(agoMin/60)}h`
+    : ts.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+  const ok = await showConfirm(
+    `📱 Hay trabajo guardado automáticamente (${label}) — ¿continuar desde donde quedaste?\n\n⚠️ Si eliges "Ignorar" se perderá todo ese progreso.`,
+    { okText:'✓ Restaurar', cancelText:'✕ Ignorar', icon:'📱' }
+  );
+  if(ok){
+    apply(autosave.data);
+    planDirty = planHasContent(); updateSaveBtnVisibility();
+    toast('✅ Sesión restaurada');
+  } else {
+    toast('🗑️ Progreso anterior descartado');
+  }
+}
+
+/* ══ OBSERVACIONES ══ */
+let obsCount = 0;
+
+function addObservacion(text=''){
+  const tbody = document.getElementById('obsList');
+  obsCount++;
+
+  const tr = document.createElement('tr');
+
+  const tdNum = document.createElement('td');
+  tdNum.className = 'obs-num-cell registro-hora-cell';
+  tdNum.textContent = tbody.rows.length + 1;
+
+  const tdText = document.createElement('td');
+  tdText.className = 'registro-alim-cell';
+  const div = document.createElement('div');
+  div.className = 'registro-alim-edit obs-text';
+  div.contentEditable = 'true';
+  div.spellcheck = false;
+  if(text) div.textContent = text;
+  div.addEventListener('input', () => { autoSave(); });
+  div.addEventListener('focus', () => armUndoSnapshot(div));
+  div.addEventListener('blur', () => commitUndoSnapshotIfChanged(div));
+  div.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); div.blur(); }
+  });
+  div.addEventListener('paste', e => {
+    e.preventDefault();
+    const t = (e.clipboardData||window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, t);
+  });
+  tdText.appendChild(div);
+
+  const tdDel = document.createElement('td');
+  const btnDel = document.createElement('button');
+  btnDel.className = 'btn-del-row';
+  btnDel.innerHTML = '✕';
+  btnDel.title = 'Eliminar observación';
+  btnDel.setAttribute('aria-label', 'Eliminar observación');
+  btnDel.addEventListener('click', async () => {
+    const hasText = div.textContent.trim();
+    if(hasText && !await showConfirm('¿Eliminar esta observación?', {okText:'Sí, eliminar', danger:true})) return;
+    if(hasText) pushUndoSnapshot(collect());
+    tr.remove(); renumberObs(); autoSave();
+  });
+  tdDel.appendChild(btnDel);
+
+  tr.appendChild(tdNum); tr.appendChild(tdText); tr.appendChild(tdDel);
+  tbody.appendChild(tr);
+  autoSave();
+  return tr;
+}
+
+function renumberObs(){
+  document.querySelectorAll('#obsList tr').forEach((tr, i) => {
+    const cell = tr.querySelector('.obs-num-cell');
+    if(cell) cell.textContent = i + 1;
+  });
+}
+
+function collectObservaciones(){
+  const obs = [];
+  document.querySelectorAll('#obsList .obs-text').forEach(div => {
+    obs.push(div.textContent.trim());
+  });
+  return obs;
+}
+
+function restoreObservaciones(obs){
+  document.getElementById('obsList').innerHTML = '';
+  obsCount = 0;
+  if(!obs || !obs.length) return;
+  obs.forEach(text => addObservacion(text));
+}
+
+/* ══ PLANES — GOOGLE SHEETS API ══ */
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxd7xRWWwPrwGjEM1WYrZB1PDg7fgZzNhkMz2XNY_N3LYZXHlQ9hxO4dSl9uSmjtkcs/exec';
+let planesCache = [];
+let currentPlanId = '';
+let currentPlanName = '';
+
+function getSheetUrl(){ return SHEET_URL; }
+
+function setEstado(msg){
+  const el = document.getElementById('planesStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.toggle('status-error', msg.includes('⚠️') || msg.includes('❌'));
+}
+
+function renderPlanPicker(){
+  const list = document.getElementById('planPickerList');
+  const visibles = planesCache
+    .filter(p => p.id !== AUTOSAVE_ID)
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+  if(!visibles.length){
+    list.innerHTML = '<div class="plan-picker-empty">Todavía no hay planes guardados</div>';
+  } else {
+    list.innerHTML = '';
+    visibles.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'plan-picker-item' + (p.id === currentPlanId ? ' selected' : '');
+      item.setAttribute('role','option');
+
+      const nameBtn = document.createElement('button');
+      nameBtn.type = 'button';
+      nameBtn.className = 'plan-picker-item-name';
+      nameBtn.textContent = p.name;
+      nameBtn.addEventListener('click', () => cargarPlan(p.id));
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'plan-picker-item-del';
+      delBtn.innerHTML = '🗑️';
+      delBtn.setAttribute('aria-label', 'Eliminar plan ' + p.name);
+      delBtn.addEventListener('click', e => { e.stopPropagation(); eliminarPlan(p.id); });
+
+      item.appendChild(nameBtn); item.appendChild(delBtn);
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('planPickerLabel').textContent = currentPlanName || '— Seleccionar plan —';
+}
+
+function togglePlanPicker(){
+  const list = document.getElementById('planPickerList');
+  if(list.classList.contains('open')) closePlanPicker(); else openPlanPicker();
+}
+function openPlanPicker(){
+  document.getElementById('planPickerList').classList.add('open');
+  document.getElementById('planPickerBtn').setAttribute('aria-expanded','true');
+}
+function closePlanPicker(){
+  document.getElementById('planPickerList').classList.remove('open');
+  document.getElementById('planPickerBtn').setAttribute('aria-expanded','false');
+}
+document.addEventListener('mousedown', e => {
+  const picker = document.getElementById('planPicker');
+  if(picker && !picker.contains(e.target)) closePlanPicker();
+});
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && document.getElementById('planPickerList').classList.contains('open')) closePlanPicker();
+});
+
+async function sheetGet(){
+  const url = getSheetUrl();
+  if(!url) return [];
+  const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now());
+  const j = await r.json();
+  return j.ok ? (j.plans || []) : [];
+}
+
+async function sheetPost(body){
+  const url = getSheetUrl();
+  if(!url) return;
+  /* no-cors: el POST llega al Apps Script aunque no podamos leer la respuesta */
+  await fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+}
+
+async function refrescarPlanes(afterLoad){
+  if(!getSheetUrl()) return;
+  setEstado('🔄');
+  showSyncProgress(15, '🔄 Conectando con el servidor...');
+  try{
+    planesCache = await Promise.race([
+      sheetGet(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+    ]);
+    showSyncProgress(80, '📋 Sincronizando planes guardados...');
+    renderPlanPicker();
+    setEstado('');
+    showSyncProgress(100, '✅ ¡Listo!');
+    await new Promise(r => setTimeout(r, 300));
+    hideSyncProgress();
+    if(afterLoad) afterLoad();
+  } catch(e){
+    setEstado('⚠️ Sin conexión');
+    showSyncProgress(100, '⚠️ Sin conexión con el servidor');
+    await new Promise(r => setTimeout(r, 1000));
+    hideSyncProgress();
+  }
+}
+
+async function guardarPlan(){
+  const nombre = await showPrompt('Escribe un nombre para este plan:');
+  if(!nombre?.trim()) return;
+  const existente = planesCache.find(p => p.name.toLowerCase() === nombre.trim().toLowerCase());
+  if(existente && !await showConfirm(`Ya existe un plan llamado "${existente.name}". ¿Quieres sobreescribirlo?`, {okText:'Sí, sobreescribir', danger:true})) return;
+  const id = existente ? existente.id : 'plan_' + Date.now();
+  /* Los planes guardados son plantillas reutilizables entre pacientes —
+     el nombre del paciente actual no debe quedar grabado en la plantilla,
+     aunque sí se mantiene escrito en pantalla. */
+  const data = collect();
+  data.childName = '';
+  const plan = { id, name: nombre.trim(), created: existente?.created || new Date().toISOString(), data };
+  setEstado('💾 Guardando...');
+  document.getElementById('btnGuardarComo').style.display = 'none';
+  showSyncProgress(20, '💾 Guardando plan...');
+  try{
+    await sheetPost({ action: 'save', plan });
+    /* Verificar via GET que realmente se guardó */
+    showSyncProgress(60, '🔎 Verificando guardado...');
+    await new Promise(r => setTimeout(r, 1200));
+    planesCache = await sheetGet();
+    const guardado = planesCache.find(p => p.id === id);
+    if(guardado){
+      currentPlanId = id; currentPlanName = plan.name;
+      renderPlanPicker();
+      planDirty = false; updateSaveBtnVisibility();
+      setEstado('✅ Guardado');
+      showSyncProgress(100, '✅ ¡Guardado!');
+      await new Promise(r => setTimeout(r, 400));
+      toast('✅ Plan guardado: ' + plan.name);
+    } else {
+      renderPlanPicker();
+      updateSaveBtnVisibility();
+      setEstado('⚠️ No se confirmó el guardado');
+      showSyncProgress(100, '⚠️ No se pudo confirmar');
+      await new Promise(r => setTimeout(r, 900));
+      toast('⚠️ Revisa la conexión con el Sheet');
+    }
+  } catch(e){
+    updateSaveBtnVisibility();
+    setEstado('⚠️ Sin conexión');
+    showSyncProgress(100, '⚠️ Sin conexión');
+    await new Promise(r => setTimeout(r, 900));
+    toast('❌ Sin conexión');
+  } finally {
+    hideSyncProgress();
+  }
+}
+
+async function cargarPlan(id){
+  const plan = planesCache.find(p => p.id === id);
+  if(!plan) return;
+  if(!await showConfirm(`¿Cargar el plan "${plan.name}"? Esto reemplazará lo que tienes en pantalla.`, {icon:'⬆️'})){
+    closePlanPicker();
+    return;
+  }
+  pushUndoSnapshot(collect());
+  apply(plan.data); autoSave();
+  planDirty = false; updateSaveBtnVisibility();
+  currentPlanId = plan.id; currentPlanName = plan.name;
+  renderPlanPicker();
+  closePlanPicker();
+  toast('✅ Plan cargado: ' + plan.name);
+}
+
+async function eliminarPlan(id){
+  const plan = planesCache.find(p => p.id === id);
+  if(!plan) return;
+  if(!await showConfirm(`¿Eliminar el plan "${plan.name}"? Esta acción no se puede deshacer.`, {okText:'Sí, eliminar', danger:true})) return;
+  setEstado('🗑️ Eliminando...');
+  showSyncProgress(20, '🗑️ Eliminando plan...');
+  try{
+    await sheetPost({ action: 'delete', id });
+    showSyncProgress(70, '🔎 Verificando...');
+    await new Promise(r => setTimeout(r, 1200));
+    planesCache = await sheetGet();
+    if(currentPlanId === id){ currentPlanId = ''; currentPlanName = ''; }
+    renderPlanPicker();
+    setEstado('');
+    showSyncProgress(100, '✅ Plan eliminado');
+    await new Promise(r => setTimeout(r, 400));
+    toast('🗑️ Plan eliminado');
+  } catch(e){
+    setEstado('⚠️ Sin conexión');
+    showSyncProgress(100, '⚠️ Sin conexión');
+    await new Promise(r => setTimeout(r, 900));
+    toast('❌ Sin conexión');
+  } finally {
+    hideSyncProgress();
+  }
+}
+
+/* Deja la pantalla en blanco para empezar un plan nuevo desde cero —
+   no toca los planes guardados, solo lo que hay en pantalla ahora mismo. */
+async function nuevoPlanEnBlanco(){
+  if(!await showConfirm('¿Dejar la pantalla en blanco para empezar un plan nuevo? Se perderá lo que tienes sin guardar.', {okText:'Sí, dejar en blanco', danger:true, icon:'🆕'})) return;
+  pushUndoSnapshot(collect());
+  apply({ childName:'', dateStart: fmt(new Date()), numWeeks: 1, cells:{}, registro:[], observaciones:[] });
+  currentPlanId = ''; currentPlanName = '';
+  autoSave();
+  planDirty = planHasContent(); updateSaveBtnVisibility();
+  renderPlanPicker();
+  closeSideMenu();
+  toast('🆕 Pantalla en blanco lista para llenar');
+}
+
+/* ── PERSISTENCIA ── */
+function collectCells(){
+  const out={};
+  document.querySelectorAll('.cell-edit').forEach(el=>{
+    out[el.dataset.id] = el.textContent.trim();
+  });
+  return out;
+}
+function restoreCells(cells){
+  document.querySelectorAll('.cell-edit').forEach(el=>{
+    el.textContent = (cells && cells[el.dataset.id]) || '';
+  });
+  refreshCellClearButtons();
+}
+function toggleCellClearBtn(div){
+  const td = div.closest('td.cell');
+  if(td) td.classList.toggle('has-content', !!div.textContent.trim());
+}
+function refreshCellClearButtons(){
+  document.querySelectorAll('.cell-edit').forEach(toggleCellClearBtn);
+}
+function collect(){
+  return {
+    childName: document.getElementById('childName').value,
+    dateStart: startDate ? fmt(startDate) : '',
+    numWeeks:  numWeeks,
+    cells: collectCells(),
+    registro: collectRegistro(),
+    observaciones: collectObservaciones()
+  };
+}
+function apply(d){
+  if(!d) return;
+  document.getElementById('childName').value = d.childName || '';
+  if(d.dateStart){
+    const p=d.dateStart.split('/'); startDate=new Date(+p[2],+p[1]-1,+p[0]);
+    document.getElementById('lblStart').textContent=d.dateStart;
+  }
+  if(d.numWeeks){
+    numWeeks = d.numWeeks;
+    document.getElementById('weeksInput').value = numWeeks;
+  } else if(d.dateEnd && startDate){
+    /* backward compat: derive numWeeks from stored dateEnd */
+    const p=d.dateEnd.split('/'); const ed=new Date(+p[2],+p[1]-1,+p[0]);
+    numWeeks = Math.max(1, weeksBetween(startDate, ed));
+    document.getElementById('weeksInput').value = numWeeks;
+  }
+  onDatesChange();
+  restoreCells(d.cells);
+  restoreRegistro(d.registro || []);
+  restoreObservaciones(d.observaciones || []);
+}
+function autoSave(){
+  try{ localStorage.setItem(KEY,JSON.stringify(collect())); }catch(e){}
+  scheduleLocalSave();
+  planDirty = true; updateSaveBtnVisibility();
+  /* El plan cambió: el PDF ya construido (si lo hay) queda desactualizado */
+}
+function planHasContent(){
+  const d = collect();
+  return !!(
+    (d.childName && d.childName.trim()) ||
+    Object.values(d.cells||{}).some(v => v && v.trim()) ||
+    (d.registro||[]).some(r => r.alim && r.alim.trim()) ||
+    (d.observaciones||[]).some(o => o && o.trim())
+  );
+}
+function updateSaveBtnVisibility(){
+  const btn = document.getElementById('btnGuardarComo');
+  if(btn) btn.style.display = planDirty ? '' : 'none';
+}
+
+/* ── DESHACER (historial completo desde que se abrió la app) ── */
+const UNDO_MAX = 200;
+let undoStack = [];
+/* Para ediciones de texto: se arma un snapshot "candidato" al enfocar el campo,
+   pero solo se guarda en la pila si el contenido realmente cambió al salir de él
+   (evita llenar el historial con pasos vacíos por solo hacer clic). */
+let _pendingUndoSnapshot = null;
+let _pendingUndoPrevText = null;
+
+function pushUndoSnapshot(snap){
+  undoStack.push(snap);
+  if(undoStack.length > UNDO_MAX) undoStack.shift();
+  updateUndoBtnVisibility();
+}
+function undoFieldText(el){ return 'value' in el ? el.value : el.textContent; }
+function armUndoSnapshot(div){
+  _pendingUndoSnapshot = collect();
+  _pendingUndoPrevText = undoFieldText(div);
+}
+function commitUndoSnapshotIfChanged(div){
+  if(_pendingUndoSnapshot !== null && undoFieldText(div) !== _pendingUndoPrevText){
+    pushUndoSnapshot(_pendingUndoSnapshot);
+  }
+  _pendingUndoSnapshot = null;
+  _pendingUndoPrevText = null;
+}
+function updateUndoBtnVisibility(){
+  const btn = document.getElementById('undoBtn');
+  if(btn) btn.classList.toggle('show', undoStack.length > 0);
+}
+function undoLastAction(){
+  if(!undoStack.length) return;
+  const snapshot = undoStack.pop();
+  apply(snapshot);
+  refreshCellClearButtons();
+  planDirty = planHasContent(); updateSaveBtnVisibility();
+  updateUndoBtnVisibility();
+  toast(undoStack.length ? `↺ Acción deshecha (quedan ${undoStack.length})` : '↺ Acción deshecha');
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+/* ── MODAL A MEDIDA (reemplaza prompt/confirm nativos) ── */
+function showModal(opts){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById('modalOverlay');
+    const icon    = document.getElementById('modalIcon');
+    const msg     = document.getElementById('modalMsg');
+    const input   = document.getElementById('modalInput');
+    const btnOk   = document.getElementById('modalOk');
+    const btnCancel = document.getElementById('modalCancel');
+
+    icon.textContent = opts.icon || (opts.danger ? '⚠️' : '💭');
+    msg.textContent  = opts.message || '';
+    input.style.display = opts.isPrompt ? 'block' : 'none';
+    input.value = opts.defaultValue || '';
+    btnOk.textContent = opts.okText || 'Aceptar';
+    btnOk.className = opts.danger ? 'danger' : '';
+    btnCancel.style.display = opts.hideCancel ? 'none' : '';
+    btnCancel.textContent = opts.cancelText || 'Cancelar';
+    overlay.classList.add('open');
+    if(opts.isPrompt) setTimeout(()=>input.focus(), 60);
+    else setTimeout(()=>btnOk.focus(), 60);
+
+    function cleanup(result){
+      overlay.classList.remove('open');
+      btnOk.removeEventListener('click', onOk);
+      btnCancel.removeEventListener('click', onCancel);
+      input.removeEventListener('keydown', onKey);
+      overlay.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk(){ cleanup(opts.isPrompt ? (input.value.trim() || null) : true); }
+    function onCancel(){ cleanup(opts.isPrompt ? null : false); }
+    function onKey(e){
+      if(e.key==='Enter'){ e.preventDefault(); onOk(); }
+      if(e.key==='Escape'){ onCancel(); }
+    }
+    btnOk.addEventListener('click', onOk);
+    btnCancel.addEventListener('click', onCancel);
+    input.addEventListener('keydown', onKey);
+    overlay.addEventListener('keydown', onKey);
+  });
+}
+function showConfirm(message, opts={}){
+  return showModal({ message, isPrompt:false, okText:opts.okText||'Sí', cancelText:opts.cancelText||'Cancelar', danger:opts.danger, icon:opts.icon });
+}
+function showPrompt(message, defaultValue=''){
+  return showModal({ message, isPrompt:true, defaultValue, okText:'Guardar', cancelText:'Cancelar', icon:'📋' });
+}
+
+/* ── BARRA DE PROGRESO DEL PDF ── */
+let pdfInProgress = false;
+function showPdfProgress(pct, label){
+  document.getElementById('pdfProgressOverlay').classList.add('open');
+  document.getElementById('pdfProgressLabel').textContent = label;
+  document.getElementById('pdfProgressFill').style.width = Math.min(100,Math.round(pct)) + '%';
+  document.getElementById('pdfProgressPct').textContent = Math.min(100,Math.round(pct)) + '%';
+}
+function hidePdfProgress(){
+  document.getElementById('pdfProgressOverlay').classList.remove('open');
+}
+
+function showSyncProgress(pct, label){
+  document.getElementById('syncProgressOverlay').classList.add('open');
+  document.getElementById('syncProgressLabel').textContent = label;
+  document.getElementById('syncProgressFill').style.width = Math.min(100,Math.round(pct)) + '%';
+  document.getElementById('syncProgressPct').textContent = Math.min(100,Math.round(pct)) + '%';
+}
+function hideSyncProgress(){
+  document.getElementById('syncProgressOverlay').classList.remove('open');
+}
+
+/* ══════════════════════════════════════════
+   DESCARGA DE REFERENCIA (APLV / Alergia al huevo)
+   ══════════════════════════════════════════ */
+const REF_FILES = {
+  aplv:  { id: '1ZKHFg2z4HGejEDHMjV7cDSAGwyOtamXv', name: 'APLV', icon: '🥛',
+    desc: 'Guía con los alimentos permitidos y los que se deben evitar para el manejo de la alergia a la proteína de leche de vaca.' },
+  huevo: { id: '1JoinJpy16Ilq93c7vlS6-0CmbU1PSF0i', name: 'Alergia al huevo', icon: '🥚',
+    desc: 'Guía con los alimentos permitidos y los que se deben evitar para el manejo de la alergia al huevo.' },
+  ambos: { id: '1OpBCRJW2u9tVh4WDSb5S8pJWXK87jCXF', name: 'APLV + Alergia al huevo', icon: '📋',
+    desc: 'Guía combinada con los alimentos permitidos y los que se deben evitar para ambas alergias.' }
+};
+function refDownloadUrl(fileId){ return 'https://drive.google.com/uc?export=download&id=' + fileId; }
+function refViewUrl(fileId){ return 'https://drive.google.com/file/d/' + fileId + '/view'; }
+
+async function descargarSeleccion(){
+  const wantPlan  = document.getElementById('dlPlan').checked;
+  const wantAplv  = document.getElementById('dlAplv').checked;
+  const wantHuevo = document.getElementById('dlHuevo').checked;
+
+  if(!wantPlan && !wantAplv && !wantHuevo){ toast('Selecciona al menos una opción para descargar'); return; }
+
+  closeSideMenu();
+
+  /* Abrir las descargas de Drive de forma síncrona (dentro del mismo clic)
+     para que el navegador no las bloquee como pop-ups */
+  if(wantAplv && wantHuevo){
+    window.open(refDownloadUrl(REF_FILES.ambos.id), '_blank');
+  } else {
+    if(wantAplv)  window.open(refDownloadUrl(REF_FILES.aplv.id), '_blank');
+    if(wantHuevo) window.open(refDownloadUrl(REF_FILES.huevo.id), '_blank');
+  }
+
+  /* Solo se construye el PDF del plan si el usuario lo seleccionó */
+  if(wantPlan){
+    try{
+      await downloadAllPDF({ notify: false });
+    }catch(e){ /* downloadAllPDF ya muestra su propio aviso de error */ }
+  }
+}
+
+/* ══════════════════════════════════════════
+   PDF DOWNLOAD — con página extra de REGISTRO
+   ══════════════════════════════════════════ */
+function downloadAllPDF(opts={}){
+  return new Promise((resolve, reject) => {
+    if(pdfInProgress){ toast('⏳ Ya se está generando el PDF, espera un momento...'); resolve(null); return; }
+    pdfInProgress = true;
+    const btn = document.getElementById('sideBtnDownload');
+    if(btn) btn.disabled = true;
+    showPdfProgress(2, '📚 Cargando librerías...');
+    const libs=[
+      {src:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',        check:()=>window.jspdf},
+      {src:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', check:()=>window.html2canvas},
+      {src:'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js',                        check:()=>window.PDFLib}
+    ];
+    function runPDFSafe(){
+      runPDF(opts).then(resolve).catch(err=>{
+        console.error(err);
+        hidePdfProgress(); pdfInProgress=false; if(btn) btn.disabled=false;
+        toast('❌ Error generando el PDF: ' + err.message);
+        reject(err);
+      });
+    }
+    let loaded=0;
+    libs.forEach(lib=>{
+      if(lib.check()){ if(++loaded===libs.length) runPDFSafe(); return; }
+      const s=document.createElement('script'); s.src=lib.src;
+      s.onload=()=>{ if(++loaded===libs.length) runPDFSafe(); };
+      s.onerror=()=>{
+        hidePdfProgress(); pdfInProgress=false; if(btn) btn.disabled=false;
+        toast('❌ Sin conexión para cargar librerías');
+        reject(new Error('No se pudieron cargar las librerías del PDF'));
+      };
+      document.head.appendChild(s);
+    });
+  });
+}
+
+/* Genera un canvas del registro para el PDF — layout de alta resolución */
+async function captureRegistroPage(){
+  const childName = document.getElementById('childName').value.trim();
+  const PW = 3508; // A4 landscape 300dpi
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = `
+    position: fixed; top: -99999px; left: 0;
+    width: ${PW}px; background: white;
+    font-family: 'Nunito', Nunito, sans-serif;
+    padding: 80px 120px; box-sizing: border-box;
+  `;
+
+  const page = document.createElement('div');
+  page.style.cssText = `background:white;`;
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'text-align:center;margin-bottom:50px;padding-bottom:30px;border-bottom:3px solid #ede9fe;';
+  const ems = document.createElement('div');
+  ems.style.cssText = 'font-size:60px;letter-spacing:14px;margin-bottom:14px;';
+  ems.textContent = '🌟 🥦 🍎 🥣 🍗 🌟';
+  const rh1 = document.createElement('div');
+  rh1.style.cssText = 'font-size:54px;font-weight:900;color:#5b21b6;margin-bottom:10px;';
+  rh1.textContent = '📋 Registro de Alimentación';
+  const rsub = document.createElement('div');
+  rsub.style.cssText = 'font-size:36px;font-weight:700;color:#7c3aed;';
+  rsub.textContent = childName ? '👦 ' + childName : '¡Comer bien es divertido y delicioso!';
+  hdr.appendChild(ems); hdr.appendChild(rh1); hdr.appendChild(rsub);
+  page.appendChild(hdr);
+
+  // Table
+  const tblWrap = document.createElement('div');
+  tblWrap.style.cssText = 'overflow:hidden;border-radius:20px;border:3px solid #ede9fe;background:#fdfcff;';
+  const tbl = document.createElement('table');
+  tbl.style.cssText = 'width:100%;border-collapse:collapse;font-family:Nunito,sans-serif;';
+  const thead = document.createElement('thead');
+  const htr = document.createElement('tr');
+  htr.style.background = '#f5f3ff';
+  [['width:320px', '🕐 Hora'], ['', '🥗 Alimentación']].forEach(([w, label]) => {
+    const th = document.createElement('th');
+    th.style.cssText = w + ';padding:24px 28px;font-weight:800;font-size:30px;color:#5b21b6;text-align:center;border-bottom:3px solid #ede9fe;';
+    th.textContent = label;
+    htr.appendChild(th);
+  });
+  thead.appendChild(htr); tbl.appendChild(thead);
+  const rtbody = document.createElement('tbody');
+  collectRegistro().forEach((row, i) => {
+    const tr = document.createElement('tr');
+    tr.style.cssText = `background:${i%2===0?'white':'#fdf9ff'};border-bottom:2px solid #f5f3ff;`;
+    const td1 = document.createElement('td');
+    td1.style.cssText = 'padding:20px 28px;text-align:center;font-size:28px;font-weight:700;color:#5b21b6;border-right:2px solid #f5f3ff;';
+    td1.textContent = formatHora12(row.hora) || '—';
+    const td2 = document.createElement('td');
+    td2.style.cssText = 'padding:20px 32px;text-align:left;font-size:28px;font-weight:600;color:#374151;';
+    td2.textContent = row.alim || '';
+    tr.appendChild(td1); tr.appendChild(td2); rtbody.appendChild(tr);
+  });
+  tbl.appendChild(rtbody); tblWrap.appendChild(tbl); page.appendChild(tblWrap);
+
+  // Observations — mismo diseño de tabla que el registro
+  const obsData = collectObservaciones().filter(o => o);
+  if(obsData.length > 0){
+    const obsSection = document.createElement('div');
+    obsSection.style.cssText = 'margin-top:50px;border-top:3px solid #ede9fe;padding-top:36px;';
+    const obsH = document.createElement('div');
+    obsH.style.cssText = 'font-size:48px;font-weight:900;color:#5b21b6;text-align:center;margin-bottom:28px;';
+    obsH.textContent = '📝 Observaciones';
+    obsSection.appendChild(obsH);
+
+    const obsTblWrap = document.createElement('div');
+    obsTblWrap.style.cssText = 'overflow:hidden;border-radius:20px;border:3px solid #ede9fe;background:#fdfcff;';
+    const obsTbl = document.createElement('table');
+    obsTbl.style.cssText = 'width:100%;border-collapse:collapse;font-family:Nunito,sans-serif;';
+
+    const oHead = document.createElement('thead');
+    const oHtr = document.createElement('tr');
+    oHtr.style.background = '#f5f3ff';
+    [['width:80px','#'], ['','📝 Observación']].forEach(([w, label]) => {
+      const th = document.createElement('th');
+      th.style.cssText = w + ';padding:22px 28px;font-weight:800;font-size:28px;color:#5b21b6;text-align:center;border-bottom:3px solid #ede9fe;';
+      th.textContent = label;
+      oHtr.appendChild(th);
+    });
+    oHead.appendChild(oHtr); obsTbl.appendChild(oHead);
+
+    const oBody = document.createElement('tbody');
+    obsData.forEach((o, i) => {
+      const tr = document.createElement('tr');
+      tr.style.cssText = `background:${i%2===0?'white':'#fdf9ff'};border-bottom:2px solid #f5f3ff;`;
+      const tdN = document.createElement('td');
+      tdN.style.cssText = 'padding:20px 28px;text-align:center;font-size:28px;font-weight:800;color:#a78bfa;border-right:2px solid #f5f3ff;';
+      tdN.textContent = i + 1;
+      const tdT = document.createElement('td');
+      tdT.style.cssText = 'padding:20px 32px;text-align:left;font-size:28px;font-weight:600;color:#374151;line-height:1.4;';
+      tdT.textContent = o;
+      tr.appendChild(tdN); tr.appendChild(tdT); oBody.appendChild(tr);
+    });
+    obsTbl.appendChild(oBody); obsTblWrap.appendChild(obsTbl);
+    obsSection.appendChild(obsTblWrap);
+    page.appendChild(obsSection);
+  }
+
+  wrapper.appendChild(page);
+  document.body.appendChild(wrapper);
+  await new Promise(r => setTimeout(r, 80));
+  const canvas = await html2canvas(wrapper, {
+    scale: 1, useCORS: true,
+    scrollX: 0, scrollY: 0,
+    windowWidth: PW, width: PW,
+    height: wrapper.scrollHeight,
+    backgroundColor: '#ffffff'
+  });
+  document.body.removeChild(wrapper);
+  return { dataUrl: canvas.toDataURL('image/png'), w: canvas.width, h: canvas.height };
+}
+
+async function runPDF(opts={}){
+  showPdfProgress(5, '📄 Generando PDF del plan...');
+  const childName=document.getElementById('childName').value.trim();
+  const planName=currentPlanName || '';
+  const fechaStr=startDate?fmt(startDate).replace(/\//g,'-'):'';
+  const nameParts=['Plan alimentario'];
+  if(childName) nameParts.push(childName);
+  if(fechaStr) nameParts.push(fechaStr);
+  if(planName) nameParts.push(planName);
+  const name=nameParts.join(' - ');
+  const pdfUrl1='https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIA.pdf';
+  const pdfUrl2='https://drayeiny.github.io/Plancomplementario/ALIMENTACIONCOMPLEMENTARIAFINAL.pdf';
+
+  const PW = 3508;
+  const MEAL_COLORS = {
+    desayuno:{ bg:'#fff7ed', color:'#c2410c' },
+    almuerzo:{ bg:'#f0fdf4', color:'#15803d' },
+    cena:    { bg:'#eff6ff', color:'#1d4ed8' }
+  };
+  const SUB_COLORS = {
+    cereal:  { bg:'#fffbeb', color:'#92400e' },
+    fruta:   { bg:'#fff1f2', color:'#9f1239' },
+    verdura: { bg:'#f0fdf4', color:'#14532d' },
+    proteina:{ bg:'#faf5ff', color:'#6b21a8' }
+  };
+  const CELL_BG = { cereal:'#fffdf7', fruta:'#fff8f8', verdura:'#f8fff9', proteina:'#fdf7ff' };
+
+  function buildPrintPage(w){
+    const ws=addDays(startDate,w*7), we=addDays(ws,6);
+    const el=document.createElement('div');
+    el.style.cssText=`position:fixed;top:-99999px;left:0;width:${PW}px;background:white;font-family:'Nunito',Nunito,sans-serif;padding:70px 90px;box-sizing:border-box;`;
+
+    const hdr=document.createElement('div');
+    hdr.style.cssText='text-align:center;margin-bottom:44px;padding-bottom:26px;border-bottom:3px solid #ede9fe;';
+    const e1=document.createElement('div'); e1.style.cssText='font-size:56px;letter-spacing:14px;margin-bottom:12px;'; e1.textContent='🌟 🥦 🍎 🥣 🍗 🌟';
+    const h1=document.createElement('div'); h1.style.cssText='font-size:52px;font-weight:900;color:#5b21b6;margin-bottom:8px;'; h1.textContent='🍽️ Plan de Alimentación Semanal';
+    const s1=document.createElement('div'); s1.style.cssText='font-size:36px;font-weight:700;color:#7c3aed;';
+    s1.textContent=(childName?'👦 '+childName+' · ':'')+`Semana ${w+1}: ${fmt(ws)} al ${fmt(we)}`;
+    hdr.appendChild(e1); hdr.appendChild(h1); hdr.appendChild(s1); el.appendChild(hdr);
+
+    const tbl=document.createElement('table');
+    tbl.style.cssText='width:100%;border-collapse:separate;border-spacing:5px;';
+    const thead=document.createElement('thead');
+    const hrow=document.createElement('tr');
+    const c1=document.createElement('th'); c1.style.width='165px';
+    const c2=document.createElement('th'); c2.style.width='150px';
+    hrow.appendChild(c1); hrow.appendChild(c2);
+    for(let d=0;d<7;d++){
+      const dd=addDays(ws,d); const di=dd.getDay();
+      const th=document.createElement('th');
+      th.style.cssText='background:linear-gradient(160deg,#7c3aed,#6d28d9);color:white;font-weight:800;font-size:28px;text-align:center;padding:18px 8px;border-radius:14px;';
+      th.innerHTML=`${DAY_ICONS_ALL[di]} ${DAY_NAMES_ES[di]}<br><span style="font-size:22px;opacity:0.85">${dd.getDate()}/${dd.getMonth()+1}</span>`;
+      hrow.appendChild(th);
+    }
+    thead.appendChild(hrow); tbl.appendChild(thead);
+
+    const tbody=document.createElement('tbody');
+    meals.forEach((meal,mi)=>{
+      meal.subs.forEach((sub,si)=>{
+        const tr=document.createElement('tr');
+        if(si===0){
+          const mc=MEAL_COLORS[meal.id]||{bg:'#f5f3ff',color:'#5b21b6'};
+          const td=document.createElement('td');
+          td.rowSpan=meal.subs.length;
+          td.style.cssText=`background:${mc.bg};color:${mc.color};font-weight:900;font-size:28px;text-align:center;padding:10px 14px;border-radius:14px;vertical-align:middle;white-space:nowrap;`;
+          td.textContent=meal.label; tr.appendChild(td);
+        }
+        const sc=SUB_COLORS[sub.id]||{bg:'#f5f5f5',color:'#333'};
+        const std=document.createElement('td');
+        std.style.cssText=`background:${sc.bg};color:${sc.color};font-weight:800;font-size:24px;padding:8px 14px;border-radius:10px;text-align:right;white-space:nowrap;vertical-align:middle;`;
+        std.textContent=`${sub.icon} ${sub.label}`; tr.appendChild(std);
+        for(let d=0;d<7;d++){
+          const cellEl=document.querySelector(`[data-id="w${w}_${meal.id}_${sub.id}_${d}"]`);
+          const text=cellEl?cellEl.textContent.trim():'';
+          const ctd=document.createElement('td');
+          ctd.style.cssText=`background:${CELL_BG[sub.id]||'#fff'};padding:4px;border-radius:10px;vertical-align:middle;`;
+          const inner=document.createElement('div');
+          inner.style.cssText='min-height:82px;border:2px dashed #e5e7eb;border-radius:10px;padding:10px 8px;font-size:28px;font-weight:700;color:#374151;text-align:center;display:flex;align-items:center;justify-content:center;font-family:Nunito,sans-serif;word-break:break-word;line-height:1.3;';
+          inner.textContent=text; ctd.appendChild(inner); tr.appendChild(ctd);
+        }
+        tbody.appendChild(tr);
+      });
+      if(mi<meals.length-1){
+        const sp=document.createElement('tr');
+        const td=document.createElement('td'); td.colSpan=9; td.style.height='12px';
+        sp.appendChild(td); tbody.appendChild(sp);
+      }
+    });
+    tbl.appendChild(tbody); el.appendChild(tbl);
+    return el;
+  }
+
+  const pageImages=[];
+  for(let w=0;w<numWeeks;w++){
+    showPdfProgress(10 + (w/numWeeks)*35, `📅 Capturando semana ${w+1} de ${numWeeks}...`);
+    const el=buildPrintPage(w);
+    document.body.appendChild(el);
+    await new Promise(r=>setTimeout(r,120));
+    const canvas=await html2canvas(el,{
+      scale:1, useCORS:true,
+      scrollX:0, scrollY:0,
+      windowWidth:PW, width:PW, height:el.scrollHeight,
+      backgroundColor:'#ffffff'
+    });
+    document.body.removeChild(el);
+    pageImages.push({dataUrl:canvas.toDataURL('image/png'),w:canvas.width,h:canvas.height});
+  }
+
+  /* Capturar la página del registro */
+  showPdfProgress(47, '📋 Generando página de registro...');
+  const regImg = await captureRegistroPage();
+
+  showPdfProgress(52, '🧩 Ensamblando PDF...');
+  const {PDFDocument}=window.PDFLib;
+  const planDoc=await PDFDocument.create();
+  const mmToPt=mm=>mm*2.8346;
+  const pageW=mmToPt(297), pageH=mmToPt(210), margin=mmToPt(4);
+
+  /* Helper para añadir páginas de un PDF externo */
+  async function appendExternalPDF(url, label, pct){
+    try{
+      showPdfProgress(pct, '⬇️ Cargando ' + label + '...');
+      const bytes=await fetch(url).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); });
+      const doc=await PDFDocument.load(bytes,{ignoreEncryption:true});
+      const pages=await planDoc.copyPages(doc,doc.getPageIndices());
+      pages.forEach(p=>planDoc.addPage(p));
+    } catch(err){
+      console.warn('No se pudo cargar '+label+':',err);
+      toast('⚠️ No se pudo adjuntar: '+label);
+      await new Promise(r=>setTimeout(r,1800));
+    }
+  }
+
+  /* Helper para añadir una imagen capturada como página del PDF */
+  async function addImagePage(img){
+    const imgBytes=await fetch(img.dataUrl).then(r=>r.arrayBuffer());
+    const embedded=await planDoc.embedPng(imgBytes);
+    const page=planDoc.addPage([pageW,pageH]);
+    const ratio=img.w/img.h;
+    const maxW=pageW-margin*2, maxH=pageH-margin*2;
+    let iW=maxW, iH=maxW/ratio;
+    if(iH>maxH){ iH=maxH; iW=maxH*ratio; }
+    page.drawImage(embedded,{x:(pageW-iW)/2,y:(pageH-iH)/2,width:iW,height:iH});
+  }
+
+  /* ── ORDEN FINAL DEL PDF ──────────────────────────────────────
+     1. ALIMENTACIONCOMPLEMENTARIA.pdf  (intro/portada)
+     2. Plantillas generadas (semanas del plan + registro)
+     3. ALIMENTACIONCOMPLEMENTARIAFINAL.pdf  (cierre)
+     ─────────────────────────────────────────────────────────── */
+
+  /* 1 — PDF inicial */
+  await appendExternalPDF(pdfUrl1, 'PDF inicial', 56);
+
+  /* 2a — Páginas del plan semanal */
+  showPdfProgress(62, '📎 Añadiendo semanas del plan...');
+  for(const img of pageImages) await addImagePage(img);
+
+  /* 2b — Página del registro */
+  showPdfProgress(68, '📎 Añadiendo registro de alimentación...');
+  const regPageW = mmToPt(297), regPageH = mmToPt(210);
+  const regBytes = await fetch(regImg.dataUrl).then(r=>r.arrayBuffer());
+  const regEmbedded = await planDoc.embedPng(regBytes);
+  const regPage = planDoc.addPage([regPageW, regPageH]);
+  const regRatio = regImg.w / regImg.h;
+  const rMaxW = regPageW - margin*2, rMaxH = regPageH - margin*2;
+  let rW = rMaxW, rH = rMaxW / regRatio;
+  if(rH > rMaxH){ rH = rMaxH; rW = rMaxH * regRatio; }
+  regPage.drawImage(regEmbedded, { x: margin, y: regPageH - margin - rH, width: rW, height: rH });
+
+  /* 3 — PDF final */
+  await appendExternalPDF(pdfUrl2, 'PDF final', 74);
+
+  showPdfProgress(78, '✅ PDF combinado — guardando en Drive...');
+  const pdfBytes=await planDoc.save();
+  const filename=name.replace(/\s+/g,' ').trim()+'.pdf';
+
+  const driveLink = await uploadToDrive(pdfBytes, filename, { notify: opts.notify !== false });
+
+  if(opts.download !== false){
+    showPdfProgress(98, '📥 Descargando en tu dispositivo...');
+    const blob=new Blob([pdfBytes],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download=filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  showPdfProgress(100, '✅ ¡Listo!');
+  await new Promise(r=>setTimeout(r,600));
+  hidePdfProgress();
+  pdfInProgress = false;
+  const btn = document.getElementById('sideBtnDownload');
+  if(btn) btn.disabled = false;
+  if(opts.download !== false) toast('✅ PDF descargado');
+  return driveLink;
+}
+
+/* ── DRIVE UPLOAD ── */
+function bytesToBase64(bytes){
+  let bin=''; const chunk=8192;
+  for(let i=0;i<bytes.length;i+=chunk)
+    bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  return btoa(bin);
+}
+
+async function uploadToDrive(pdfBytes, filename, opts={}){
+  const url=getSheetUrl();
+  if(!url) return null;
+  try{
+    const base64=bytesToBase64(new Uint8Array(pdfBytes));
+    const r=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'saveToDrive',pdf:base64,filename,notify:opts.notify!==false})
+    });
+    const j=await r.json();
+    if(j.ok && j.link){
+      return j.link;
+    } else {
+      toast('⚠️ Error al guardar en Drive: '+(j.error||'no se pudo guardar'));
+      return null;
+    }
+  }catch(e){
+    toast('⚠️ Error de conexión al guardar en Drive');
+    return null;
+  }
+}
+
+/* ── BOOT ── */
+const today=new Date();
+startDate=new Date(today);
+document.getElementById('lblStart').textContent=fmt(startDate);
+document.getElementById('weeksInput').value=1;
+numWeeks=1;
+try{
+  const saved = JSON.parse(localStorage.getItem(KEY));
+  if(saved){ apply(saved); } else { onDatesChange(); restoreRegistro([]); }
+}catch(e){ onDatesChange(); restoreRegistro([]); }
+planDirty = planHasContent();
+updateSaveBtnVisibility();
+refrescarPlanes(checkLocalRestore);
+
+/* ── CHEQUEO DE ACTUALIZACIÓN ── */
+const APP_VERSION = '1.61';
+function checkForUpdate(manual){
+  const url = location.href.split('?')[0] + '?_=' + Date.now();
+  fetch(url, { cache: 'no-store' })
+    .then(r => r.text())
+    .then(html => {
+      const m = html.match(/id="appVersion">v?([\d.]+)</);
+      if(m && m[1] && m[1] !== APP_VERSION){
+        const verEl = document.getElementById('appVersion');
+        const btnEl = document.getElementById('appUpdateBtn');
+        if(verEl) verEl.style.display = 'none';
+        if(btnEl) btnEl.style.display = '';
+        if(manual) toast('⬆️ Hay una nueva versión (v' + m[1] + ') — toca el botón para actualizar');
+      } else if(manual){
+        toast('✅ Ya tienes la última versión');
+      }
+    })
+    .catch(()=>{ if(manual) toast('⚠️ No se pudo buscar actualizaciones (sin conexión)'); });
+}
+/* Mantener oprimido el número de versión (~0.7 s) busca una actualización */
+(function(){
+  const el = document.getElementById('appVersionInfo');
+  if(!el) return;
+  let timer = null;
+  const start = () => { clearTimeout(timer); timer = setTimeout(() => { timer = null; toast('🔄 Buscando actualización...'); checkForUpdate(true); }, 700); };
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  el.addEventListener('pointerdown', start);
+  ['pointerup','pointerleave','pointercancel'].forEach(ev => el.addEventListener(ev, cancel));
+  el.addEventListener('contextmenu', e => e.preventDefault());
+})();
+checkForUpdate();
+setInterval(checkForUpdate, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) checkForUpdate(); });
+</script>
+</body>
+</html>
