@@ -682,7 +682,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.49</span>
+      <span id="appVersion">v1.50</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1585,31 +1585,34 @@ function drawRetoOralHeader(doc){
     [['Peso / Talla', val('ro_pesotalla')],   ['Alimentación', val('ro_alimentacion')]],
     [['Fórmula base', val('ro_formulabase')], ['Fórmula reto', val('ro_formulareto')]]
   ];
-  const boxY = 108, padX = 14, rowH = 28, boxH = rows.length * rowH + 12;
+  const boxY = 108, padX = 14, lineH = 13, gap = 18;
+  const colW = (W - 2 * M - 2 * padX - gap) / 2;
+  /* Primero se calcula cuántas líneas ocupa cada dato (la letra no se reduce: si no cabe, la fila crece) */
+  const layout = rows.map(row => {
+    const cells = row.map(([label, value]) => {
+      const lbl = label.toUpperCase() + ':';
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      const vxOff = doc.getTextWidth(lbl) + 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
+      const lines = doc.splitTextToSize(value, colW - vxOff);
+      return { lbl, vxOff, lines: lines.length ? lines : [''] };
+    });
+    const n = Math.max(...cells.map(c => c.lines.length));
+    return { cells, h: 28 + (n - 1) * lineH };
+  });
+  const boxH = layout.reduce((a, r) => a + r.h, 0) + 12;
   doc.setFillColor(255, 255, 255); doc.setDrawColor(...blue); doc.setLineWidth(1);
   doc.roundedRect(M, boxY, W - 2 * M, boxH, 8, 8, 'FD');
-  const gap = 18, colW = (W - 2 * M - 2 * padX - gap) / 2;
   let y = boxY + 26;
-  rows.forEach(row => {
-    row.forEach(([label, value], i) => {
+  layout.forEach(row => {
+    row.cells.forEach((c, i) => {
       const x = M + padX + i * (colW + gap);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...blue);
-      const lbl = label.toUpperCase() + ':';
-      doc.text(lbl, x, y);
-      const vx = x + doc.getTextWidth(lbl) + 6;
+      doc.text(c.lbl, x, y);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(30, 30, 35);
-      /* Si el dato no cabe, se reduce la letra (mínimo 8.5 pt) y solo entonces se corta con "..." */
-      const maxW = x + colW - vx;
-      let fs = 10.5, txt = value;
-      doc.setFontSize(fs);
-      while(fs > 8.5 && doc.getTextWidth(txt) > maxW){ fs -= 0.5; doc.setFontSize(fs); }
-      if(doc.getTextWidth(txt) > maxW){
-        while(txt.length > 1 && doc.getTextWidth(txt + '...') > maxW) txt = txt.slice(0, -1);
-        txt = txt.trimEnd() + '...';
-      }
-      doc.text(txt, vx, y);
+      c.lines.forEach((ln, k) => doc.text(ln, x + c.vxOff, y + k * lineH));
     });
-    y += rowH;
+    y += row.h;
   });
   y = boxY + boxH + 20;
   return y;
@@ -2648,7 +2651,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.49';
+const APP_VERSION = '1.50';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
