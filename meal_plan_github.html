@@ -499,7 +499,6 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
 .ro-pair { display: flex; align-items: center; gap: 8px; }
 .ro-pair input { flex: 1; min-width: 0; }
 .ro-sep { font-size: 1.1rem; font-weight: 700; color: #8b7fae; }
-.ro-unit { font-size: 0.85rem; }
 .ro-field.full { grid-column: 1 / -1; }
 .ro-actions { margin-top: 16px; }
 @media (max-width: 480px) { .ro-form { grid-template-columns: 1fr; } }
@@ -686,7 +685,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.52</span>
+      <span id="appVersion">v1.53</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="location.reload()">
@@ -1505,7 +1504,6 @@ const REF_WINDOWS = [
       <div class="ro-field"><label for="ro_oz">Volumen de toma habitual</label>
         <div class="ro-pair">
           <input id="ro_oz" type="text" inputmode="decimal" placeholder="Onzas (oz)" aria-label="Volumen de toma habitual en onzas" oninput="roUpdateVolumen()">
-          <span class="ro-sep ro-unit">oz</span>
         </div>
         <span id="ro_ml" class="ro-edad" aria-live="polite"></span></div>
       <div class="ro-actions ro-field full"><button type="button" class="btn-mac" onclick="descargarRetoOralPDF()">Descargar PDF</button></div>
@@ -1707,7 +1705,17 @@ function drawRetoOralSection2(doc, y){
   lines.forEach((ln, k) => doc.text(ln, M, y + k * 14));
   y += (lines.length - 1) * 14 + 8;
   doc.setDrawColor(200, 207, 225); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
-  return y + 16;
+  y += 16;
+
+  /* Modo de preparación: usa las onzas y los ml del formulario (en blanco si no se llenó) */
+  const uno = v && v.oz === '1';
+  const agua = v ? (uno ? 'la 1 onza' : 'las ' + v.oz + ' onzas') + ' de agua (' + v.ml + ' ml)' : 'las ____ onzas de agua (____ ml)';
+  const segs = [
+    { t: 'Modo de preparación: ', b: true },
+    { t: 'Vierta siempre primero ' + agua + ' a temperatura adecuada. Luego agregue las medidas en polvo indicadas de cada fórmula y mezcle bien.' }
+  ];
+  doc.setTextColor(80, 84, 94);
+  return drawRichParagraph(doc, segs, M, y, W - 2 * M, 14, 10) + 5;
 }
 async function descargarRetoOralPDF(){
   const btn = document.querySelector('#retoOralForm .btn-mac');
@@ -2700,7 +2708,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.52';
+const APP_VERSION = '1.53';
 function checkForUpdate(manual){
   const url = location.href.split('?')[0] + '?_=' + Date.now();
   fetch(url, { cache: 'no-store' })
