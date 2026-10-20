@@ -682,6 +682,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 2 — Descarga de material -->
   <p class="side-menu-label">Descargar material</p>
   <button id="sideBtnDownload" class="btn-mac" onclick="descargarSeleccion()">Descargar</button>
+  <button id="waSendBtn" class="btn-mac" type="button" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
 
   <!-- Iconos de referencia (3 por fila, 1x1) — se llenan desde REF_WINDOWS -->
   <div id="refGrid" role="group" aria-label="Referencias"></div>
@@ -689,7 +690,7 @@ table.registro-table tbody td { padding: 3px 5px; vertical-align: middle; }
   <!-- SECCIÓN 5 — Versión / fecha -->
   <div class="side-menu-foot">
     <span id="appVersionInfo">
-      <span id="appVersion">v1.66</span>
+      <span id="appVersion">v1.67</span>
       <span id="appBuildDate">7 oct 2026</span>
     </span>
     <button id="appUpdateBtn" type="button" class="app-update-btn" style="display:none" title="Hay una nueva versión disponible — clic para actualizar" aria-label="Actualizar aplicación" onclick="applyUpdate()">
@@ -2379,6 +2380,7 @@ function autoSave(){
   scheduleLocalSave();
   planDirty = true; updateSaveBtnVisibility();
   /* El plan cambió: el PDF ya construido (si lo hay) queda desactualizado */
+  builtPlanLink = null;
 }
 function planHasContent(){
   const d = collect();
@@ -2490,6 +2492,9 @@ function showPrompt(message, defaultValue=''){
 
 /* ── BARRA DE PROGRESO DEL PDF ── */
 let pdfInProgress = false;
+/* Link de Drive del PDF del plan ya construido en esta sesión — se reutiliza entre "Descargar" y el envío
+   por WhatsApp mientras el plan no cambie. */
+let builtPlanLink = null;
 function showPdfProgress(pct, label){
   document.getElementById('pdfProgressOverlay').classList.add('open');
   document.getElementById('pdfProgressLabel').textContent = label;
@@ -2545,9 +2550,172 @@ async function descargarSeleccion(){
   /* Solo se construye el PDF del plan si el usuario lo seleccionó */
   if(wantPlan){
     try{
-      await downloadAllPDF({ notify: false });
+      const planLink = await downloadAllPDF({ notify: false });
+      if(planLink) builtPlanLink = planLink;
     }catch(e){ /* downloadAllPDF ya muestra su propio aviso de error */ }
   }
+}
+
+/* Arma la lista de material de alimentación seleccionado con sus enlaces.
+   El Plan de alimentación usa un link provisorio hasta que se construya. */
+function getSelectedDocItems(){
+  const wantPlan  = document.getElementById('dlPlan').checked;
+  const wantAplv  = document.getElementById('dlAplv').checked;
+  const wantHuevo = document.getElementById('dlHuevo').checked;
+  const items = [];
+  if(wantPlan){
+    items.push({
+      icon: '📄', label: 'Plan de alimentación',
+      desc: 'Tu plan de alimentación personalizado, con el detalle de cada comida y horario.',
+      url: builtPlanLink || '⏳ (se generará al enviar)'
+    });
+  }
+  if(wantAplv && wantHuevo){
+    items.push({ icon: REF_FILES.ambos.icon, label: REF_FILES.ambos.name, desc: REF_FILES.ambos.desc, url: refViewUrl(REF_FILES.ambos.id) });
+  } else {
+    if(wantAplv)  items.push({ icon: REF_FILES.aplv.icon,  label: REF_FILES.aplv.name,  desc: REF_FILES.aplv.desc,  url: refViewUrl(REF_FILES.aplv.id) });
+    if(wantHuevo) items.push({ icon: REF_FILES.huevo.icon, label: REF_FILES.huevo.name, desc: REF_FILES.huevo.desc, url: refViewUrl(REF_FILES.huevo.id) });
+  }
+  return items;
+}
+
+/* Aviso automático sobre exclusión de leche/huevo según las guías seleccionadas —
+   se agrega siempre que corresponda, además de las observaciones escritas a mano. */
+function buildAlergiaBullets(){
+  const wantAplv  = document.getElementById('dlAplv').checked;
+  const wantHuevo = document.getElementById('dlHuevo').checked;
+  const bullets = [];
+  if(wantAplv && wantHuevo){
+    bullets.push('El plan de alimentación no debe incluir leche de vaca ni huevo, ni sus derivados.');
+  } else if(wantAplv){
+    bullets.push('El plan de alimentación no debe incluir leche de vaca ni sus derivados.');
+  } else if(wantHuevo){
+    bullets.push('El plan de alimentación no debe incluir huevo ni sus derivados.');
+  }
+  return bullets;
+}
+
+function buildWaMessage(items){
+  if(!items.length) return '';
+  const nombre = document.getElementById('childName').value.trim();
+  const plural = items.length > 1;
+  const saludo = nombre
+    ? `👩‍⚕️ ¡Hola! Aquí tienes el material de alimentación de *${nombre}*:`
+    : `👩‍⚕️ ¡Hola! Aquí tienes tu material de alimentación:`;
+  const lista = items.map(it => `${it.icon} *${it.label}*\n${it.desc}\n${it.url}`).join('\n\n');
+  const nota = plural
+    ? `⚠️ Estos enlaces estarán disponibles solo por *15 días*. Te recomiendo descargarlos y guardarlos ahora para que le queden siempre disponibles a ${nombre || 'tu paciente'}.`
+    : `⚠️ Este enlace estará disponible solo por *15 días*. Te recomiendo descargarlo y guardarlo ahora para que le quede siempre disponible a ${nombre || 'tu paciente'}.`;
+  const obsManuales = (collectObservaciones() || []).map(o => o.trim()).filter(Boolean);
+  const obsBullets = [...buildAlergiaBullets(), ...obsManuales];
+  const obsBlock = obsBullets.length
+    ? `\n\n📝 *Observaciones importantes:*\n${obsBullets.map(o => `• ${o}`).join('\n')}`
+    : '';
+  return `${saludo}\n\n${lista}${obsBlock}\n\n${nota}`;
+}
+
+/* CallMeBot (la API gratuita de WhatsApp que usa el backend) trunca en
+   silencio los mensajes largos sin avisar — el plan, las 2 guías de
+   alergias y las observaciones fácilmente superan ese límite. Por eso el
+   envío real (a diferencia de la vista previa/copiar) parte el texto en
+   varios mensajes de WhatsApp seguidos.
+   El primer mensaje SIEMPRE es el saludo + los enlaces con su descripción,
+   completos y sin partir — se ubica dónde termina el último enlace
+   seleccionado (el texto puede haber sido editado a mano en el recuadro,
+   así que se busca sobre el texto real que se va a enviar, no sobre el
+   que generó buildWaMessage). El resto (observaciones, aviso de vigencia)
+   se corta en bloques de tamaño seguro si hace falta. */
+function chunkWaText(text, limit){
+  if(text.length <= limit) return [text];
+  const lines = text.split('\n');
+  const blocks = [];
+  let current = '';
+  lines.forEach(line => {
+    const candidate = current ? current + '\n' + line : line;
+    if(candidate.length > limit && current){
+      blocks.push(current);
+      current = line;
+    } else {
+      current = candidate;
+    }
+  });
+  if(current) blocks.push(current);
+  return blocks.map(b => b.trim()).filter(Boolean);
+}
+
+function splitWaTextForSending(texto, items){
+  const WA_BLOCK_LIMIT = 650;
+  if(texto.length <= WA_BLOCK_LIMIT) return [texto];
+  let splitAt = 0;
+  if(items && items.length){
+    const lastUrl = items[items.length - 1].url;
+    const idx = lastUrl ? texto.lastIndexOf(lastUrl) : -1;
+    if(idx >= 0) splitAt = idx + lastUrl.length;
+  }
+  const primero = texto.slice(0, splitAt).trim();
+  if(!primero) return chunkWaText(texto, WA_BLOCK_LIMIT);
+  const resto = texto.slice(splitAt).trim();
+  const restoBloques = resto ? chunkWaText(resto, WA_BLOCK_LIMIT) : [];
+  return [primero, ...restoBloques];
+}
+
+/* Construye el PDF del plan si hace falta (aún no se había generado por
+   "Descargar" ni por un envío/copia anterior) y guarda el link real. Devuelve false si la construcción falló. */
+async function ensurePlanBuilt(opts={}){
+  const wantPlan = document.getElementById('dlPlan').checked;
+  if(!wantPlan || builtPlanLink) return true;
+  try{
+    const planLink = await downloadAllPDF({ notify: false, download: opts.download !== false });
+    if(!planLink) return false;
+    builtPlanLink = planLink;
+    return true;
+  }catch(e){
+    return false; /* downloadAllPDF ya muestra su propio aviso de error */
+  }
+}
+
+/* Botón "Enviar por WhatsApp": arma el mensaje con los documentos marcados y lo envía solo
+   (sin recuadro de texto). Si el plan aún no tiene PDF, lo genera y sube a Drive primero. */
+async function enviarWhatsApp(){
+  const btn = document.getElementById('waSendBtn');
+  const items = getSelectedDocItems();
+  if(!items.length){ toast('Selecciona al menos un material para enviar'); return; }
+  const setBtn = (dis, txt) => { if(btn){ btn.disabled = dis; btn.textContent = txt; } };
+
+  const needsBuild = document.getElementById('dlPlan').checked && !builtPlanLink;
+  if(needsBuild) setBtn(true, 'Generando plan...');
+  const built = await ensurePlanBuilt({ download: false });
+  if(!built){ setBtn(false, 'Enviar por WhatsApp'); return; }
+
+  const texto = buildWaMessage(getSelectedDocItems());
+  const bloques = splitWaTextForSending(texto, getSelectedDocItems());
+  const baseReqId = 'wa' + Date.now() + Math.random().toString(36).slice(2,8);
+  const reqIds = bloques.map((_, i) => baseReqId + '_' + i);
+  setBtn(true, 'Enviando...');
+  try{
+    for(let i = 0; i < bloques.length; i++){
+      await sheetPost({ action: 'notifyDownload', text: bloques[i], reqId: reqIds[i] });
+      if(i < bloques.length - 1) await new Promise(r => setTimeout(r, 1200));
+    }
+  }catch(e){
+    toast('⚠️ No se pudo enviar por WhatsApp');
+    setBtn(false, 'Enviar por WhatsApp');
+    return;
+  }
+  /* Los POST son no-cors: se consulta el resultado real de CallMeBot de cada mensaje */
+  try{
+    await new Promise(r => setTimeout(r, 1500));
+    const codes = [];
+    for(const reqId of reqIds){
+      const r = await fetch(getSheetUrl() + '?action=getWhatsAppResult&reqId=' + encodeURIComponent(reqId) + '&_=' + Date.now());
+      const j = await r.json();
+      codes.push(j.ok && j.whatsapp ? j.whatsapp.code : null);
+    }
+    if(codes.every(c => c === 200)) toast(bloques.length > 1 ? '✅ Enviado por WhatsApp (' + bloques.length + ' mensajes)' : '✅ Enviado por WhatsApp');
+    else if(codes.every(c => c === 200 || c === 210)) toast('⏳ En camino por WhatsApp (puede tardar unos minutos)');
+    else if(codes.some(c => c !== null)) toast('⚠️ WhatsApp no envió todo');
+  }catch(e){ /* si no se puede verificar, no interrumpimos más */ }
+  setBtn(false, 'Enviar por WhatsApp');
 }
 
 /* ══════════════════════════════════════════
@@ -2949,7 +3117,7 @@ updateSaveBtnVisibility();
 refrescarPlanes(checkLocalRestore);
 
 /* ── CHEQUEO DE ACTUALIZACIÓN ── */
-const APP_VERSION = '1.66';
+const APP_VERSION = '1.67';
 /* ── ACTUALIZACIÓN AUTOMÁTICA ──
    Al detectar una versión nueva, la página se recarga sola. Si el usuario está en medio de algo
    (escribiendo, con una ventana abierta o generando un PDF) espera y reintenta cada 15 s.
